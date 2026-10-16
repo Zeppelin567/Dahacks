@@ -36,6 +36,11 @@ LAYER = {
     "safe": (sp.SAFE_VERSION, sp.SAFE_PROMPT, sp.SAFE_SCHEMA),
     "green": (sp.GREEN_VERSION, sp.GREEN_PROMPT, sp.GREEN_SCHEMA),
 }
+# USD per million tokens, prompts under 100K (platform.claude.com/docs/en/about-claude/pricing, 2026-10-16).
+PRICES = {
+    "claude-haiku-5-5": {"input_tokens": 0.10, "output_tokens": 0.50,
+                         "cache_read_input_tokens": 0.01, "cache_creation_input_tokens": 0.125},
+}  # fmt: skip
 MIN_JUNCTION_PHOTOS = 2  # one photo can't show a whole intersection; those get the rule fallback
 COMPASS = {0: "NORTH", 90: "EAST", 180: "SOUTH", 270: "WEST"}
 _write_lock = threading.Lock()
@@ -198,8 +203,11 @@ def main() -> None:
     ap.add_argument("--model", default="claude-haiku-5-5")
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--limit", type=int, help="score at most N samples (smoke test)")
+    ap.add_argument("--budget-usd", type=float, default=3.0, help="stop once this run has spent this much")
     args = ap.parse_args()
     load_env()
+    if args.model not in PRICES:
+        sys.exit(f"no price for {args.model}: add it to PRICES so the budget guard can work")
 
     samples = [json.loads(line) for line in (DATA / "samples.jsonl").read_text(encoding="utf-8").splitlines()]
     if args.samples:
@@ -217,6 +225,7 @@ def main() -> None:
     client = anthropic.Anthropic(max_retries=6)
     tokens: collections.Counter = collections.Counter()
     status: collections.Counter = collections.Counter()
+    spent = 0.0
 
     def run(s):
         try:
@@ -241,9 +250,13 @@ def main() -> None:
                 f.flush()
             status[row["status"]] += 1
             tokens.update(row.get("usage", {}))
+            spent = sum(PRICES[args.model][k] * n for k, n in tokens.items()) / 1e6
             if i % 100 == 0:
-                print(f"   {i}/{len(todo)} {dict(status)}")
-    print(f"done: {dict(status)}  tokens: {dict(tokens)}")
+                print(f"   {i}/{len(todo)} {dict(status)} ${spent:.3f}")
+            if spent >= args.budget_usd:
+                print(f"   budget reached (${spent:.3f} >= ${args.budget_usd}); stopping. Rerun to resume.")
+                break
+    print(f"done: {dict(status)}  tokens: {dict(tokens)}  cost: ${spent:.3f}")
 
 
 if __name__ == "__main__":

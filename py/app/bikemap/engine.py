@@ -319,7 +319,7 @@ def _edge_coords(G, u, v, d) -> list[LatLng]:
 
 
 def _green_reasons(d: dict) -> list[str]:
-    out: list[str] = []
+    out: list[str] = [str(d["green_note"])] if d.get("green_note") else []  # 照片打分的一句话（4_bake.py）
     pd = _num(d, "park_dist_m")
     if pd is not None and 0 <= pd < 50:
         out.append("runs next to a park/green space")

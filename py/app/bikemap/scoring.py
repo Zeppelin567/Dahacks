@@ -38,9 +38,37 @@ def safety_score(edge: Edge) -> float:
     return _clamp(v) if v is not None else 0.5
 
 
+HAZARD_TEXT = {  # scoring-spec.md §6: rider text for each hazard id
+    "door_zone": "Parked cars: watch for opening doors",
+    "no_bike_lane": "No bike lane: you share the lane with cars",
+    "poor_pavement": "Rough pavement in the riding line",
+    "blind_corner": "Blind corner: cross traffic is hard to see",
+    "right_turn_slip_lane": "Fast right-turn lane crosses your path",
+    "construction": "Construction narrows the road",
+    "high_speed_traffic": "Cars pass at 40 mph or more",
+    "wide_crossing": "Long crossing: 4 or more lanes",
+    "bike_lane_between_turn_lanes": "Bike lane squeezed between turning cars",
+    "bike_lane_drops": "Bike lane ends suddenly",
+    "freeway_ramp_crossing": "Cars enter or leave the freeway across your path",
+    "expressway": "Expressway: very fast, heavy traffic",
+    "bike_lane_blocked": "Bike lane often blocked by cars or bins",
+    "sharrows_only": "Only bike symbols painted, no real bike lane",
+    "frequent_driveways": "Many driveways: watch for turning cars",
+    "dual_right_turn": "Two right-turn lanes cross your path",
+    "no_median_refuge": "No island to wait on mid-crossing",
+}
+
+
 def safety_reasons(edge: Edge) -> list[str]:
-    """从 highway / maxspeed 生成人类可读文案（真实值，无 MOCK）。"""
-    out: list[str] = []
+    """What a rider sees on click: Claude's note + hazards (photo-scored), else the map-data reason."""
+    note = edge.get("safety_note")
+    if note:
+        hazards = [h for h in str(edge.get("safety_hazards") or "").split(",") if h]
+        out = [str(note)] + [HAZARD_TEXT.get(h, h) for h in hazards[:3]]
+        if edge.get("safety_confidence") == "low":
+            out.append("⚠️ uncertain: the street photo was hard to read")
+        return out
+    out = ["No street imagery — scored from map data"]
     hw = edge.get("highway", "")
     if isinstance(hw, list):
         hw = hw[0] if hw else ""
