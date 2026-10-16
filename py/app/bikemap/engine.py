@@ -65,7 +65,7 @@ SAFE_FEATURES = ["safety"]
 
 # 团队硬性安全要求（论文之外）：这些路永远不进路网
 UNSAFE_HIGHWAYS = {"motorway", "trunk", "motorway_link", "trunk_link"}
-SAFETY_FLOOR = 0.2  # safety_score 低于此的边直接删（不是扣分）
+SAFETY_FLOOR = 0.2  # safety_score 低于此的边：推荐路线按论文 disqualify 处理（α = 10·length），不删边
 
 
 def _graph_path() -> Path:
@@ -185,17 +185,19 @@ def _make_weight(prefs: dict[str, float], d_tol: float, mode: Mode):
     平行边之间取代价最小的那条（等价于先把图压成 DiGraph）。
     """
 
+    def cost(e: dict) -> float:
+        length = _num(e, "length") or 0.0
+        if scoring.safety_score(e) < SAFETY_FLOOR:
+            # 安全底线（safe 和 green 都适用）：几乎不走，但边还在，
+            # 所以最快路线照样能走 Lawrence，对比才看得出来；也不会把起终点孤立。
+            return DISQUALIFY_MULT * length
+        _, v11 = edge_feature_vector(e, mode)
+        return preference_weight(v11, prefs, d_tol, length)
+
     def w(u, v, d):
         if "length" not in d:  # 平行边字典
-            best = None
-            for e in d.values():
-                _, v11 = edge_feature_vector(e, mode)
-                c = preference_weight(v11, prefs, d_tol, _num(e, "length") or 0.0)
-                if best is None or c < best[0]:
-                    best = (c, e)
-            return best[0]
-        _, v11 = edge_feature_vector(d, mode)
-        return preference_weight(v11, prefs, d_tol, _num(d, "length") or 0.0)
+            return min(cost(e) for e in d.values())
+        return cost(d)
 
     return w
 
@@ -208,16 +210,13 @@ def _length_weight(u, v, d) -> float:
 
 
 def _safety_floor_view(G):
-    """硬安全底线（论文之外，团队要求）：高速路 + safety<0.2 的边直接删。"""
+    """只删高速路（自行车不能上）。safety<0.2 的边不删，在 _make_weight 里重罚。"""
 
     def ok(u, v, k):
-        d = G[u][v][k]
-        hw = d.get("highway", "")
+        hw = G[u][v][k].get("highway", "")
         if isinstance(hw, list):
             hw = hw[0] if hw else ""
-        if hw in UNSAFE_HIGHWAYS:
-            return False
-        return scoring.safety_score(d) >= SAFETY_FLOOR
+        return hw not in UNSAFE_HIGHWAYS
 
     return nx.subgraph_view(G, filter_edge=ok)
 

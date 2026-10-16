@@ -28,6 +28,7 @@ import osmnx as ox
 FEATURE_ATTRS = {
     "safety": ("safety_score", False),
     "vegetation": ("vegetation_vlm", True),
+    "shade": ("shade_vlm", False),  # 照片的树冠遮天比例 shade_sky_pct / 100
 }
 
 
@@ -70,9 +71,9 @@ def main(argv=None) -> None:
     ap.add_argument("--graph", required=True, help="输入 graphml 路径")
     ap.add_argument(
         "--feature",
-        choices=["safety", "vegetation"],
+        choices=["safety", "vegetation", "shade"],
         default=None,
-        help="safety: 0..1 → safety_score；vegetation: 1-5 → vegetation_vlm",
+        help="safety: 0..1 → safety_score；vegetation: 1-5 → vegetation_vlm；shade: 0..1 → shade_vlm",
     )
     ap.add_argument("--scores", default=None, help="分数 JSON 路径（配合 --feature）")
     ap.add_argument("--safety", default=None, help="[旧版兼容] A 的输出: {u_v_k: 0..1}")

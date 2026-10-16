@@ -17,6 +17,7 @@ The whole plan is in **[.plans/actualproject.md](.plans/actualproject.md)**: pro
     ```
 
     The graph and scores are committed. Photos, raw LLM replies and keys are not.
+- Scoring spec (prompts, schemas, bake-off): [.plans/scoring-spec.md](.plans/scoring-spec.md)
 - Reference project (Aggie Street Smart): [referenceproject.md](referenceproject.md)
 
 ```

@@ -4,10 +4,11 @@
 [-1, 1] 的边向量。VLM 精修分数经 merge_scores.py 合并后优先使用。
 
 特征：
-  vegetation（1-5 量表，论文 §5 用 1-5）：朋友管线的 VLM 分数优先，
-      否则用 OSM 代理（公园距离/树/水）。
+  vegetation：照片分（VLM greenery，存成论文的 1-5 量表 vegetation_vlm）占 75%，
+      OSM 代理（公园/水体距离、行道树）占 25%。照片 80 m 一张，常常拍不到旁边的
+      溪和公园，所以代理分不丢掉。没照片的边只用代理分。
   quiet：highway 路类做噪音代理。
-  shade：行道树密度做树荫代理（真树荫需太阳位置×树高，诚实标注）。
+  shade：照片量出来的树冠遮天比例（shade_vlm 0..1）优先；没照片才用行道树密度代理。
   safety：读预计算的 safety_score（等 A 的 LLM 分数），缺省 0.5。
 """
 
@@ -66,12 +67,21 @@ def safety_reasons(edge: Edge) -> list[str]:
     return out
 
 
+VLM_WEIGHT = 0.75  # vegetation 里照片分的权重，其余给 OSM 代理
+
+
 def vegetation_score(edge: Edge) -> float:
-    """植被分 0..1。VLM 精修（1-5 量表）优先，否则 OSM 代理公式。"""
+    """植被分 0..1。有照片：0.75·VLM + 0.25·OSM 代理；没照片：只用代理。"""
+    proxy = vegetation_proxy(edge)
     v = _num(edge, "vegetation_vlm")
-    if v is not None:
-        return _clamp((v - 1.0) / 4.0)  # 论文 §5：1-5 量表 → 0..1
-    # OSM 代理：公园距离 0.5 + 树 0.3 + 水 0.2
+    if v is None:
+        return proxy
+    vlm = _clamp((v - 1.0) / 4.0)  # 论文 §5：1-5 量表 → 0..1
+    return _clamp(VLM_WEIGHT * vlm + (1 - VLM_WEIGHT) * proxy)
+
+
+def vegetation_proxy(edge: Edge) -> float:
+    """OSM 代理：公园距离 0.5 + 树 0.3 + 水 0.2。"""
     total, wsum = 0.0, 0.0
     pd = _num(edge, "park_dist_m")
     total += (math.exp(-pd / 150) if pd is not None and pd >= 0 else 0.5) * 0.5
@@ -106,6 +116,9 @@ def quiet_score(edge: Edge) -> float:
 
 
 def shade_score(edge: Edge) -> float:
-    """树荫分：行道树密度做代理（真树荫需太阳位置×树高，v0 诚实标注为代理值）。"""
+    """树荫分：照片量的树冠遮天比例优先（OSM 的树点很少），没照片才用行道树密度代理。"""
+    sv = _num(edge, "shade_vlm")
+    if sv is not None:
+        return _clamp(sv)
     tc = _num(edge, "tree_count")
     return _clamp(min(1.0, tc / 10) if tc is not None else 0.5)

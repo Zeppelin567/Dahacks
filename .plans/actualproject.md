@@ -128,55 +128,9 @@ Each script can be rerun on its own, and so can each layer. `2_photos.py` and `3
   - Residential junctions and residential right-side photos are left out and use the fallback rules.
   - Imagery exists for 94–99% of samples, and 18% of the imagery predates 2022.
 
-#### 3. Scoring (`3_score.py --layer safe`)
+#### 3. Scoring (`3_score.py --layer safe|green`)
 
-**Model call**
-
-- **Provider:** Claude API (`ANTHROPIC_API_KEY` in the root `.env`).
-- **Bake-off:** before the city-wide run, score 20 places the team knows against `claude-haiku-5-5` and `claude-sonnet-5-5`. Use Haiku city-wide unless Sonnet is clearly better on these 20.
-  - The 20 places must include Stevens Creek × De Anza, a 280 ramp, Lawrence Expressway, the Mary Ave bike bridge and a few quiet residential streets.
-- **City-wide run:** send it through the Message Batches API, which costs half the normal price. Cache the prompt's fixed part (role and rubric) with prompt caching. Set a spend limit in the Claude Console before starting.
-- **Cache:** each call's raw reply goes to `py/data/cache/llm/{layer}/{key}.json`. Photos go to `py/data/cache/streetview/`.
-
-**Prompt**
-
-The prompt has three parts:
-
-1. **Role:** an experienced urban cyclist rating how safe this spot is to ride.
-2. **Facts:** speed limit, lane count, highway type, OSM cycleway tags, `turn:lanes` / `cycleway:lanes` if present, the City `PathType` if joined, and signal yes/no for intersections. Missing values are stated as unknown. When OSM and the City disagree, give both with their source and let the photo decide. The prompt says: *these are facts; don't re-guess them from the photo.*
-3. **Rubric and the output schema**, as below.
-
-**Rubric**
-
-| Situation | Score |
-|---|---|
-| Separated bike path / physically protected lane | 9–10 |
-| Bike lane in good condition | 7–8 |
-| No bike lane, with curbside parking | ≤ 5 |
-| Multi-lane road, no bike facility | 3–4 |
-| No reasonable person would ride it | 1–2 |
-| **Expressway**: name contains "Expressway", or ≥45 mph, or ≥6 lanes (Lawrence, Foothill) | **1–2** |
-| Bike lane squeezed between the through lane and a right-turn lane (cars cross it to turn) | ≤ 4 |
-| Freeway on/off ramp where traffic crosses the bike lane | ≤ 3 |
-| Bike lane ends abruptly | ≤ 4 |
-| *Intersection*: signalised, with a bike box or crossing markings | 8–10 |
-| *Intersection*: unsignalised crossing of a multi-lane road | 1–3 |
-
-**Output** (strict JSON). `claude-haiku-5-5` rejects `temperature` and thinks by default, so leave room in `max_tokens` (~2,000).
-
-```json
-{
-  "score": 1,
-  "hazards": ["door_zone", "no_bike_lane", "poor_pavement", "blind_corner",
-              "right_turn_slip_lane", "construction", "high_speed_traffic", "wide_crossing",
-              "bike_lane_between_turn_lanes", "bike_lane_drops", "freeway_ramp_crossing", "expressway"],
-  "confidence": "high | medium | low",
-  "note": "one short sentence"
-}
-```
-
-- `hazards` may only contain values from that list. Enforce it with structured output (a JSON schema with an `enum`). Asked in plain text, Haiku wrote free-form hazards in the key test. The frontend maps each value to a fixed plain-English line, e.g. `door_zone` → "Parked cars: watch for opening doors".
-- `confidence: low` is shown to riders as ⚠️ uncertain.
+The prompts, schemas, request settings, output format, bake-off rules and the mapping into the routing engine are all in **[scoring-spec.md](scoring-spec.md)** (`safe-v1`, `green-v1`). That spec replaces the earlier rubric and hazard list that were here.
 
 #### 4. Bake (`4_bake.py`)
 
@@ -256,16 +210,17 @@ Intersections with no imagery use Aggie's rule: Y-junction 8, T-junction 7, four
 | Parks, Stevens Creek | OSM `leisure=park`, `waterway=stream`, no photos needed |
 | 🤫 Quiet | Road type and speed from OSM, no photos needed |
 
+- **Green scoring** (decided 2026-10-16, details in [scoring-spec.md](scoring-spec.md) §7 and §11):
+  - The photo prompt gives a 1–10 `greenery_score` (rubric: 10 park or creek corridor … 1 industrial) and `shade_sky_pct`.
+  - The engine (BikeButler paper method) uses:
+    - **vegetation** = 0.75 × photo + 0.25 × OSM proxy (parks, water, street trees)
+    - **shade** = photo canopy, else OSM tree density
+    - **quiet** = road class
+- **Safety floor:** an edge with safety below 0.2 costs 10× its length on the Green route too, so trees never pull a route onto an expressway.
+
 **Ideas to discuss:**
 
-- A draft green rubric for the photo prompt:
-  - 9–10: creek corridor or dense canopy
-  - 7–8: tree-lined residential street
-  - 5–6: young trees
-  - 3–4: concrete commercial strip
-  - 1–2: industrial area or parking lots
 - Show route tags such as `% tree canopy`, `% creek proximity`, `% parks & greenways`, using OSM parks, `waterway=stream` (Stevens Creek) and `natural=tree_row`.
-- **Safety floor:** the Green route must never send riders onto a dangerous road just because it has trees. Penalise edges whose safety score is below 5. Both scores sit in the same graph, so this is a lookup.
 - Demo anchors: McClellan Ranch, Blackberry Farm, Stevens Creek Trail, Memorial Park and Linda Vista Park on the nature side; De Anza College, Main Street and Apple Park on the city side.
 
 ## 5. UI ideas (not decided)
