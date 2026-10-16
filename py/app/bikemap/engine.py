@@ -450,7 +450,13 @@ def network(layer: Mode) -> NetworkResponse:
     G = _load_graph()
     primary = "safety" if layer == "safe" else "vegetation"
     segments = []
-    for u, v, k, d in G.edges(keys=True, data=True):
+    seen: set[tuple] = set()
+    for u, v, _k, d in G.edges(keys=True, data=True):
+        # 双向路在有向图里是两条边，几何重合；底图只画一次（payload 减半）
+        street = (min(u, v), max(u, v), round(float(d.get("length", 0)), 1))
+        if street in seen:
+            continue
+        seen.add(street)
         vec01, _ = edge_feature_vector(d, layer)
         score = max(0.0, min(1.0, vec01[primary]))
         segments.append(

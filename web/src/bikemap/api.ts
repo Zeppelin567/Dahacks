@@ -34,6 +34,38 @@ export type NetworkResponse = { layer: Mode; mock: boolean; segments: Segment[] 
 
 export type RouteRequest = { start: LatLng; end: LatLng; mode: Mode; rural?: number; prefs?: GreenPrefs };
 
+export type Photo = { url: string; pano_id: string; heading: number; date: string | null };
+
+export type StreetDetail = {
+  mode: Mode;
+  name: string;
+  road: string;
+  score10: number;
+  level: Level;
+  source: "photo" | "map";
+  note: string | null;
+  chips: string[];
+  photo: Photo | null;
+  streetview_url: string;
+  coords: LatLng[];
+};
+
+export type Destination = {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  icon: string;
+  category_label: string;
+  description: string;
+  score: number | null;
+  amenities: string[];
+};
+
+export type DestinationsResponse = { source: "live_osm_overpass" | "fallback"; destinations: Destination[] };
+
+export type SearchResult = { name: string; detail: string; lat: number; lng: number };
+
 const BASE = "/api/py/bikemap";
 
 export const bikemap = {
@@ -45,4 +77,9 @@ export const bikemap = {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(req),
     }).then((r) => unwrap<RouteResponse>(r)),
+  street: (at: LatLng, mode: Mode) =>
+    fetch(`${BASE}/street?lat=${at[0]}&lng=${at[1]}&mode=${mode}`).then((r) => unwrap<StreetDetail>(r)),
+  destinations: () => fetch(`${BASE}/destinations`).then((r) => unwrap<DestinationsResponse>(r)),
+  search: (q: string) =>
+    fetch(`${BASE}/search?q=${encodeURIComponent(q)}`).then((r) => unwrap<SearchResult[]>(r)),
 };

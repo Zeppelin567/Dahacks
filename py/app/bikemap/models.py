@@ -86,3 +86,54 @@ class NetworkResponse(BaseModel):
     layer: Mode
     mock: bool
     segments: list[Segment]
+
+
+class Photo(BaseModel):
+    """The Street View photo the scoring prompt looked at (served from the local cache)."""
+
+    url: str
+    pano_id: str
+    heading: int
+    date: str | None = None
+
+
+class StreetDetail(BaseModel):
+    """What the detail card shows when a rider clicks a street."""
+
+    mode: Mode
+    name: str
+    road: str = Field(description="Human road type, e.g. 'residential street'")
+    score10: float = Field(ge=0, le=10, description="Same score as the map colour, on a 1-10 scale")
+    level: Level
+    source: Literal["photo", "map"] = Field(description="photo = scored by Claude from Street View")
+    note: str | None = Field(description="Claude's one-line read of the photo")
+    chips: list[str] = Field(description="Hazards (safe) or greenery facts (green)")
+    photo: Photo | None
+    streetview_url: str = Field(description="Google Maps Street View link (free, no key)")
+    coords: list[LatLng] = Field(description="The street's geometry, to highlight it")
+
+
+class Destination(BaseModel):
+    """A pin with a 'Route here' button. Nature pins come from OSM Overpass (Hong Zhe's scoring)."""
+
+    id: str
+    name: str
+    lat: float
+    lng: float
+    icon: str
+    category_label: str
+    description: str = ""
+    score: int | None = Field(default=None, description="0-100 green score; None for city places")
+    amenities: list[str] = []
+
+
+class DestinationsResponse(BaseModel):
+    source: Literal["live_osm_overpass", "fallback"]
+    destinations: list[Destination]
+
+
+class SearchResult(BaseModel):
+    name: str
+    detail: str
+    lat: float
+    lng: float

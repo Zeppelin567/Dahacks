@@ -6,10 +6,10 @@ Reference project: [Aggie Street Smart](../referenceproject.md) (HackDavis 2026)
 
 ## 1. Product
 
-A bike map for people who ride in Cupertino, for commuting or anything else. It has **two maps**, as two tabs of one app sharing the same start/end, road graph and backend:
+A bike map for people who ride in Cupertino, for commuting or anything else. It is one map with a 🏙️ Modern ↔ 🌿 Nature switch. Both modes share the same start/end, road graph and backend. We pitch under **both** themes (Modern Life + Nature Life).
 
-1. **🛡️ Safe route**: the safest way from A to B. Every street is coloured by risk, and clicking a street says why.
-2. **🌳 Green route**: a **City ↔ Rural slider** (how much detour you'll accept) plus three toggles, 🌳 Greenery / 🤫 Quiet / ☀️ Shade. Slide toward Rural and the route bends through parks, trees and quiet streets. The trade-off (extra minutes vs. greenery gained) is always shown.
+1. **🏙️ Modern mode = Safe route**: the safest way from A to B. Every street is coloured by risk, and clicking a street says why.
+2. **🌿 Nature mode = Green route**: a **Direct ↔ Scenic slider** (how much detour you'll accept) plus three toggles, 🌳 Greenery / 🤫 Quiet / ☀️ Shade. Slide toward Scenic and the route bends through parks, trees and quiet streets. Nature mode also shows park destinations (Hong Zhe's discovery map).
 
 - **Area:** Cupertino, plus a 500 m buffer around the city boundary.
 - **Platform:** desktop web first.
@@ -18,12 +18,12 @@ A bike map for people who ride in Cupertino, for commuting or anything else. It 
 
 | Part | What |
 |---|---|
-| Frontend | React 19 + Vite + Tailwind + shadcn/ui, maps with **Leaflet** (`web/src/bikemap/`, `web/src/pages/{safe,green}-route.tsx`) |
+| Frontend | React 19 + Vite + Tailwind + shadcn/ui, maps with **Leaflet** (`web/src/bikemap/`) |
 | Backend | Python FastAPI side-car (`py/app/bikemap/`), reached through `/api/py/bikemap/*`, public (no sign-in) |
 | Contract | `py/app/bikemap/models.py` ⇄ `web/src/bikemap/api.ts`. Change both together. |
 | Routing | `osmnx` graph + `networkx` Dijkstra, precomputed graph file loaded at startup |
 
-The engine is a **mock** today, and the UI shows a "MOCK DATA" badge. Replacing the mock doesn't touch `web/`.
+The engine is real now (`mock=False`, city-wide scores baked into the graph).
 
 **How we're judged** (guide.deanzahacks.com/judging): four criteria at 25% each.
 
@@ -223,20 +223,28 @@ Intersections with no imagery use Aggie's rule: Y-junction 8, T-junction 7, four
 - Show route tags such as `% tree canopy`, `% creek proximity`, `% parks & greenways`, using OSM parks, `waterway=stream` (Stevens Creek) and `natural=tree_row`.
 - Demo anchors: McClellan Ranch, Blackberry Farm, Stevens Creek Trail, Memorial Park and Linda Vista Park on the nature side; De Anza College, Main Street and Apple Park on the city side.
 
-## 5. UI ideas (not decided)
+## 5. UI (decided 2026-10-16, UI grilling)
 
-- A letter grade (A–F) per route. We need to decide how it's computed and whether `grade` / `risky_crossings` go into the contract.
-- A Street View storyboard that previews a route with the AI's notes at each stop.
-- Suggested-destination pins on the map before a destination is picked, then routing in one click.
-- Several candidate routes per trip instead of one recommended route.
-- Picking start and end by clicking the map, not only from presets.
-- A layer showing real crash points.
-- A detour slider on the Safe page.
+Terry builds all of it. Code lives in `web/src/bikemap/`; Hong Zhe's prototype (`map-recommendation/`) is merged into it.
+
+| # | Topic | Decision |
+|---|---|---|
+| U1 | Concept | One full-screen map with a **🏙️ Modern ↔ 🌿 Nature** switch. Modern = Safe route, Nature = Green route. Switching keeps the same trip. |
+| U2 | Look | The switch flips everything. Modern: dark tiles, dark glass cards, cyan accent. Nature: light tiles, light frosted cards, green accent. No separate light/dark toggle. Tiles are Stadia Maps `alidade_smooth_dark` / `alidade_smooth`, keyless on localhost. CARTO was the plan, but it now watermarks tiles fetched without a key. A deployed site would need a free Stadia key. |
+| U3 | Layout | Floating cards on the map: search top-left, mode switch top-centre, locate top-right, trip card left, detail card right, small stats bar bottom. |
+| U4 | Fastest route | **Never shown**, neither on the map nor in the numbers. The API still computes it. |
+| U5 | Start / end | Presets, or click the map ("Start here / Go here"). Locate-me is optional; the start defaults to De Anza. No GPS overlay. |
+| U6 | Search | Live Nominatim through our backend, fired on Enter only (Nominatim policy bans search-as-you-type). Local presets and pins are matched first. |
+| U7 | Pins | Both modes, same card, same "Route here" (sets **To**, keeps From). Modern = city presets; Nature = live Overpass parks (Hong Zhe's query + score), falling back to 8 built-in parks if Overpass takes more than 5 s. |
+| U8 | Slider | Nature mode only: **Direct ↔ Scenic** plus Greenery / Quiet / Shade toggles. Modern mode has no slider. |
+| U9 | Street click | Detail card: score 1–10, Claude's note, hazard chips (Modern) or greenery facts (Nature), the cached Street View photo (local demo only) and an "Open in Street View" link. |
+| U10 | Dropped | Recent-visits drawer, "live status" pill, GPS permission overlay. |
+| U11 | Name | "BikeMap Cupertino" for now. |
+| U12 | Demo | Local only. |
+
+**Parked:** headline comparison numbers (after path planning) and extras: parks/water overlay, city-wide greenery layer, crash dots, 👍/👎 voting, storyboard, multiple routes.
 
 ## 6. Not decided yet
 
-- Which theme we submit under. Check the official track text: "City Life & Rural Life" or "City Life and Natural Life".
-- Final name (candidates: BikeMap Cupertino, VerdantRide)
-- Demo routes: ones where the fastest route takes a big road and the Safe/Green route visibly doesn't
-- Deploy, or demo locally only
+- Demo routes: ones where the Safe/Green route visibly avoids a big road
 - Who on the team owns which script
