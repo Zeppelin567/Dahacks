@@ -1,0 +1,1081 @@
+/* ============================================================
+   BikeMap — Green Destination Discovery
+   Design tokens & full styles
+   ============================================================ */
+
+/* --- Tokens --- */
+:root {
+  --bg-dark:        #0f1117;
+  --bg-card:        rgba(22, 25, 35, 0.88);
+  --bg-glass:       rgba(22, 25, 35, 0.72);
+  --border-glass:   rgba(255, 255, 255, 0.08);
+
+  --green-primary:  #34d399;
+  --green-glow:     rgba(52, 211, 153, 0.45);
+  --green-dark:     #059669;
+  --green-badge-bg: rgba(52, 211, 153, 0.14);
+
+  --blue-user:      #60a5fa;
+  --blue-proximity: rgba(96, 165, 250, 0.12);
+  --blue-stroke:    rgba(96, 165, 250, 0.35);
+
+  --text-primary:   #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted:     #64748b;
+
+  --radius-sm:   8px;
+  --radius-md:  14px;
+  --radius-lg:  20px;
+  --radius-full: 999px;
+
+  --shadow-card:   0 8px 32px rgba(0, 0, 0, 0.45);
+  --shadow-glow:   0 0 18px var(--green-glow);
+
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- Reset --- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* ============================================================
+   GPS Permission Overlay
+   ============================================================ */
+.gps-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: fadeIn 0.3s ease;
+}
+
+.gps-overlay.hidden {
+  display: none;
+}
+
+.gps-modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  padding: 40px 36px;
+  text-align: center;
+  max-width: 380px;
+  width: 90%;
+  box-shadow: var(--shadow-card);
+}
+
+.gps-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.gps-modal h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--text-primary);
+}
+
+.gps-modal p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin-bottom: 28px;
+}
+
+.gps-btn {
+  display: block;
+  width: 100%;
+  padding: 14px 0;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.gps-btn:first-of-type {
+  background: var(--green-primary);
+  color: #0f1117;
+  margin-bottom: 12px;
+}
+
+.gps-btn:first-of-type:hover {
+  background: #4ade80;
+  box-shadow: var(--shadow-glow);
+}
+
+.gps-btn--secondary {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-glass) !important;
+}
+
+.gps-btn--secondary:hover {
+  color: var(--text-primary);
+  border-color: rgba(255,255,255,0.18) !important;
+}
+
+/* ============================================================
+   Map
+   ============================================================ */
+#map {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* Darken standard OSM tiles to match the dark UI theme */
+.leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.75) contrast(1.2) saturate(0.3);
+}
+
+/* Hide default Leaflet attribution bar styling clash */
+.leaflet-control-attribution {
+  background: var(--bg-glass) !important;
+  color: var(--text-muted) !important;
+  font-size: 10px !important;
+  backdrop-filter: blur(6px);
+  border-radius: var(--radius-sm) !important;
+  padding: 2px 8px !important;
+}
+
+.leaflet-control-attribution a {
+  color: var(--text-secondary) !important;
+}
+
+/* Hide default zoom controls — we have our own locate btn */
+.leaflet-control-zoom {
+  display: none;
+}
+
+/* ============================================================
+   Search Bar
+   ============================================================ */
+.search-container {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  width: min(520px, calc(100% - 48px));
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-full);
+  padding: 0 20px;
+  height: 52px;
+  box-shadow: var(--shadow-card);
+  transition: border-color var(--transition);
+}
+
+.search-bar:focus-within {
+  border-color: rgba(52, 211, 153, 0.35);
+}
+
+.search-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-clear {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 22px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color var(--transition);
+}
+
+.search-clear:hover {
+  color: var(--text-primary);
+}
+
+/* --- Search Results Dropdown --- */
+.search-results {
+  list-style: none;
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  margin-top: 8px;
+  padding: 6px 0;
+  box-shadow: var(--shadow-card);
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.search-results.hidden {
+  display: none;
+}
+
+.search-results li {
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: background var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-results li:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.search-results li .result-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.search-results li .result-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-results li .result-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-results li .result-address {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.search-results .no-results {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: default;
+}
+
+/* scrollbar */
+.search-results::-webkit-scrollbar { width: 6px; }
+.search-results::-webkit-scrollbar-track { background: transparent; }
+.search-results::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+}
+
+/* ============================================================
+   Locate Me Button
+   ============================================================ */
+.locate-btn {
+  position: fixed;
+  bottom: 32px;
+  left: 24px;
+  z-index: 1000;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid var(--border-glass);
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.locate-btn svg {
+  width: 22px;
+  height: 22px;
+  color: var(--blue-user);
+}
+
+.locate-btn:hover {
+  border-color: var(--blue-stroke);
+  background: rgba(22, 25, 35, 0.9);
+}
+
+.locate-btn:active {
+  transform: scale(0.92);
+}
+
+/* ============================================================
+   Destination Card (Bottom Popup)
+   ============================================================ */
+.destination-card {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  z-index: 1000;
+  width: min(380px, calc(100% - 48px));
+  background: var(--bg-card);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-card);
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.destination-card.hidden {
+  display: none;
+}
+
+.card-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+  transition: color var(--transition);
+}
+.card-close:hover { color: var(--text-primary); }
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--green-badge-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.card-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.card-badge {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--green-primary);
+  background: var(--green-badge-bg);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+}
+
+.card-route-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--green-primary);
+  color: #0f1117;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.card-route-btn:hover {
+  background: #4ade80;
+  box-shadow: var(--shadow-glow);
+}
+
+.card-route-btn:active {
+  transform: scale(0.97);
+}
+
+/* ============================================================
+   Custom Leaflet Marker Styles
+   ============================================================ */
+
+/* Green nature pin */
+.green-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+
+.green-pin-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #4ade80, var(--green-dark));
+  border: 2.5px solid rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 16px var(--green-glow), 0 2px 8px rgba(0,0,0,0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.green-pin:hover .green-pin-dot {
+  transform: scale(1.15);
+  box-shadow: 0 0 28px var(--green-glow), 0 4px 16px rgba(0,0,0,0.35);
+}
+
+.green-pin-label {
+  margin-top: 5px;
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: rgba(15, 17, 23, 0.75);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  pointer-events: none;
+}
+
+/* User location pulsing dot */
+.user-pin {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--blue-user);
+  border: 3px solid rgba(255,255,255,0.9);
+  box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.5);
+  animation: userPulse 2s ease-in-out infinite;
+}
+
+@keyframes userPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.5); }
+  70%  { box-shadow: 0 0 0 14px rgba(96, 165, 250, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(96, 165, 250, 0); }
+}
+
+/* Search result pin (red-ish for contrast) */
+.search-pin {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #f97316;
+  border: 2.5px solid rgba(255,255,255,0.85);
+  box-shadow: 0 0 10px rgba(249,115,22,0.4);
+}
+
+/* ============================================================
+   Animations
+   ============================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateX(-50%) translateY(30px); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+}
+
+/* ============================================================
+   Loading indicator
+   ============================================================ */
+.loading-indicator {
+  position: fixed;
+  top: 88px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1001;
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-full);
+  padding: 10px 22px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--green-primary);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: fadeIn 0.3s ease;
+}
+
+.loading-indicator.hidden { display: none; }
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(52,211,153,0.2);
+  border-top-color: var(--green-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   Top Controls Bar: Status Pill, Toggle & Recent Visits
+   ============================================================ */
+.top-controls-bar {
+  position: fixed;
+  top: 86px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: min(720px, calc(100% - 32px));
+  flex-wrap: wrap;
+}
+
+.live-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #e2e8f0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  transition: all var(--transition);
+}
+
+.live-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #a855f7;
+  box-shadow: 0 0 8px #a855f7;
+  animation: liveBlink 1.8s infinite;
+}
+
+@keyframes liveBlink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+/* --- Recommendations Toggle Box --- */
+.toggle-control-box {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-full);
+  padding: 5px 12px 5px 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  transition: all var(--transition);
+}
+
+.toggle-control-box:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.toggle-switch-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-icon {
+  font-size: 14px;
+}
+
+.toggle-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: #334155;
+  border-radius: 20px;
+  transition: var(--transition);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.toggle-slider::before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #94a3b8;
+  border-radius: 50%;
+  transition: var(--transition);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: #059669;
+  border-color: #34d399;
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(16px);
+  background-color: #ffffff;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.8);
+}
+
+/* --- Recent Visits Top Button --- */
+.recent-history-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: var(--radius-full);
+  padding: 6px 12px;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  color: #ddd6fe;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.recent-history-btn:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: #a78bfa;
+  transform: translateY(-1px);
+}
+
+.recent-history-btn:active {
+  transform: scale(0.96);
+}
+
+.recent-count-badge {
+  background: #8b5cf6;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+}
+
+/* ============================================================
+   Recent Visits Pin on Leaflet Map
+   ============================================================ */
+.recent-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+
+.recent-pin-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #c084fc, #7c3aed);
+  border: 2.5px solid rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+  font-size: 16px;
+  line-height: 1;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.recent-pin-dot::after {
+  content: '🕒';
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  font-size: 10px;
+  background: #1e1b4b;
+  border: 1.5px solid #c084fc;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.recent-pin:hover .recent-pin-dot {
+  transform: scale(1.15);
+  box-shadow: 0 0 26px rgba(168, 85, 247, 0.85), 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.recent-pin-label {
+  margin-top: 5px;
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 600;
+  color: #f5f3ff;
+  background: rgba(15, 17, 23, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+/* ============================================================
+   Recent Visits Drawer / Modal
+   ============================================================ */
+.recent-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+.recent-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+}
+
+.recent-modal-card {
+  position: relative;
+  width: min(460px, 100%);
+  max-height: 80vh;
+  background: var(--bg-card);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.recent-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.recent-modal-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.recent-modal-icon {
+  font-size: 24px;
+}
+
+.recent-modal-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.recent-modal-header p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.recent-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.recent-modal-close:hover {
+  color: var(--text-primary);
+}
+
+.recent-places-list {
+  padding: 12px 16px;
+  overflow-y: auto;
+  max-height: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recent-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.recent-item:hover {
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.35);
+  transform: translateX(2px);
+}
+
+.recent-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.recent-item-icon {
+  font-size: 18px;
+  width: 36px;
+  height: 36px;
+  background: rgba(139, 92, 246, 0.15);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.recent-item-details {
+  min-width: 0;
+}
+
+.recent-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-item-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.recent-item-badge {
+  font-size: 10px;
+  color: #c4b5fd;
+  background: rgba(139, 92, 246, 0.18);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.recent-item-action {
+  background: none;
+  border: none;
+  color: var(--green-primary);
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.recent-item-action:hover {
+  background: rgba(52, 211, 153, 0.12);
+}
+
+.recent-empty-state {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-secondary);
+}
+
+.recent-empty-icon {
+  font-size: 36px;
+  margin-bottom: 8px;
+}
+
+.recent-empty-state p {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.recent-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border-glass);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.clear-recent-btn {
+  background: none;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.clear-recent-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+}
+
+.card-badge--recent {
+  color: #c4b5fd !important;
+  background: rgba(139, 92, 246, 0.2) !important;
+  border: 1px solid rgba(139, 92, 246, 0.35);
+}
+
+.card-badges-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.card-score {
+  font-size: 11px;
+  font-weight: 700;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.15);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.card-distance {
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.card-amenities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.amenity-tag {
+  font-size: 11px;
+  font-weight: 500;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+/* ============================================================
+   Utility
+   ============================================================ */
+.hidden { display: none !important; }
+

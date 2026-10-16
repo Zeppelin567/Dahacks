@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BikeMap — Green Destination Discovery</title>
+  <meta name="description" content="Discover nearby parks, trails and nature reserves for your next bike ride in Cupertino." />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- GPS Permission Overlay -->
+  <div id="gps-overlay" class="gps-overlay">
+    <div class="gps-modal">
+      <div class="gps-icon">📍</div>
+      <h2>Enable Location</h2>
+      <p>We need your location to find nearby green destinations for your ride.</p>
+      <button id="gps-enable-btn" class="gps-btn">Turn On Location</button>
+      <button id="gps-skip-btn" class="gps-btn gps-btn--secondary">Use Default (De Anza College)</button>
+    </div>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="search-container">
+    <div class="search-bar">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        type="text"
+        id="search-input"
+        class="search-input"
+        placeholder="Search destination..."
+        autocomplete="off"
+      />
+      <button id="search-clear" class="search-clear hidden">&times;</button>
+    </div>
+    <ul id="search-results" class="search-results hidden"></ul>
+  </div>
+
+  <!-- Map Container -->
+  <div id="map"></div>
+
+  <!-- Locate Me Button -->
+  <button id="locate-btn" class="locate-btn" title="Center on my location">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+    </svg>
+  </button>
+
+  <!-- Top Controls Bar: Status Pill + Recommendations Toggle + Recent Visits Button -->
+  <div class="top-controls-bar">
+    <div id="live-status-pill" class="live-status-pill">
+      <span class="live-status-dot"></span>
+      <span id="live-status-text">Recent Visits Mode</span>
+    </div>
+
+    <div class="toggle-control-box" title="Toggle nature destinations">
+      <label class="toggle-switch-label" for="recommendation-toggle">
+        <span class="toggle-icon">🌿</span>
+        <span class="toggle-title">Nature</span>
+        <span class="toggle-switch">
+          <input type="checkbox" id="recommendation-toggle" />
+          <span class="toggle-slider"></span>
+        </span>
+      </label>
+    </div>
+
+    <button id="recent-history-btn" class="recent-history-btn" title="View Recent Visits">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+      <span>Recent Visits</span>
+      <span id="recent-count-badge" class="recent-count-badge">0</span>
+    </button>
+  </div>
+
+  <!-- Recent Visits Modal Drawer -->
+  <div id="recent-modal" class="recent-modal hidden">
+    <div class="recent-modal-backdrop" id="recent-modal-backdrop"></div>
+    <div class="recent-modal-card">
+      <div class="recent-modal-header">
+        <div class="recent-modal-title-row">
+          <span class="recent-modal-icon">🕒</span>
+          <div>
+            <h3>Recent Destinations</h3>
+            <p>Saved automatically in your browser's local storage</p>
+          </div>
+        </div>
+        <button id="recent-modal-close" class="recent-modal-close" title="Close">&times;</button>
+      </div>
+      <div id="recent-places-list" class="recent-places-list"></div>
+      <div class="recent-modal-footer">
+        <button id="clear-recent-btn" class="clear-recent-btn">Clear History</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Selected Destination Card -->
+  <div id="destination-card" class="destination-card hidden">
+    <button id="card-close" class="card-close">&times;</button>
+    <div class="card-header">
+      <div id="card-icon" class="card-icon">🌿</div>
+      <div class="card-info">
+        <h3 id="card-name" class="card-name">Park Name</h3>
+        <div class="card-badges-row">
+          <span id="card-badge" class="card-badge">Nature Reserve</span>
+          <span id="card-score" class="card-score">Score: 95</span>
+          <span id="card-distance" class="card-distance">0.6 km</span>
+        </div>
+      </div>
+    </div>
+    <div id="card-amenities" class="card-amenities"></div>
+    <button id="card-route-btn" class="card-route-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+        <path d="M5 12h14M12 5l7 7-7 7"/>
+      </svg>
+      Route Here
+    </button>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="map.js"></script>
+</body>
+</html>
