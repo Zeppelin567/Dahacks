@@ -4,12 +4,11 @@ Each function takes one road segment (an osmnx edge's attribute dict, plus anyth
 you join onto it) and returns 0..1 where 1 is best. The engine multiplies these
 into the edge weights; see engine.py.
 
-Candidate inputs (from the 2026-10-16 research, see docs/CONSENSUS.md):
-  Safety : OSM maxspeed / lanes / cycleway tags, City of Cupertino Bikeways layer
-           (Class I–IV), CCRS crash points near the edge, street-level image model.
-  Green  : distance to OSM parks / green landuse / water, vegetation ratio from
-           street-level images (Mapillary — NOT Google Street View, its ToS forbids
-           building a city-wide index), road class / speed as a noise proxy.
+The plan is in .plans/actualproject.md.
+  Safety : vision-LLM score per edge from Street View + OSM/City facts, precomputed by
+           py/scripts/ (plan §3). Crash data is for validation only, never an input.
+  Green  : distance to OSM parks / green landuse / water, road class / speed as a
+           noise proxy (plan §4, still being decided).
 """
 
 from __future__ import annotations

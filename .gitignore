@@ -18,6 +18,8 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 *.egg-info/
+# Street View photos + raw LLM replies: never commit Google imagery to the public repo
+py/data/cache/
 
 # Editors / OS
 .DS_Store

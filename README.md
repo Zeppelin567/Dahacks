@@ -1,7 +1,23 @@
 # BikeMap Cupertino (DAHacks 5.0)
 
-Two bike maps for Cupertino: a **Safe route** map and a **Green route** map with a City ↔ Rural slider.
-Team decisions, the API contract and who owns what: **[docs/CONSENSUS.md](docs/CONSENSUS.md)**.
+Two bike maps for Cupertino: a Safe route map and a Green route map with a City ↔ Rural slider.
+
+## Tech plan
+
+The whole plan is in **[.plans/actualproject.md](.plans/actualproject.md)**: product, team, contract, and the Safe route pipeline (decided 2026-10-16).
+
+- **Safe route**
+  - Every street and intersection gets a 1–10 safety score. Street View photos plus OSM and City of Cupertino facts go to a vision LLM on DigitalOcean, which returns the score.
+  - Routing runs Dijkstra on "felt distance" (λ = 3, intersection penalty 20 m per point, 50% detour cap).
+  - Real CCRS bike crashes are used only to validate the scores, never to compute them.
+  - Pipeline:
+
+    ```
+    py/scripts/1_build_graph.py → 2_score.py → 3_bake.py → py/data/cupertino_safe.graphml
+    ```
+
+    The graph and scores are committed. Photos, raw LLM replies and keys are not.
+- Reference project (Aggie Street Smart): [referenceproject.md](referenceproject.md)
 
 ```
 npm install && npm run dev:py   # Python side-car

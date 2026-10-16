@@ -1,362 +1,260 @@
-# VerdantRide (Cupertino): Safe & Nature-Centric Cycling Navigation
-## Product & Technical Specification
+# BikeMap Cupertino (working name): product & tech plan
 
-> **Hackathon Theme:** City Life and Natural Life  
-> **Pilot Region:** Cupertino, CA (Centered around De Anza College, Stevens Creek Trail, McClellan Ranch Preserve, and Apple Park)  
-> **Target Platform:** Next.js + Mapbox GL JS frontend, Python (FastAPI + NetworkX/OSMnx) backend, Precomputed SQLite / GeoJSON cache  
-> **Reference Inspiration:** Aggie Street Smart (HackDavis 2026 Winner)
+DAHacks 5.0 · Fri 2026-10-16 → Sat 2026-10-17 · **Devpost closes Sat 2:00 PM**
+This is the team's single plan. If you change a decision, change it here first, then in code.
+Reference project: [Aggie Street Smart](../referenceproject.md) (HackDavis 2026).
 
----
+## 1. Product
 
-## 1. Executive Summary & Vision
+A bike map for people who ride in Cupertino, for commuting or anything else. It has **two maps**, as two tabs of one app sharing the same start/end, road graph and backend:
 
-Modern urban navigation directs cyclists along the fastest path, which often channels riders onto noisy multi-lane arterials (e.g., Stevens Creek Blvd) right next to high-speed vehicle traffic. While projects like *Aggie Street Smart* solved bicycle safety through AI road hazard scoring, they overlooked how urban cyclists yearn for **nature immersion, stress relief, and cleaner air**.
+1. **🛡️ Safe route**: the safest way from A to B. Every street is coloured by risk, and clicking a street says why.
+2. **🌳 Green route**: a **City ↔ Rural slider** (how much detour you'll accept) plus three toggles, 🌳 Greenery / 🤫 Quiet / ☀️ Shade. Slide toward Rural and the route bends through parks, trees and quiet streets. The trade-off (extra minutes vs. greenery gained) is always shown.
 
-**VerdantRide** bridges **city life and natural life**. It gives cyclists the freedom to transition seamlessly between getting to their destination quickly via protected bike infrastructure (**Fast Mode**) and exploring shaded greenways, flowering tree canopies, and tranquil creeks (**Nature Mode**).
+- **Area:** Cupertino, plus a 500 m buffer around the city boundary.
+- **Platform:** desktop web first.
 
-### Key Differentiators
-1. **Continuous "Fast vs. Nature" Dynamic Slider:** Instead of a rigid binary toggle, riders drag a continuous slider. As the slider moves, the system dynamically re-ranks **8 candidate routes**, re-evaluates their recommendation scores, and updates the map in real time.
-2. **Top 8 Graded Paths:** The routing engine computes 8 distinct routes, each graded with clear letter grades for **Safety (A/B/C)** and **Nature (A/B/C)**, featuring an animated **`[Recommended]`** badge on the top pick.
-3. **Curiosity Storyboard & Environmental Breakdown:** Riders see exact environmental composition tags:
-   - **`% Tree Canopy`** (shade & cooling)
-   - **`% River / Creek`** (Stevens Creek water views)
-   - **`% Parks & Greenways`** (traffic-free trails)
-   - **`% Flowers & Flora`** (seasonal blooms & landscaping)
-   Alongside an interactive **Street View Storyboard Tour** that sparks curiosity before the ride.
-4. **Google Maps-Style Scattered Destination Discovery:** Before entering a destination, the main map displays scattered recommendation pins biased heavily towards **natural gems** (McClellan Ranch, Blackberry Farm, Memorial Park, Rancho San Antonio) and **frequent routine spots** (De Anza College Library, Apple Park, City Cafes). Any pin launches routes in 1 click.
+## 2. Stack (already in the repo)
 
----
+| Part | What |
+|---|---|
+| Frontend | React 19 + Vite + Tailwind + shadcn/ui, maps with **Leaflet** (`web/src/bikemap/`, `web/src/pages/{safe,green}-route.tsx`) |
+| Backend | Python FastAPI side-car (`py/app/bikemap/`), reached through `/api/py/bikemap/*`, public (no sign-in) |
+| Contract | `py/app/bikemap/models.py` ⇄ `web/src/bikemap/api.ts`. Change both together. |
+| Routing | `osmnx` graph + `networkx` Dijkstra, precomputed graph file loaded at startup |
 
-## 2. User Experience & UI Specifications
+The engine is a **mock** today, and the UI shows a "MOCK DATA" badge. Replacing the mock doesn't touch `web/`.
 
-### 2.1 Main Discovery Map (Pre-Destination State)
-* **Visual Style:** High-contrast Mapbox vector map with subtle green tinting over parks and tree canopies.
-* **Scattered Destination Pins:**
-  * **Natural Escapes (High Nature Score):** Styled with soft emerald glowing markers and nature icons:
-    * *McClellan Ranch Preserve* (`🌿 Nature A+ · 9.6`)
-    * *Blackberry Farm & Stevens Creek Trail* (`🌊 Nature A+ · 9.4`)
-    * *Cupertino Memorial Park & Pond* (`🌸 Nature A · 8.9`)
-    * *Linda Vista Park & Foothill Views* (`🌲 Nature A · 8.7`)
-    * *Rancho San Antonio County Park (East Access)* (`🦌 Nature A+ · 9.8`)
-  * **Frequent / Everyday Spots:** Styled with sleek slate/blue badges:
-    * *De Anza College Library & Campus Center* (Frequent Routine)
-    * *Main Street Cupertino & Philz Coffee* (Frequent Routine)
-    * *Apple Park Visitor Center & Caffe Macs* (City Landmark)
-* **Search Bar:**
-  * Always accessible at the top.
-  * Allows free-text search for any location (e.g., "City Cafe", "Whole Foods", "Cupertino Library"). Commercial places remain fully searchable even if not highlighted on the initial map view.
-* **1-Click Route Launcher:**
-  * Clicking any pin immediately sets it as the destination from the user's current location (defaulting to De Anza College Quad) and launches the 8-route preview drawer.
+**How we're judged** (guide.deanzahacks.com/judging): four criteria at 25% each.
 
-### 2.2 Route Comparison & Interactive Slider Drawer
-* **The Continuous Dynamic Slider:**
-  * Positioned prominently above the route list:
-    ```
-    [ ⚡ Fast & Safe ] ═══════════●════════════ [ 🌿 Lush Nature ]
-         (0% Arterial)           (50% Balanced)         (100% Scenic)
-    ```
-  * As the rider slides the handle:
-    * The overall utility score for each route recalculates live.
-    * The 8 routes dynamically re-sort smoothly using FLIP CSS transitions.
-    * The **`[★ Recommended]`** badge floats to the newly crowned #1 route.
-    * The highlighted path on the Mapbox canvas updates its stroke glow.
-* **Route Card Component (Top 8 Paths):**
-  Each of the 8 route cards presents:
-  1. **Rank & Recommendation Badge:** E.g., `#1 · Recommended` (emerald pill with pulse glow).
-  2. **Route Name / Persona:** E.g., *"Stevens Creek Greenway & Blackberry Path"* or *"McClellan Buffered Bike Corridor"*.
-  3. **ETA & Distance:** E.g., `18 min · 3.4 mi` (vs. Fast route: `12 min · 2.6 mi`).
-  4. **Dual Letter Grades:**
-     * **Safety Grade:** `Grade A` (emerald), `Grade B` (amber), `Grade C` (orange).
-     * **Nature Grade:** `Grade A+` (forest green), `Grade B` (teal), `Grade C` (slate).
-  5. **Environmental Composition Tags:**
-     * `🌿 82% Canopy`
-     * `🌊 45% Creek Proximity`
-     * `🌸 25% Flora & Gardens`
-     * `🚴 90% Dedicated Bike Path`
-  6. **Safety Hazards / Notes:** E.g., *"Zero door-zone exposure; fully separated grade"*.
+- Functionality
+- Creativity & Originality
+- Theme Fit, to *one* selected theme
+- Presentation
 
-### 2.3 Curiosity Storyboard & Route Preview Tour
-* Riders click **"Preview Ride / Storyboard"** on any route card:
-* A modal / side-drawer opens with an interactive street-by-street slideshow:
-  * Plays sampled Google Street View imagery along the path in forward sequence.
-  * **AI Storyboard Annotations:**
-    * *Mile 0.8:* `"Entering shaded sycamore canopy along Stevens Creek — temperature drops ~4°F"`
-    * *Mile 1.4:* `"Blackberry Farm Nature Path — blooming California poppies & creek soundscape"`
-    * *Mile 2.1:* `"Smooth paved Class I bike trail, no cross traffic for next 1.2 miles"`
-  * Allows cyclists to build confidence and excitement before clipping in.
+There's no technical-complexity score, so AI only earns points where judges can see it working. Devpost needs a 2–3 min demo video, a public repo and screenshots.
 
----
+**Team**
 
-## 3. Data Pipeline & Scoring Architecture
+| Who | Owns |
+|---|---|
+| Business major | Pitch, demo script, Devpost write-up, demo video and slides. Works only on these from Sat 10 AM. |
+| Model A | Safe scoring pipeline (§3) |
+| Model B | Green scoring (§4) |
+| Model C | Graph and routing engine (`py/app/bikemap/engine.py`) |
+| Lead (Terry) | Frontend, integration, and cutting scope every 2 h |
+
+## 3. Safe route
+
+### The approach in one paragraph
+
+We score every bikeable street and intersection in Cupertino the way Aggie Street Smart did (see [referenceproject.md](../referenceproject.md)):
+
+1. Sample points along every road.
+2. Fetch Google Street View photos at each point.
+3. Send the photos plus the known map facts to a vision LLM, which returns a 1–10 safety score and a list of hazards.
+
+Routing then finds the path with the shortest "felt distance", where low-scored roads and intersections count as longer than they are.
+Everything is precomputed. At demo time the API only loads a graph file and runs Dijkstra, so no outside service is needed.
+
+### Decisions
+
+| # | Topic | Decision |
+|---|---|---|
+| 1 | Scoring method | Vision LLM on Street View photos for every sampled point (Aggie-style) |
+| 2 | Final score | The LLM's 1–10 score **is** the final score. OSM and city facts go into the prompt as facts. There is no rule-based guardrail on top. |
+| 3 | No imagery | Rule fallback by road type (table below). The reason shown to riders says so. |
+| 4 | Road sampling | One point every 80 m. Two photos per point: forward and right. Free Metadata API first, deduplicated by `pano_id`. Two-way roads are scored once. |
+| 5 | Intersections | Every node where ≥3 streets meet. Four photos (N/E/S/W), scored by the LLM. |
+| 6 | Model | DigitalOcean serverless inference. Run a 20-spot bake-off between 2–3 vision models first, then use the winner city-wide. |
+| 7 | Prompt | Fixed rubric plus fixed JSON output with a fixed hazard list. All rules, including the expressway penalty, live **only in the prompt**. No hard-coded caps. |
+| 8 | Routing | Felt distance with λ = 3, intersection penalty k = 20 m per point, 50% detour cap |
+| 9 | Crash data | **Not used in scoring or routing.** Used only to validate. |
+| 10 | City Bikeways | Joined to OSM edges and passed to the prompt as facts. Built segments only. |
+| 11 | Graph and storage | Three scripts. The graph and scores are committed; photos, raw LLM replies and keys are not. |
+
+### Pipeline
 
 ```
-┌────────────────────────────────────────────────────────┐
-│  OpenStreetMap (OSM) via Overpass API / OSMnx          │
-│  - Road Network, Bike Lanes, Speed Limits, Surface     │
-│  - Leisure (Parks), Natural (Wood, Tree Rows), Waterway │
-└──────────────────────────┬─────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│  Spatial Sampling & Google Street View Imagery Pipeline │
-│  - Sample points every 80m along bikeable edges        │
-│  - Intersection nodes (4-angle views)                  │
-│  - Street View Metadata API Check & Local Disk Cache   │
-└──────────────────────────┬─────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│  Gemini 1.5 / 2.0 Multimodal Environmental & Safety AI  │
-│  - Evaluates Street View photos + OSM segment context  │
-│  - Outputs structured JSON (Nature & Safety Scores)    │
-└──────────────────────────┬─────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│  Precomputed SQLite & GeoJSON Database (Cupertino Grid)│
-│  - Edge ID, Safety Score, Nature Score, Canopy %,      │
-│  - Water %, Flower %, Hazard Tags, Geometry            │
-└────────────────────────────────────────────────────────┘
+py/scripts/
+  1_build_graph.py   OSM download + City Bikeways join        → py/data/graph_raw.graphml
+  2_score.py         sample → Street View → LLM (resumable)   → py/data/scores.json
+  3_bake.py          write scores + fallbacks into the graph  → py/data/cupertino_safe.graphml
 ```
 
-### 3.1 OpenStreetMap (OSM) Road & Green Network
-* Bounding Box: Cupertino and adjacent corridors (lat: `37.2900` to `37.3500`, lon: `-122.0800` to `-122.0100`).
-* Extracted tags:
-  * Highway classification: `cycleway`, `path`, `residential`, `tertiary`, `secondary`.
-  * Bike infrastructure: `cycleway=lane`, `cycleway=track`, `cycleway=separate`, `bicycle=designated`.
-  * Environmental proximity: distance to `leisure=park`, `leisure=nature_reserve`, `waterway=stream` (Stevens Creek), `natural=tree_row`.
+Each script can be rerun on its own. `2_score.py` skips anything already in the cache, so a crash or a rate limit only costs the call in flight.
 
-### 3.2 Google Street View Sampling & Cache
-* To prevent duplicate API charges and rate limiting:
-  1. Call Google Street View **Metadata API** (free) to verify imagery exists within 50m.
-  2. Download front-facing (`fov=90`, `heading=forward`) and side-facing (`heading=right` toward bike lane/verge) images.
-  3. Store images hashed by `(lat, lon)` in `.cache/streetview/`.
+#### 1. Graph (`1_build_graph.py`)
 
-### 3.3 Gemini Multimodal Environmental & Safety Scoring
-Each sampled segment passes its Street View image plus known OSM facts into Gemini with a strict schema.
+- **Download:** `osmnx` with `network_type="bike"`, directed (one-way streets apply to bikes too). The area is the Cupertino boundary plus a **500 m buffer**, which keeps routes near the city edge sensible and includes Lawrence Expressway.
+- **Tags to keep:** add these to `ox.settings.useful_tags_way` **before** downloading, because osmnx drops them by default:
+  - `cycleway`, `cycleway:right`, `cycleway:left`, `cycleway:both`, `cycleway:*:buffer`
+  - `turn:lanes`, `cycleway:lanes`
+  - `maxspeed`, `lanes`, `surface`, `bicycle`
+- **Overpass:** overpass-api.de needs a `User-Agent` header (it returns 406 without one) and may need a retry with backoff.
+- **City Bikeways join:**
+  - Source: `https://gis.cupertino.org/cupgis/rest/services/Public/Traffic_Infrastructure/MapServer/8/query?where=1%3D1&outFields=*&f=geojson`
+  - Keep only `Status` in (`Active`, `Complete`). 51 of the 332 features are planned (Programmed, Proposed, Design and so on) and do not exist yet.
+  - Buffer each city line by 10 m. An OSM edge takes that city feature if ≥60% of its length falls inside the buffer.
+  - Store the city `PathType` text on the edge (`SEPARATED BIKEWAY`, `BUFFERED BIKE LANE`, `BIKE LANE`, `BIKE BLVD`, `BIKE ROUTE`, `BIKE PATH` …). Don't use `CLASS`, because Class III mixes quiet bike boulevards with signed-only routes on arterials.
+- **Signals:** the OSM `highway=traffic_signals` nodes (182 in the city) mark signalised intersections.
 
-#### Gemini System Prompt:
-```text
-You are an expert urban cyclist and environmental scientist evaluating street segments for bicycle navigation.
-You are given:
-1. One or more street-level photographs of a road or path.
-2. Known metadata (speed limit, lane count, road type from OpenStreetMap).
+#### 2. Scoring (`2_score.py`)
 
-Evaluate both the CYCLING SAFETY (1-10) and the NATURAL IMMERSION (1-10).
+**Sampling**
 
-SAFETY RUBRIC:
-- 9-10: Fully separated off-street bike path / greenway, physical barriers from cars.
-- 7-8: Dedicated painted bike lane on quiet residential street or wide buffered lane.
-- 5-6: Bike lane adjacent to curbside parking (door zone hazard), or wide shared lane.
-- 3-4: Multi-lane busy road without bike lane, fast vehicle traffic (>35mph).
-- 1-2: Extremely hazardous, narrow, freeway on-ramps, heavy commercial trucks.
+- **Roads:** one point every 80 m along each undirected edge, heading = edge bearing. Two photos per point:
+  - forward, heading = bearing
+  - right, heading = bearing + 90
+- **Intersections:** every node with `street_count >= 3`. Four photos, at headings 0 / 90 / 180 / 270.
+- **Before buying any photo:** call the Street View **Metadata API**, which is free. It tells us whether imagery exists, its `pano_id` and its capture date.
+  - Points that resolve to the same `pano_id` share one set of photos.
+  - Flag old imagery from `captured_at`. Threshold TBD; new bike lanes won't be in old photos.
+- **Budget:** run the metadata pass first and count the photos actually needed. Static Street View has 10,000 free photos a month, then $7 per 1,000. Set a quota in Google Cloud Console, because Google Maps Platform has no automatic spending cap.
 
-NATURE RUBRIC:
-- 9-10: Surrounded by dense nature, creek/river corridor, dense tree canopy (>70%), parks, or flowering landscaping; minimal or no visible concrete/buildings.
-- 7-8: Tree-lined residential street with mature canopy, manicured gardens, or adjacent to a neighborhood park.
-- 5-6: Occasional young trees or street shrubs, predominantly suburban streetscape.
-- 3-4: Concrete-dominated commercial strip with sparse or no vegetation.
-- 1-2: Industrial zone, parking lots, bare asphalt, heavy traffic exhaust.
+**Model call**
 
-Return strictly valid JSON according to the schema provided.
-```
+- **Provider:** DigitalOcean serverless inference.
+- **Bake-off:** before the city-wide run, score 20 places the team knows against 2–3 vision models (candidates from the DO catalog: Kimi K3, Qwen3.8-Max, Nemotron Nano 12B VL). Keep the model whose scores match common sense.
+  - The 20 places must include Stevens Creek × De Anza, a 280 ramp, Lawrence Expressway, the Mary Ave bike bridge and a few quiet residential streets.
+- **Before starting:** confirm three things on the DO account: credits, rate limits, and which models list image input in `/v1/models`.
+- **Cache:** each call's raw reply goes to `py/data/cache/llm/{key}.json`. Photos go to `py/data/cache/streetview/`.
 
-#### JSON Output Schema:
+**Prompt**
+
+The prompt has three parts:
+
+1. **Role:** an experienced urban cyclist rating how safe this spot is to ride.
+2. **Facts:** speed limit, lane count, highway type, OSM cycleway tags, `turn:lanes` / `cycleway:lanes` if present, the City `PathType` if joined, and signal yes/no for intersections. Missing values are stated as unknown. When OSM and the City disagree, give both with their source and let the photo decide. The prompt says: *these are facts; don't re-guess them from the photo.*
+3. **Rubric and the output schema**, as below.
+
+**Rubric**
+
+| Situation | Score |
+|---|---|
+| Separated bike path / physically protected lane | 9–10 |
+| Bike lane in good condition | 7–8 |
+| No bike lane, with curbside parking | ≤ 5 |
+| Multi-lane road, no bike facility | 3–4 |
+| No reasonable person would ride it | 1–2 |
+| **Expressway**: name contains "Expressway", or ≥45 mph, or ≥6 lanes (Lawrence, Foothill) | **1–2** |
+| Bike lane squeezed between the through lane and a right-turn lane (cars cross it to turn) | ≤ 4 |
+| Freeway on/off ramp where traffic crosses the bike lane | ≤ 3 |
+| Bike lane ends abruptly | ≤ 4 |
+| *Intersection*: signalised, with a bike box or crossing markings | 8–10 |
+| *Intersection*: unsignalised crossing of a multi-lane road | 1–3 |
+
+**Output** (strict JSON, temperature 0)
+
 ```json
 {
-  "safety_score": 8.5,
-  "safety_grade": "A",
-  "nature_score": 9.2,
-  "nature_grade": "A+",
-  "canopy_pct": 75,
-  "water_visible": true,
-  "greenery_types": ["dense_trees", "creek", "wildflowers"],
-  "hazards": [],
-  "safety_summary": "Protected Class I multi-use path separated from motor vehicles.",
-  "nature_summary": "Lush riparian tree canopy along Stevens Creek with blooming roadside vegetation.",
-  "storyboard_highlight": "Shaded creek-side path under dense eucalyptus and sycamore branches."
+  "score": 1,
+  "hazards": ["door_zone", "no_bike_lane", "poor_pavement", "blind_corner",
+              "right_turn_slip_lane", "construction", "high_speed_traffic", "wide_crossing",
+              "bike_lane_between_turn_lanes", "bike_lane_drops", "freeway_ramp_crossing", "expressway"],
+  "confidence": "high | medium | low",
+  "note": "one short sentence"
 }
 ```
 
----
+- `hazards` may only contain values from that list. The frontend maps each value to a fixed plain-English line, e.g. `door_zone` → "Parked cars: watch for opening doors".
+- `confidence: low` is shown to riders as ⚠️ uncertain.
 
-## 4. Multi-Objective Routing Algorithm
+#### 3. Bake (`3_bake.py`)
 
-### 4.1 Cost Function Formulation
-For each directed edge $e$ in the bike network graph $G = (V, E)$, the base metric is physical length $L(e)$ in meters.
+- **Edge score:** the median of its sample points' scores.
+- **Hazards:** the union of its samples' hazards.
+- **Edges with no imagery** use the fallback rule below.
 
-Each edge has:
-- $S(e) \in [1.0, 10.0]$: Safety score (higher is safer).
-- $N(e) \in [1.0, 10.0]$: Nature score (higher is greener).
-- $W_{slider} \in [0.0, 1.0]$: The user's dynamic slider value ($0.0 = \text{Fast}$, $1.0 = \text{Nature}$).
+| Edge | Fallback score |
+|---|---|
+| City `SEPARATED BIKEWAY` / `BIKE PATH` (Class I / IV) | 9 |
+| `highway` = cycleway / path | 9 |
+| residential / living_street | 7 |
+| tertiary | 5 |
+| secondary | 4 |
+| primary | 3 |
 
-We define the perceived felt resistance cost $C(e, W_{slider})$:
+Fallback edges get the reason *"No street imagery — scored from map data"*.
 
-$$C_{safety}(e) = L(e) \times \left(1.0 + \alpha \times \left(10 - S(e)\right)^{1.8}\right)$$
+Intersections with no imagery use Aggie's rule: Y-junction 8, T-junction 7, four-way 5.5, and +1.5 if signalised.
 
-$$C_{nature}(e) = L(e) \times \left(\frac{1.0}{1.0 + \beta \times (N(e) - 1.0)}\right)$$
+**API scale:** `py/app/bikemap/models.py` uses 0..1 scores. The engine converts with `score / 10`, so the web contract doesn't change.
 
-$$\text{Combined Cost } C(e) = (1 - W_{slider}) \cdot C_{safety}(e) + W_{slider} \cdot \left[ C_{nature}(e) \times P_{safety\_floor}(S(e)) \right]$$
+### Routing (`py/app/bikemap/engine.py`)
 
-Where:
-* $P_{safety\_floor}(S(e))$ is a safety guardrail multiplier: if $S(e) < 5.0$, a steep penalty ($3.0\times$) is applied so Nature Mode never routes riders onto dangerous highways just because trees line the shoulder.
-* $\alpha, \beta$ are scaling constants calibrated to allow up to a 25%–40% pleasant detour in Nature Mode.
+- **Load once:** load `cupertino_safe.graphml` once at FastAPI startup and keep it in memory. Start and end snap to the nearest node with `ox.nearest_nodes`.
+- **Edge weight:**
+  - `weight = length × (1 + λ × (10 − score) / 9)` with **λ = 3**
+  - A 10-point road counts at its real length; a 1-point road feels 4× longer.
+- **Intersection penalty:**
+  - Add `k × (10 − node_score)` metres to the edge entering a scored intersection, with **k = 20**
+  - A 1-point intersection costs an extra 180 m.
+- **Fastest route:** plain Dijkstra on `length`, used for the comparison numbers.
+- **Detour cap:** if the Safe route is more than 50% longer than the fastest route, halve λ and rerun.
+- **Tuning:** λ, k and the cap are constants. Tune them on Saturday with the real demo routes.
 
-### 4.2 Generating 8 Meaningfully Distinct Routes
-To prevent 8 nearly identical paths with minor 10-meter detours:
-1. **Pareto Weight Sampling:** We evaluate graph traversals across 5 distinct cost weight profiles:
-   - Profile 1: Pure Shortest & Safest (Direct Class I/II Bike Lanes)
-   - Profile 2: Balanced Commute (70% Safety / 30% Nature)
-   - Profile 3: Scenic Greenway (Blackberry Farm & Stevens Creek Trail bias)
-   - Profile 4: Park-to-Park Wanderer (Cupertino Memorial & Linda Vista anchor)
-   - Profile 5: Maximum Canopy & Quiet Residential
-2. **Yen's K-Shortest Paths with Overlap Penalty (Penalty Method):**
-   - When path $P_k$ is found, we increase edge costs along edges in $P_k$ by an overlap penalty factor $\gamma = 1.6$.
-   - This forces subsequent paths to discover alternative green corridors (e.g., McClellan Rd bike boulevard vs. Stevens Creek Trail vs. Bollinger Rd bike lane).
-3. **Route Deduplication & Ranking:**
-   - Filter out routes with $>80\%$ geometric Jaccard similarity.
-   - Retain the top 8 distinct routes.
-   - Score each route on overall distance, duration, average safety score, and average nature score.
-   - Assign Letter Grades:
-     - $\ge 9.0$: **A+**
-     - $8.0 - 8.9$: **A**
-     - $7.0 - 7.9$: **B**
-     - $6.0 - 6.9$: **C**
-     - $< 6.0$: **D**
+### Validation (crash data)
 
----
+- **Data:** CCRS on data.ca.gov has 295 bike-involved crashes in Cupertino for 2016 to 8 Oct 2026, and 275 of them have coordinates.
+  - Query it with `https://data.ca.gov/api/3/action/datastore_search_sql`. No download is needed.
+  - Filter crashes on `"City Name"='Cupertino'`.
+  - A crash is bike-involved when the parties join on `CollisionId` and `PartyType='Bicyclist'` or `Vehicle1TypeDesc IN ('Bicycle','ElectricBicycles')`.
+- **Crashes never touch scoring or routing.** The LLM never sees them, so all 275 are a clean test.
+- **Metric:** *"Red segments are X% of road length but contain Y% of real bike crashes."* Match a crash to an edge if it is within 25 m.
+- **If Y isn't clearly above X,** we fix the prompt or we don't use the number. No cherry-picking.
+- **Caveat:** total crashes drop sharply from 2019. That could be COVID or a reporting change, so we quote ratios, not trends.
 
-## 5. System Architecture & Tech Stack
+### What gets committed
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        FRONTEND (Next.js 14 / React)                   │
-│                                                                        │
-│  - Mapbox GL JS Canvas (Vector Tiles, Dynamic GeoJSON Layers)          │
-│  - Dynamic Slider Component (0-100% Fast vs. Nature)                   │
-│  - 8-Route List with Letter Grades (A/B/C) & [Recommended] badge      │
-│  - Route Storyboard Modal (Street View Tour + Curiosity highlights)    │
-│  - Scattered Suggested Destination Pins & Search Autocomplete          │
-└───────────────────────────────────▲────────────────────────────────────┘
-                                    │ HTTP / JSON API
-                                    ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                       BACKEND (FastAPI - Python)                       │
-│                                                                        │
-│  - GET /api/destinations/suggested   (Scattered natural + frequent POIs)│
-│  - POST /api/routes/calculate        (Returns 8 distinct graded paths)  │
-│  - GET /api/routes/{id}/storyboard   (Street View sequence + AI notes)  │
-│  - GET /api/search?q={query}         (Mapbox / OSM Geocoder proxy)      │
-│                                                                        │
-│  Engine Modules:                                                       │
-│  - `app/routing/multi_graph.py`      (NetworkX graph + Yen's k-paths)   │
-│  - `app/scoring/gemini_agent.py`     (Multimodal environmental rater)   │
-│  - `app/data/cupertino_cache.sqlite` (Precomputed network & scores)    │
-└────────────────────────────────────────────────────────────────────────┘
-```
+| Path | Committed? |
+|---|---|
+| `py/data/cupertino_safe.graphml` | ✅ The demo runs offline |
+| `py/data/scores.json` | ✅ Diff it when the prompt changes |
+| `py/data/cache/` (Street View photos, raw LLM replies) | ❌ gitignored. Google's photos must not go into a public repo |
+| `.env` (Google Maps key, DigitalOcean key) | ❌ |
 
-### 5.1 Backend Endpoints
+### Facts we measured (2026-10-16)
 
-#### `POST /api/routes/calculate`
-* **Request:**
-  ```json
-  {
-    "origin": { "lat": 37.3195, "lng": -122.0450 },
-    "destination": { "lat": 37.3140, "lng": -122.0680 },
-    "slider_nature_pct": 75
-  }
-  ```
-* **Response:**
-  ```json
-  {
-    "recommended_route_index": 0,
-    "slider_nature_pct": 75,
-    "routes": [
-      {
-        "id": "route_greenway_creek",
-        "name": "Stevens Creek Trail & Blackberry Farm Way",
-        "distance_meters": 4920,
-        "duration_seconds": 1080,
-        "safety_score": 9.4,
-        "safety_grade": "A",
-        "nature_score": 9.6,
-        "nature_grade": "A+",
-        "tags": {
-          "canopy_pct": 82,
-          "river_creek_pct": 64,
-          "parks_pct": 58,
-          "flowers_pct": 28
-        },
-        "geojson": { "type": "LineString", "coordinates": [...] },
-        "elevation_gain_m": 24,
-        "storyboard_count": 6
-      },
-      ... // 7 more routes
-    ]
-  }
-  ```
+- **OSM in the city:** maxspeed is on 93% of arterials and 17% of residential streets; lanes on 97% and 26%. 98% of arterials carry a cycleway tag.
+- **Lighting:** `lit` is on only 4% of ways, so there's no night mode.
+- **Bikeways layer:** Class II 27.4 mi, III 11.0 mi, I 3.4 mi and IV 3.0 mi are built.
+- **Other city layers:** the same MapServer also has traffic signal heads (3), traffic calming (32), traffic signs (34) and bike parking (88).
+- **Bike crashes per year:** 45 / 39 / 42 / 24 / 21 / 13 / 21 / 25 / 25 / 34 for 2016–2025, and 6 so far in 2026.
 
-#### `GET /api/destinations/suggested`
-Returns pre-populated scattered map pins around Cupertino:
-* 5 Nature Escapes (McClellan Ranch, Blackberry Farm, Memorial Park, etc.)
-* 3 Frequent Spots (De Anza Library, Apple Park Visitor Center, Main St Cupertino)
+## 4. Green route
 
----
+**Decided:**
 
-## 6. Cupertino Pilot Area & Demo Route Scenarios
+- One City ↔ Rural slider plus three toggles: Greenery / Quiet / Shade.
+- The current formula: `weight = length × (1 − rural × green_score)`.
 
-### 6.1 Geographic Anchors
-* **Center Point:** De Anza College (`37.3195° N, -122.0450° W`)
-* **Key Nature POIs:**
-  1. *McClellan Ranch Preserve & Nature Museum* (`37.3140° N, -122.0680° W`) — historic ranch, tree preserve, quiet walking/cycling connection.
-  2. *Blackberry Farm Park* (`37.3130° N, -122.0635° W`) — creek-side trail, picnic grounds, dense tree canopy.
-  3. *Stevens Creek Trail Corridor* (`37.3160° N, -122.0590° W`) — continuous protected trail along the stream.
-  4. *Cupertino Memorial Park* (`37.3240° N, -122.0400° W`) — large lake/pond, landscaped amphitheater, flowers.
-  5. *Linda Vista Park* (`37.3300° N, -122.0600° W`) — community park, scenic foothill vistas.
-* **Key City Life POIs:**
-  1. *Apple Park Visitor Center & Campus* (`37.3328° N, -122.0053° W`) — iconic architecture, sleek modern city contrast.
-  2. *Main Street Cupertino* (`37.3235° N, -122.0150° W`) — dining, retail, bike hub.
-  3. *De Anza College Library & Campus Center* (`37.3195° N, -122.0450° W`) — student commute center.
+**Ideas to discuss, from the earlier draft:**
 
-### 6.2 The Hackathon Demo Script (3-Minute Winning Pitch)
-1. **Act 1: The Dilemma (30s):**
-   * "Today, when students at De Anza College bike across Cupertino, standard navigation pushes them onto Stevens Creek Blvd—fast, but loud, car-heavy, and stressful. What if your bike route prioritized your mental well-being and natural connection without sacrificing safety?"
-2. **Act 2: The Map & Discovery (45s):**
-   * Show VerdantRide's Cupertino map with scattered Google Maps-style recommendation pins highlighting both everyday routines (De Anza Library) and natural gems (McClellan Ranch Preserve).
-   * 1-Click on McClellan Ranch: The app immediately computes **8 distinct routes**.
-3. **Act 3: The Interactive Continuous Slider (60s):**
-   * Start at **Fast Mode (0%)**: Route #1 is the fastest direct path via McClellan Rd bike lane. Safety Grade: A, Nature Grade: B-.
-   * Drag the slider toward **Nature Mode (100%)**:
-     * Watch the cards dynamically re-rank!
-     * Route #3 (Stevens Creek Trail & Blackberry Farm) rises to #1 with an animated `[Recommended]` badge!
-     * Grade: Nature A+, 82% Shaded Canopy, 64% Creek Proximity, with zero car door hazards.
-4. **Act 4: Curiosity Storyboard (30s):**
-   * Open the Storyboard Tour: Show Street View snapshots annotated with Gemini's vision analysis highlighting the shaded sycamores and stream views.
-5. **Act 5: Real-World Resilience (15s):**
-   * Highlight that the entire Cupertino network is precomputed and cached in SQLite/GeoJSON for instant zero-latency demoing, with live API connectivity.
+- Have the same Street View + vision LLM pass return a **nature score** alongside the safety score, so one batch of calls covers both maps. The nature rubric:
+  - 9–10: creek corridor or dense canopy
+  - 7–8: tree-lined residential street
+  - 5–6: young trees
+  - 3–4: concrete commercial strip
+  - 1–2: industrial area or parking lots
+- Show route tags such as `% tree canopy`, `% creek proximity`, `% parks & greenways`, using OSM parks, `waterway=stream` (Stevens Creek) and `natural=tree_row`.
+- **Safety floor:** the Green route must never send riders onto a dangerous road just because it has trees. Penalise edges whose safety score is below 5.
+- Demo anchors: McClellan Ranch, Blackberry Farm, Stevens Creek Trail, Memorial Park and Linda Vista Park on the nature side; De Anza College, Main Street and Apple Park on the city side.
 
----
+## 5. UI ideas (not decided)
 
-## 7. Implementation Roadmap
+- A letter grade (A–F) per route. We need to decide how it's computed and whether `grade` / `risky_crossings` go into the contract.
+- A Street View storyboard that previews a route with the AI's notes at each stop.
+- Suggested-destination pins on the map before a destination is picked, then routing in one click.
+- Several candidate routes per trip instead of one recommended route.
+- Picking start and end by clicking the map, not only from presets.
+- A layer showing real crash points.
+- A detour slider on the Safe page.
 
-### Phase 1: Data & Graph Setup
-- [ ] Extract Cupertino bike network via OSMnx into NetworkX graph.
-- [ ] Implement sampling points (80m) + Street View metadata checking.
-- [ ] Build Gemini vision prompt and precompute ~150 key Cupertino street segments into local SQLite/GeoJSON cache.
+## 6. Not decided yet
 
-### Phase 2: Multi-Objective Routing Engine
-- [ ] Implement dual cost functions ($C_{safety}$ and $C_{nature}$).
-- [ ] Implement Yen's k-shortest paths with edge penalties to yield 8 distinct routes.
-- [ ] Compute route letter grades (A/B/C) and tag percentages (% canopy, % creek, % flowers).
-
-### Phase 3: Frontend Web Application
-- [ ] Scaffold Next.js application with Mapbox GL JS integration.
-- [ ] Implement scattered suggestion map pins (Google Maps style) with 1-click launcher.
-- [ ] Build the interactive dynamic continuous slider with smooth list re-ordering.
-- [ ] Build route cards with dual badges (Safety + Nature) and `[Recommended]` indicator.
-- [ ] Build the Curiosity Storyboard modal for Street View preview tours.
-
-### Phase 4: Polish & Hackathon Presentation
-- [ ] Add smooth CSS micro-interactions and glowing route vectors.
-- [ ] Verify offline demo mode resilience.
-- [ ] Package project documentation, Devpost submission copy, and presentation script.
+- Which theme we submit under. Check the official track text: "City Life & Rural Life" or "City Life and Natural Life".
+- Final name (candidates: BikeMap Cupertino, VerdantRide)
+- Demo routes: ones where the fastest route takes a big road and the Safe/Green route visibly doesn't
+- Deploy, or demo locally only
+- Who on the team owns which script
