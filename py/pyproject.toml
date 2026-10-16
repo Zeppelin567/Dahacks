@@ -8,6 +8,8 @@ dependencies = [
   "uvicorn[standard]>=0.30",
   "python-multipart>=0.0.9",
   "pillow>=10",
+  "osmnx>=2",
+  "networkx>=3",
 ]
 
 [dependency-groups]
@@ -27,4 +29,5 @@ select = ["E", "F", "I", "B", "UP"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
+pythonpath = [
+"."]
