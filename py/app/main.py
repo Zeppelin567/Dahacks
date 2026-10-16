@@ -21,6 +21,8 @@ from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from PIL import Image, ImageStat, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
+from app.bikemap import router as bikemap_router
+
 # root_path makes the generated OpenAPI document (and its "servers" entry)
 # correct when viewed through the api's proxy at /api/py.
 app = FastAPI(
@@ -29,6 +31,7 @@ app = FastAPI(
     description="Side-car for compute the TypeScript api should not do itself.",
     root_path="/api/py",
 )
+app.include_router(bikemap_router)
 
 
 class Health(BaseModel):

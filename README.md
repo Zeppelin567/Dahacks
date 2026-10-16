@@ -1,3 +1,19 @@
+# BikeMap Cupertino (DAHacks 5.0)
+
+Two bike maps for Cupertino: a **Safe route** map and a **Green route** map with a City ↔ Rural slider.
+Team decisions, the API contract and who owns what: **[docs/CONSENSUS.md](docs/CONSENSUS.md)**.
+
+```
+npm install && npm run dev:py   # Python side-car
+npm run dev                     # http://localhost:5173/safe
+```
+
+> Built on **MVP_demo** (github.com/blar-tw/MVP_demo, MIT), a generic starter written before the event.
+> Everything under `py/app/bikemap/`, `web/src/bikemap/` and `web/src/pages/{safe,green}-route.tsx` was built during DAHacks 5.0.
+> The rest of this README is the starter's original documentation.
+
+---
+
 # MVP Demo: a hackathon starter that already does the boring parts 
 
 It bundles auth, database, typed API with live docs, realtime, streaming LLM chat, API keys for scripts and hardware, and an optional Python side-car, wired together so a team can spend the 48 hours on the idea rather than on plumbing.

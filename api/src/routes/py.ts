@@ -117,4 +117,6 @@ export const py = base
   })
   .get("/api/py/health", forward)
   .get("/api/py/openapi.json", forward)
+  // The bike map is public: riders don't sign in.
+  .all("/api/py/bikemap/*", forward)
   .all("/api/py/*", requireAuth, forward);

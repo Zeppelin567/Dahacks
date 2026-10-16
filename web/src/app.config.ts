@@ -4,12 +4,11 @@ import type { LucideIcon } from "lucide-react";
 import { Boxes, KeyRound, LayoutDashboard, MessageSquare, Radio, Terminal } from "lucide-react";
 
 export const appConfig = {
-  name: "MVP Demo",
-  tagline: "The boring parts are already done.",
-  description:
-    "Auth, database, typed API, realtime, LLM chat and a Python side-car, wired together so you can spend the 48 hours on the idea.",
+  name: "BikeMap Cupertino",
+  tagline: "Two ways to ride: the safe way and the green way.",
+  description: "Bike routes for Cupertino commuters: a safe-route map and a City ↔ Rural green-route map.",
   /** Emoji or short text shown as the logo. */
-  logo: "⚡",
+  logo: "🚲",
   /**
    * Optional brand color (any CSS color). Overrides the theme's primary
    * color at runtime; leave undefined to keep the neutral default.
@@ -18,10 +17,10 @@ export const appConfig = {
 
   /** Flip a module off and its page + sidebar entry disappear. */
   modules: {
-    items: true,
-    chat: true,
-    live: true,
-    apiKeys: true,
+    items: false,
+    chat: false,
+    live: false,
+    apiKeys: false,
     python: true,
   },
 };
