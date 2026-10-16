@@ -1,0 +1,44 @@
+{
+  "name": "@mvp/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "React + Vite SPA. Talks to api/ over HTTP and WebSocket only.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@ai-sdk/react": "^4.0.102",
+    "@better-auth/api-key": "^1.7.4",
+    "@fontsource-variable/geist": "^5.3.0",
+    "@mvp/shared": "^0.1.0",
+    "@tanstack/react-query": "^5.102.8",
+    "ai": "^7.0.99",
+    "better-auth": "^1.7.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cn": "^0.3.0",
+    "hono": "^4.13.7",
+    "lucide-react": "^1.45.0",
+    "radix-ui": "^1.6.7",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router": "^8.3.1",
+    "shadcn": "^4.21.0",
+    "sonner": "^2.0.8",
+    "tailwind-merge": "^3.7.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^24.13.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "tailwindcss": "^4.3.3",
+    "tw-animate-css": "^1.4.0",
+    "vite": "^8.3.0"
+  }
+}

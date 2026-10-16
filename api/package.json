@@ -1,0 +1,49 @@
+{
+  "name": "@mvp/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Hono API server. Runs TypeScript directly with tsx; no build step.",
+  "exports": {
+    ".": {
+      "types": "./src/app.ts"
+    }
+  },
+  "scripts": {
+    "dev": "node --watch --watch-preserve-output --import tsx src/dev.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "drizzle-kit generate",
+    "db:seed": "tsx src/db/seed-cli.ts",
+    "db:reset": "tsx src/db/reset.ts"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.53",
+    "@ai-sdk/google": "^4.0.69",
+    "@ai-sdk/openai": "^4.0.66",
+    "@better-auth/api-key": "^1.7.4",
+    "@better-auth/drizzle-adapter": "^1.7.4",
+    "@electric-sql/pglite": "^0.5.8",
+    "@hono/node-server": "^2.1.1",
+    "@hono/zod-openapi": "^1.6.3",
+    "@mvp/shared": "^0.1.0",
+    "@scalar/hono-api-reference": "^0.12.1",
+    "ai": "^7.0.99",
+    "better-auth": "^1.7.4",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.13.7",
+    "pg": "^8.23.0",
+    "ws": "^8.21.3",
+    "zod": "^4.6.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.4",
+    "@types/pg": "^8.23.1",
+    "@types/ws": "^8.18.1",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.23.13",
+    "vitest": "^5.0.0"
+  }
+}
