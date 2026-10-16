@@ -9,7 +9,14 @@ export type Place = { id: string; name: string; lat: number; lng: number };
 
 export type GreenPrefs = { green: boolean; quiet: boolean; shade: boolean };
 
-export type Segment = { coords: LatLng[]; score: number; level: Level; reasons: string[] };
+export type Segment = {
+  coords: LatLng[];
+  score: number;
+  level: Level;
+  reasons: string[];
+  /** Per-feature 0..1 scores, for segment voting. Absent until the backend ships it. */
+  features?: Record<string, number> | null;
+};
 
 export type Route = { coords: LatLng[]; distance_m: number; duration_min: number; segments: Segment[] };
 
@@ -32,7 +39,18 @@ export type RouteResponse = {
 
 export type NetworkResponse = { layer: Mode; mock: boolean; segments: Segment[] };
 
-export type RouteRequest = { start: LatLng; end: LatLng; mode: Mode; rural?: number; prefs?: GreenPrefs };
+export type RouteRequest = {
+  start: LatLng;
+  end: LatLng;
+  mode: Mode;
+  rural?: number;
+  prefs?: GreenPrefs;
+  /**
+   * Direct [-5, +5] preference vector (paper §4.3); overrides the rural-slider
+   * mapping when set. Pydantic ignores it on backends that don't know it yet.
+   */
+  pref_override?: Record<string, number>;
+};
 
 const BASE = "/api/py/bikemap";
 

@@ -1,2 +1,10 @@
 export * from "./api";
 export { LEVEL_COLORS as LEVEL_COLORS_BY_MODE, RouteMap } from "./route-map";
+export { TradeoffCard } from "./tradeoff-card";
+export { GREEN_PRESETS, PresetProfiles } from "./preset-profiles";
+export { VoiceNavButton } from "./voice-nav";
+export { HazardButton, HazardLayer, HAZARD_CATEGORIES } from "./hazard-report";
+export { SegmentVote } from "./segment-vote";
+export { applyVoteDeltas, buildInstructions, clampPref, haversineM, polylineLengthM, toPrefVector } from "./route-utils";
+export type { GreenPreset } from "./preset-profiles";
+export type { Hazard } from "./hazard-report";

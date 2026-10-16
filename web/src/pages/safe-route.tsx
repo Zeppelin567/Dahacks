@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Legend, Panel, Stat } from "@/bikemap/controls";
+import { Legend, Panel } from "@/bikemap/controls";
 import { MapPage } from "@/bikemap/map-page";
+import { TradeoffCard } from "@/bikemap/tradeoff-card";
+import { VoiceNavButton } from "@/bikemap/voice-nav";
 
 // Map 1: the safest way to commute. Base layer = city-wide risk colours.
 export function SafeRoutePage() {
@@ -13,15 +15,9 @@ export function SafeRoutePage() {
       blurb="Avoid fast, busy roads with no bike lane. Click any coloured segment to see why it's rated that way."
       showNetwork={showRisk}
       stats={(r) => (
-        <div className="grid grid-cols-2 gap-2">
-          <Stat label="Extra time" value={`+${r.compare.extra_min} min`} />
-          <Stat
-            label="Risky segments"
-            value={`${r.compare.risky_segments_fastest} → ${r.compare.risky_segments_recommended}`}
-            hint="fastest → safe"
-          />
-          <Stat label="Fastest" value={`${r.fastest.duration_min} min`} />
-          <Stat label="Safe route" value={`${r.recommended.duration_min} min`} />
+        <div className="grid gap-2">
+          <TradeoffCard data={r} mode="safe" />
+          <VoiceNavButton route={r.recommended} />
         </div>
       )}
     >

@@ -1,8 +1,18 @@
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Panel, PlacePicker, toLatLng, usePlaces } from "./controls";
-import { bikemap, type GreenPrefs, type LatLng, type Mode, RouteMap, type RouteResponse } from "./index";
+import {
+  bikemap,
+  type GreenPrefs,
+  type LatLng,
+  type Mode,
+  RouteMap,
+  type Route,
+  type RouteResponse,
+  type Segment,
+} from "./index";
 import { useTrip } from "./shell";
 
 // Layout shared by both maps: control column on the left, map on the right.
@@ -13,18 +23,23 @@ export function MapPage({
   blurb,
   rural,
   prefs,
+  prefOverride,
   showNetwork,
   children,
   stats,
+  onVoteSegment,
 }: {
   mode: Mode;
   title: string;
   blurb: string;
   rural?: number;
   prefs?: GreenPrefs;
+  /** Direct [-5,5] preference vector; overrides the slider mapping when set. */
+  prefOverride?: Record<string, number>;
   showNetwork: boolean;
   children?: ReactNode;
   stats: (r: RouteResponse) => ReactNode;
+  onVoteSegment?: (seg: Segment, like: boolean) => void;
 }) {
   const { startId, endId, setStartId, setEndId } = useTrip();
   const places = usePlaces();
@@ -37,11 +52,37 @@ export function MapPage({
     staleTime: Number.POSITIVE_INFINITY,
   });
   const route = useQuery({
-    queryKey: ["bikemap", "route", mode, start, end, rural, prefs],
-    queryFn: () => bikemap.route({ start: start as LatLng, end: end as LatLng, mode, rural, prefs }),
+    queryKey: ["bikemap", "route", mode, start, end, rural, prefs, prefOverride],
+    queryFn: () =>
+      bikemap.route({
+        start: start as LatLng,
+        end: end as LatLng,
+        mode,
+        rural,
+        prefs,
+        ...(prefOverride ? { pref_override: prefOverride } : {}),
+      }),
     enabled: !!start && !!end,
     placeholderData: (prev) => prev, // keep the old route on screen while the slider moves
   });
+
+  // Faded previous route for instant A/B comparison (BikeButler-style).
+  // placeholderData keeps route.data on the OLD object while refetching, so a
+  // change of identity here always means fresh data has arrived.
+  const [prevRecommended, setPrevRecommended] = useState<Route | null>(null);
+  const lastRef = useRef<Route | undefined>(undefined);
+  const tripKey = `${startId}|${endId}`;
+  useEffect(() => {
+    setPrevRecommended(null);
+    lastRef.current = undefined;
+  }, [tripKey]);
+  const recommended = route.data?.recommended;
+  useEffect(() => {
+    if (recommended && lastRef.current && recommended !== lastRef.current) {
+      setPrevRecommended(lastRef.current);
+    }
+    lastRef.current = recommended;
+  }, [recommended]);
 
   const mock = route.data?.mock || network.data?.mock;
   const error = places.error ?? route.error ?? network.error;
@@ -82,9 +123,11 @@ export function MapPage({
           network={network.data?.segments}
           showNetwork={showNetwork}
           fastest={route.data?.fastest}
-          recommended={route.data?.recommended}
+          recommended={recommended}
+          prevRecommended={prevRecommended}
           start={start}
           end={end}
+          onVoteSegment={onVoteSegment}
         />
       </section>
     </div>

@@ -135,6 +135,11 @@ def build_preferences(req: RouteRequest) -> tuple[dict[str, float], float]:
     else:
         prefs = {"safety": -5.0}
         d_tol = SAFE_D_TOL
+    # Segment voting: override known features only; preserve the other preferences.
+    if req.pref_override:
+        for f, v in req.pref_override.items():
+            if f in prefs:
+                prefs[f] = max(-5.0, min(5.0, float(v)))
     return prefs, d_tol
 
 
@@ -368,6 +373,7 @@ def _build_route(Gv, path, w, prefs, mode: Mode, primary: str) -> Route:
     for idxs in seg_idx:
         coords: list[LatLng] = []
         wsum, ssum = 0.0, 0.0
+        fsum: dict[str, float] = {}
         reasons: list[str] = []
         for i in idxs:
             u, v, k, d, vec01, _ = infos[i]
@@ -376,11 +382,16 @@ def _build_route(Gv, path, w, prefs, mode: Mode, primary: str) -> Route:
             full.extend(c if not full else c[1:])
             ln = float(d.get("length", 0)) or 1.0
             ssum += sum(vec01[f] for f in active) / len(active) * ln
+            for f in vec01:
+                fsum[f] = fsum.get(f, 0.0) + vec01[f] * ln
             wsum += ln
             if not reasons:
                 reasons = scoring.safety_reasons(d) if mode == "safe" else _green_reasons(d)
         avg = ssum / wsum if wsum else 0.5
-        segments.append(Segment(coords=coords, score=round(avg, 2), level=_level(avg), reasons=reasons))
+        features = {f: round(v / wsum, 2) for f, v in fsum.items()} if wsum else None
+        segments.append(
+            Segment(coords=coords, score=round(avg, 2), level=_level(avg), reasons=reasons, features=features)
+        )
 
     return Route(
         coords=full,
