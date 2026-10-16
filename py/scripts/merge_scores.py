@@ -1,6 +1,6 @@
 """把 A/B 两条管线输出的 {"u_v_k": score} JSON 合并进 graphml 边属性。
 
-key 列表见 py/data/edge_index.json（build_graph.py 生成），A/B 照着它输出。
+key 是图里的边 id "u_v_k"（图由 1_build_graph.py 建好）。
 
 论文映射：VLM 的 vegetation 用 1-5 量表（论文 §5），以原值存入
 vegetation_vlm，scoring.vegetation_score 会归一化；safety 用 0..1。

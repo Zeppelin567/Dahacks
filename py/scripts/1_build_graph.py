@@ -1,15 +1,33 @@
-"""Step 1: download the Cupertino bike graph and join the City Bikeways layer onto it.
+"""Step 1: the Cupertino bike graph with every map fact the later steps need.
 
-    cd py && uv run python scripts/1_build_graph.py
+    cd py && uv run python scripts/1_build_graph.py                # reuse graph_raw.graphml, refresh facts
+    cd py && uv run python scripts/1_build_graph.py --redownload   # fetch the road network from OSM again
+
+Adds to each edge:
+  - City Bikeways PathType (city_pathtype, city_class)
+  - green features for the Green route: park_dist_m, water_dist_m (metres, -1 = no data), and
+    tree_count (OSM trees within 25 m)
+Adds to junction nodes: signal.
 
 Free: OSM (Nominatim + Overpass) and the City of Cupertino GIS server, no keys.
-Output: data/graph_raw.graphml, data/city_bikeways.geojson, and a check report + PNG in
-data/cache/reports/. Plan: .plans/actualproject.md §3 "1. Graph".
+
+Output:
+  - data/graph_raw.graphml
+  - data/city_bikeways.geojson
+  - data/green_layers.json (park and water polygons + tree points, served at GET /bikemap/green-layers)
+  - a check report and PNG in data/cache/reports/
+
+Plan: .plans/actualproject.md §3 "1. Graph".
+
+The road network is downloaded once and then reused. samples.jsonl and the score files point at its edge ids,
+so a fresh download (--redownload) can orphan them if OSM changed in between.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
+import math
 import sys
 import time
 import urllib.request
@@ -18,6 +36,8 @@ from pathlib import Path
 import geopandas as gpd
 import networkx as nx
 import osmnx as ox
+import pandas as pd
+from shapely.strtree import STRtree
 
 DATA = Path(__file__).resolve().parents[1] / "data"
 CACHE = DATA / "cache"
@@ -52,6 +72,14 @@ OVERPASS = [  # the main server is often at capacity; mirrors serve the same dat
     "https://overpass.kumi.systems/api",
 ]
 ARTERIALS = {"primary", "secondary", "tertiary"}
+GREEN_TAGS = {  # Green route features (from the BikeButler-style engine's original build script)
+    "parks": {"leisure": ["park", "garden", "nature_reserve"]},
+    "greens": {"landuse": ["grass", "forest", "meadow"], "natural": ["wood", "scrub"]},
+    "water": {"natural": "water"},
+    "trees": {"natural": ["tree", "tree_row"]},
+}
+NO_DATA = -1.0  # distance attributes: no feature of that kind in the area (scoring.py treats it as neutral)
+TREE_BUFFER_M = 25.0
 TEST_TRIP = ((37.3194, -122.0450), (37.3237, -122.0107))  # De Anza College -> Main Street
 
 
@@ -130,6 +158,62 @@ def mark_signals(G: nx.MultiDiGraph, poly) -> int:
     return len(sig)
 
 
+def add_green_features(G: nx.MultiDiGraph, poly) -> dict:
+    """park_dist_m / water_dist_m / tree_count on every edge, in metres. Returns the raw features."""
+    feats = {}
+    for name, tags in GREEN_TAGS.items():
+        try:
+            feats[name] = overpass(lambda tags=tags: ox.features_from_polygon(poly, tags))
+        except SystemExit:
+            raise
+        except Exception:  # noqa: BLE001 - osmnx raises when an area has none of a feature
+            feats[name] = gpd.GeoDataFrame(geometry=[], crs="EPSG:4326")
+
+    def geoms(gdf):
+        return [g for g in gdf.to_crs(UTM).geometry if g is not None and not g.is_empty] if len(gdf) else []
+
+    areas = gpd.GeoDataFrame(
+        pd.concat([feats["parks"][["geometry"]], feats["greens"][["geometry"]]], ignore_index=True),
+        geometry="geometry",
+        crs="EPSG:4326",
+    )
+    parks, water, trees = geoms(areas), geoms(feats["water"]), geoms(feats["trees"])
+    park_t, water_t, tree_t = (STRtree(g) if g else None for g in (parks, water, trees))
+    for (u, v, k), row in ox.graph_to_gdfs(G, nodes=False).to_crs(UTM).iterrows():
+        g, d = row.geometry, G.edges[u, v, k]
+        d["park_dist_m"] = float(g.distance(parks[park_t.nearest(g)])) if park_t else NO_DATA
+        d["water_dist_m"] = float(g.distance(water[water_t.nearest(g)])) if water_t else NO_DATA
+        d["tree_count"] = len(tree_t.query(g.buffer(TREE_BUFFER_M))) if tree_t else 0
+    feats["areas"] = areas
+    return feats
+
+
+def write_green_layers(feats: dict) -> dict:
+    """Park/water polygons and tree points as [lat, lng] for the map's nature layer."""
+
+    def polygons(gdf) -> list:
+        out = []
+        for geom in gdf.geometry:
+            if geom is None or geom.is_empty:
+                continue
+            for p in geom.geoms if geom.geom_type == "MultiPolygon" else [geom]:
+                if p.geom_type == "Polygon":
+                    ring = p.simplify(0.0001, preserve_topology=True).exterior.coords
+                    if len(ring) >= 4:
+                        out.append([[round(lat, 6), round(lng, 6)] for lng, lat in ring])
+        return out
+
+    trees = [
+        [round(p.y, 6), round(p.x, 6)]
+        for p in feats["trees"].geometry
+        if p is not None and not p.is_empty and p.geom_type == "Point"
+    ]
+    step = max(1, math.ceil(len(trees) / 30_000))
+    layers = {"parks": polygons(feats["areas"]), "water": polygons(feats["water"]), "trees": trees[::step]}
+    (DATA / "green_layers.json").write_text(json.dumps(layers))
+    return {k: len(v) for k, v in layers.items()}
+
+
 def undirected_edges(G: nx.MultiDiGraph):
     """Each physical street once: a two-way road appears as (u,v) and (v,u) in the directed graph."""
     seen = set()
@@ -144,7 +228,7 @@ def nearest_node(G: nx.MultiDiGraph, lat: float, lng: float):
     return min(G.nodes, key=lambda n: (G.nodes[n]["y"] - lat) ** 2 + ((G.nodes[n]["x"] - lng) * 0.795) ** 2)
 
 
-def report(G: nx.MultiDiGraph, city: gpd.GeoDataFrame, join: dict, osm_signals: int) -> dict:
+def report(G: nx.MultiDiGraph, city: gpd.GeoDataFrame, join: dict, osm_signals: int, green: dict) -> dict:
     und = list(undirected_edges(G))
     km = sum(d["length"] for *_, d in und) / 1000
     art = [d for *_, d in und if first(d.get("highway")) in ARTERIALS]
@@ -192,6 +276,13 @@ def report(G: nx.MultiDiGraph, city: gpd.GeoDataFrame, join: dict, osm_signals: 
         "spot_checks": spot,
         "signalised_junctions": sum(bool(G.nodes[n].get("signal")) for n in G.nodes),
         "osm_signal_points": osm_signals,
+        "green_layers": green,
+        "streets_within_100m_of_park_pct": round(
+            100 * sum(0 <= float(d.get("park_dist_m", -1)) < 100 for *_, d in und) / len(und)
+        ),
+        "streets_with_osm_trees_pct": round(
+            100 * sum(int(d.get("tree_count", 0)) > 0 for *_, d in und) / len(und)
+        ),
         "largest_strongly_connected_pct": round(100 * len(scc) / G.number_of_nodes(), 1),
         "test_route": {
             "trip": "De Anza College -> Main Street",
@@ -217,18 +308,29 @@ def plot(G: nx.MultiDiGraph) -> Path:
 def main() -> None:
     configure()
     REPORTS.mkdir(parents=True, exist_ok=True)
-    print("1/4 area: Cupertino boundary + 500 m (Nominatim)")
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--redownload", action="store_true", help="fetch the road network from OSM again")
+    args = ap.parse_args()
+    out = DATA / "graph_raw.graphml"
+    print("1/5 area: Cupertino boundary + 500 m (Nominatim)")
     poly = area_polygon()
-    print("2/4 bike graph (Overpass; first run takes a minute)")
-    G = overpass(lambda: ox.graph_from_polygon(poly, network_type="bike", simplify=True, retain_all=False))
-    print("3/4 City Bikeways join + traffic signals")
+    if out.exists() and not args.redownload:
+        print(f"2/5 reusing {out.relative_to(DATA.parent)} (edge ids stay stable for samples.jsonl)")
+        G = ox.load_graphml(out)
+    else:
+        print("2/5 bike graph (Overpass; first run takes a minute)")
+        G = overpass(
+            lambda: ox.graph_from_polygon(poly, network_type="bike", simplify=True, retain_all=False)
+        )
+    print("3/5 City Bikeways join + traffic signals")
     city = fetch_city_bikeways()
     join = join_city(G, city)
     osm_signals = mark_signals(G, poly)
-    out = DATA / "graph_raw.graphml"
+    print("4/5 green features: parks, water, trees (Overpass)")
+    green = write_green_layers(add_green_features(G, poly))
     ox.save_graphml(G, out)
-    print(f"4/4 saved {out.relative_to(DATA.parent)} ({out.stat().st_size / 1e6:.1f} MB); writing report")
-    rep = report(G, city, join, osm_signals)
+    print(f"5/5 saved {out.relative_to(DATA.parent)} ({out.stat().st_size / 1e6:.1f} MB); writing report")
+    rep = report(G, city, join, osm_signals, green)
     rep["plot"] = str(plot(G).relative_to(DATA.parent))
     (REPORTS / "build_graph.json").write_text(json.dumps(rep, indent=1))
     json.dump(rep, sys.stdout, indent=1)

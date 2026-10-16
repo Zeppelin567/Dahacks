@@ -73,7 +73,9 @@ def _graph_path() -> Path:
     if env:
         return Path(env)
     # py/app/bikemap/engine.py -> parents[2] = py/
-    return Path(__file__).resolve().parents[2] / "data" / "cupertino_bike.graphml"
+    data = Path(__file__).resolve().parents[2] / "data"
+    baked = data / "cupertino_bike.graphml"  # 4_bake.py 写分数后的图
+    return baked if baked.exists() else data / "graph_raw.graphml"  # 还没 bake：分数用默认值
 
 
 _G = None
@@ -88,7 +90,7 @@ def _load_graph():
     if _G is None:
         p = _graph_path()
         if not p.exists():
-            raise RuntimeError(f"路网文件不存在: {p}，请先运行 python py/scripts/build_graph.py 生成")
+            raise RuntimeError(f"路网文件不存在: {p}，请先运行 cd py && uv run python scripts/1_build_graph.py")
         _G = ox.load_graphml(str(p))
     return _G
 

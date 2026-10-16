@@ -13,7 +13,7 @@ The whole plan is in **[.plans/actualproject.md](.plans/actualproject.md)**: pro
   - Pipeline:
 
     ```
-    py/scripts/1_build_graph.py → 2_photos.py → 3_score.py --layer safe|green → 4_bake.py → py/data/cupertino.graphml
+    py/scripts/1_build_graph.py → 2_photos.py → 3_score.py --layer safe|green → 4_bake.py → py/data/cupertino_bike.graphml
     ```
 
     The graph and scores are committed. Photos, raw LLM replies and keys are not.

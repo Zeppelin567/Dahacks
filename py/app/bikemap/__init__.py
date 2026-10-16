@@ -44,7 +44,7 @@ def _layers_path() -> Path:
 def green_layers() -> dict:
     """自然图层：parks/water 多边形 + trees 点，供 Leaflet 画图层开关。
 
-    坐标都是 [lat, lng]。文件不存在（还没跑 build_graph.py）时返回空结构，
+    坐标都是 [lat, lng]。文件不存在（还没跑 1_build_graph.py）时返回空结构，
     前端照常工作，不会崩。
     """
     p = _layers_path()

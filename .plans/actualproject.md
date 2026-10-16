@@ -82,7 +82,7 @@ py/scripts/
   2_photos.py                 sample → Metadata → Street View      → py/data/samples.json + photo cache   (shared)
   3_score.py --layer safe     safety prompt on the photos          → py/data/safety_scores.json           (Model A)
   3_score.py --layer green    green prompt on the same photos      → py/data/green_scores.json            (Model B)
-  4_bake.py                   both scores + fallbacks into graph   → py/data/cupertino.graphml
+  4_bake.py                   both scores + fallbacks into graph   → py/data/cupertino_bike.graphml
 ```
 
 Each script can be rerun on its own, and so can each layer. `2_photos.py` and `3_score.py` skip anything already in the cache, so a crash or a rate limit only costs the call in flight. Changing the green prompt never touches the safety scores, and the reverse is also true.
@@ -155,7 +155,7 @@ Intersections with no imagery use Aggie's rule: Y-junction 8, T-junction 7, four
 
 ### Routing (`py/app/bikemap/engine.py`)
 
-- **Load once:** load `cupertino.graphml` once at FastAPI startup and keep it in memory. Start and end snap to the nearest node with `ox.nearest_nodes`.
+- **Load once:** load `cupertino_bike.graphml` once at FastAPI startup and keep it in memory. Start and end snap to the nearest node with `ox.nearest_nodes`.
 - **Edge weight:**
   - `weight = length × (1 + λ × (10 − score) / 9)` with **λ = 3**
   - A 10-point road counts at its real length; a 1-point road feels 4× longer.
@@ -181,7 +181,7 @@ Intersections with no imagery use Aggie's rule: Y-junction 8, T-junction 7, four
 
 | Path | Committed? |
 |---|---|
-| `py/data/cupertino.graphml` | ✅ The demo runs offline |
+| `py/data/cupertino_bike.graphml` | ✅ The demo runs offline |
 | `py/data/samples.json`, `safety_scores.json`, `green_scores.json` | ✅ Diff them when a prompt changes |
 | `py/data/cache/` (Street View photos, raw LLM replies) | ❌ gitignored. Google's photos must not go into a public repo |
 | `.env` (Google Maps key, Anthropic key) | ❌ |
