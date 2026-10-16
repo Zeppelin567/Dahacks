@@ -18,6 +18,9 @@ dev = [
   "httpx>=0.27",
   "ruff>=0.6",
 ]
+pipeline = [
+    "matplotlib>=3.11.2",
+]
 
 [tool.ruff]
 line-length = 110
@@ -29,5 +32,4 @@ select = ["E", "F", "I", "B", "UP"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = [
-"."]
+pythonpath = ["."]

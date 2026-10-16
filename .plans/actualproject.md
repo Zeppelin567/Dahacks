@@ -66,23 +66,26 @@ Everything is precomputed. At demo time the API only loads a graph file and runs
 | 3 | No imagery | Rule fallback by road type (table below). The reason shown to riders says so. |
 | 4 | Road sampling | One point every 80 m. Two photos per point: forward and right. Free Metadata API first, deduplicated by `pano_id`. Two-way roads are scored once. |
 | 5 | Intersections | Every node where ≥3 streets meet. Four photos (N/E/S/W), scored by the LLM. |
-| 6 | Model | DigitalOcean serverless inference. Run a 20-spot bake-off between 2–3 vision models first, then use the winner city-wide. |
+| 6 | Model | Claude API. Run a 20-spot bake-off between Claude Haiku 5.5 and Claude Sonnet 5.5 first, then use the winner city-wide. |
 | 7 | Prompt | Fixed rubric plus fixed JSON output with a fixed hazard list. All rules, including the expressway penalty, live **only in the prompt**. No hard-coded caps. |
 | 8 | Routing | Felt distance with λ = 3, intersection penalty k = 20 m per point, 50% detour cap |
 | 9 | Crash data | **Not used in scoring or routing.** Used only to validate. |
 | 10 | City Bikeways | Joined to OSM edges and passed to the prompt as facts. Built segments only. |
-| 11 | Graph and storage | Three scripts. The graph and scores are committed; photos, raw LLM replies and keys are not. |
+| 11 | Graph and storage | Four scripts. The graph and scores are committed; photos, raw LLM replies and keys are not. |
+| 12 | Shared with Green | **Sampling and photos are fully shared** with the Green route and fetched once. Safety and green are **two independent Claude calls** on the same photos, each with its own prompt, owner and score file. |
 
 ### Pipeline
 
 ```
 py/scripts/
-  1_build_graph.py   OSM download + City Bikeways join        → py/data/graph_raw.graphml
-  2_score.py         sample → Street View → LLM (resumable)   → py/data/scores.json
-  3_bake.py          write scores + fallbacks into the graph  → py/data/cupertino_safe.graphml
+  1_build_graph.py            OSM download + City Bikeways join   → py/data/graph_raw.graphml
+  2_photos.py                 sample → Metadata → Street View      → py/data/samples.json + photo cache   (shared)
+  3_score.py --layer safe     safety prompt on the photos          → py/data/safety_scores.json           (Model A)
+  3_score.py --layer green    green prompt on the same photos      → py/data/green_scores.json            (Model B)
+  4_bake.py                   both scores + fallbacks into graph   → py/data/cupertino.graphml
 ```
 
-Each script can be rerun on its own. `2_score.py` skips anything already in the cache, so a crash or a rate limit only costs the call in flight.
+Each script can be rerun on its own, and so can each layer. `2_photos.py` and `3_score.py` skip anything already in the cache, so a crash or a rate limit only costs the call in flight. Changing the green prompt never touches the safety scores, and the reverse is also true.
 
 #### 1. Graph (`1_build_graph.py`)
 
@@ -99,7 +102,7 @@ Each script can be rerun on its own. `2_score.py` skips anything already in the 
   - Store the city `PathType` text on the edge (`SEPARATED BIKEWAY`, `BUFFERED BIKE LANE`, `BIKE LANE`, `BIKE BLVD`, `BIKE ROUTE`, `BIKE PATH` …). Don't use `CLASS`, because Class III mixes quiet bike boulevards with signed-only routes on arterials.
 - **Signals:** the OSM `highway=traffic_signals` nodes (182 in the city) mark signalised intersections.
 
-#### 2. Scoring (`2_score.py`)
+#### 2. Photos (`2_photos.py`, shared with Green)
 
 **Sampling**
 
@@ -109,16 +112,31 @@ Each script can be rerun on its own. `2_score.py` skips anything already in the 
 - **Intersections:** every node with `street_count >= 3`. Four photos, at headings 0 / 90 / 180 / 270.
 - **Before buying any photo:** call the Street View **Metadata API**, which is free. It tells us whether imagery exists, its `pano_id` and its capture date.
   - Points that resolve to the same `pano_id` share one set of photos.
+  - Pass `source=outdoor` and drop any pano whose returned location is more than 15 m from the sample point. Without this, metadata snaps to the nearest pano within 50 m, which can be inside a parking lot (seen in the 2026-10-16 key test).
   - Flag old imagery from `captured_at`. Threshold TBD; new bike lanes won't be in old photos.
-- **Budget:** run the metadata pass first and count the photos actually needed. Static Street View has 10,000 free photos a month, then $7 per 1,000. Set a quota in Google Cloud Console, because Google Maps Platform has no automatic spending cap.
+- **No photos for off-street ways:** service roads (parking aisles, driveways), paths, cycleways and tracks get no photos. Google rarely covers them, and a nearby road photo would describe the wrong street. They use the fallback rule in step 4.
+- **Street View car only:** panos whose copyright isn't Google (user-uploaded photospheres) are dropped (`third_party`).
+- **$0 budget:** Static Street View is free for 10,000 photos a month, then $7 per 1,000. `2_photos.py` keeps a ledger (`data/cache/streetview_usage.json`), counts each photo before requesting it, and stops at **9,000 a month**. The default run is a dry run that only uses the free Metadata API; `--fetch` downloads.
+- **What fits (dry run, 2026-10-16):** the city needs 17,473 photos and 9,000 fit. They are fetched in this order:
+  1. Arterial forward
+  2. Arterial right
+  3. Arterial junctions
+  4. Residential forward, one per street first
+
+  Result:
+  - All 1,427 arterial streets get photos, and 3,263 of 3,278 residential streets get at least one.
+  - Residential junctions and residential right-side photos are left out and use the fallback rules.
+  - Imagery exists for 94–99% of samples, and 18% of the imagery predates 2022.
+
+#### 3. Scoring (`3_score.py --layer safe`)
 
 **Model call**
 
-- **Provider:** DigitalOcean serverless inference.
-- **Bake-off:** before the city-wide run, score 20 places the team knows against 2–3 vision models (candidates from the DO catalog: Kimi K3, Qwen3.8-Max, Nemotron Nano 12B VL). Keep the model whose scores match common sense.
+- **Provider:** Claude API (`ANTHROPIC_API_KEY` in the root `.env`).
+- **Bake-off:** before the city-wide run, score 20 places the team knows against `claude-haiku-5-5` and `claude-sonnet-5-5`. Use Haiku city-wide unless Sonnet is clearly better on these 20.
   - The 20 places must include Stevens Creek × De Anza, a 280 ramp, Lawrence Expressway, the Mary Ave bike bridge and a few quiet residential streets.
-- **Before starting:** confirm three things on the DO account: credits, rate limits, and which models list image input in `/v1/models`.
-- **Cache:** each call's raw reply goes to `py/data/cache/llm/{key}.json`. Photos go to `py/data/cache/streetview/`.
+- **City-wide run:** send it through the Message Batches API, which costs half the normal price. Cache the prompt's fixed part (role and rubric) with prompt caching. Set a spend limit in the Claude Console before starting.
+- **Cache:** each call's raw reply goes to `py/data/cache/llm/{layer}/{key}.json`. Photos go to `py/data/cache/streetview/`.
 
 **Prompt**
 
@@ -144,7 +162,7 @@ The prompt has three parts:
 | *Intersection*: signalised, with a bike box or crossing markings | 8–10 |
 | *Intersection*: unsignalised crossing of a multi-lane road | 1–3 |
 
-**Output** (strict JSON, temperature 0)
+**Output** (strict JSON). `claude-haiku-5-5` rejects `temperature` and thinks by default, so leave room in `max_tokens` (~2,000).
 
 ```json
 {
@@ -157,10 +175,10 @@ The prompt has three parts:
 }
 ```
 
-- `hazards` may only contain values from that list. The frontend maps each value to a fixed plain-English line, e.g. `door_zone` → "Parked cars: watch for opening doors".
+- `hazards` may only contain values from that list. Enforce it with structured output (a JSON schema with an `enum`). Asked in plain text, Haiku wrote free-form hazards in the key test. The frontend maps each value to a fixed plain-English line, e.g. `door_zone` → "Parked cars: watch for opening doors".
 - `confidence: low` is shown to riders as ⚠️ uncertain.
 
-#### 3. Bake (`3_bake.py`)
+#### 4. Bake (`4_bake.py`)
 
 - **Edge score:** the median of its sample points' scores.
 - **Hazards:** the union of its samples' hazards.
@@ -183,7 +201,7 @@ Intersections with no imagery use Aggie's rule: Y-junction 8, T-junction 7, four
 
 ### Routing (`py/app/bikemap/engine.py`)
 
-- **Load once:** load `cupertino_safe.graphml` once at FastAPI startup and keep it in memory. Start and end snap to the nearest node with `ox.nearest_nodes`.
+- **Load once:** load `cupertino.graphml` once at FastAPI startup and keep it in memory. Start and end snap to the nearest node with `ox.nearest_nodes`.
 - **Edge weight:**
   - `weight = length × (1 + λ × (10 − score) / 9)` with **λ = 3**
   - A 10-point road counts at its real length; a 1-point road feels 4× longer.
@@ -209,10 +227,10 @@ Intersections with no imagery use Aggie's rule: Y-junction 8, T-junction 7, four
 
 | Path | Committed? |
 |---|---|
-| `py/data/cupertino_safe.graphml` | ✅ The demo runs offline |
-| `py/data/scores.json` | ✅ Diff it when the prompt changes |
+| `py/data/cupertino.graphml` | ✅ The demo runs offline |
+| `py/data/samples.json`, `safety_scores.json`, `green_scores.json` | ✅ Diff them when a prompt changes |
 | `py/data/cache/` (Street View photos, raw LLM replies) | ❌ gitignored. Google's photos must not go into a public repo |
-| `.env` (Google Maps key, DigitalOcean key) | ❌ |
+| `.env` (Google Maps key, Anthropic key) | ❌ |
 
 ### Facts we measured (2026-10-16)
 
@@ -228,17 +246,26 @@ Intersections with no imagery use Aggie's rule: Y-junction 8, T-junction 7, four
 
 - One City ↔ Rural slider plus three toggles: Greenery / Quiet / Shade.
 - The current formula: `weight = length × (1 − rural × green_score)`.
+- **Same samples and photos as the Safe route** (§3, `2_photos.py`): same 80 m spacing, same forward + right photos, nothing extra fetched.
+- **A separate Claude call** with its own prompt (`3_score.py --layer green`), owned by Model B. Safety and green are never asked in one call, so leafy streets can't inflate the safety score.
+- Where each part comes from:
 
-**Ideas to discuss, from the earlier draft:**
+| Green part | Source |
+|---|---|
+| 🌳 Greenery / ☀️ Shade (tree canopy) | The photos. OSM has very few tree records. |
+| Parks, Stevens Creek | OSM `leisure=park`, `waterway=stream`, no photos needed |
+| 🤫 Quiet | Road type and speed from OSM, no photos needed |
 
-- Have the same Street View + vision LLM pass return a **nature score** alongside the safety score, so one batch of calls covers both maps. The nature rubric:
+**Ideas to discuss:**
+
+- A draft green rubric for the photo prompt:
   - 9–10: creek corridor or dense canopy
   - 7–8: tree-lined residential street
   - 5–6: young trees
   - 3–4: concrete commercial strip
   - 1–2: industrial area or parking lots
 - Show route tags such as `% tree canopy`, `% creek proximity`, `% parks & greenways`, using OSM parks, `waterway=stream` (Stevens Creek) and `natural=tree_row`.
-- **Safety floor:** the Green route must never send riders onto a dangerous road just because it has trees. Penalise edges whose safety score is below 5.
+- **Safety floor:** the Green route must never send riders onto a dangerous road just because it has trees. Penalise edges whose safety score is below 5. Both scores sit in the same graph, so this is a lookup.
 - Demo anchors: McClellan Ranch, Blackberry Farm, Stevens Creek Trail, Memorial Park and Linda Vista Park on the nature side; De Anza College, Main Street and Apple Park on the city side.
 
 ## 5. UI ideas (not decided)
