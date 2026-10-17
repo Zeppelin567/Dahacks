@@ -30,6 +30,7 @@ from __future__ import annotations
 import math
 import os
 from pathlib import Path
+from threading import Lock
 
 import networkx as nx
 import numpy as np
@@ -79,6 +80,7 @@ def _graph_path() -> Path:
 
 
 _G = None
+_GRAPH_LOCK = Lock()
 _NODE_IDS: list | None = None
 _NODE_XS: np.ndarray | None = None
 _NODE_YS: np.ndarray | None = None
@@ -87,21 +89,29 @@ _NODE_YS: np.ndarray | None = None
 def _load_graph():
     """启动时加载一次，常驻内存。文件不存在时给明确报错。"""
     global _G
-    if _G is None:
-        p = _graph_path()
-        if not p.exists():
-            raise RuntimeError(f"路网文件不存在: {p}，请先运行 cd py && uv run python scripts/1_build_graph.py")
-        _G = ox.load_graphml(str(p))
-    return _G
+    # FastAPI runs sync handlers in different threads. The first network and
+    # route requests arrive together: serialize initialization to avoid loading
+    # multiple GraphML trees/graphs at once on a small hosting instance.
+    with _GRAPH_LOCK:
+        if _G is None:
+            p = _graph_path()
+            if not p.exists():
+                raise RuntimeError(
+                    f"路网文件不存在: {p}，请先运行 cd py && uv run python scripts/1_build_graph.py"
+                )
+            _G = ox.load_graphml(str(p))
+        return _G
 
 
 def _nearest_node(G, lat: float, lng: float):
     """numpy 暴力最近节点（不用 sklearn；全城几万节点也只要几毫秒）。"""
     global _NODE_IDS, _NODE_XS, _NODE_YS
-    if _NODE_IDS is None or len(_NODE_IDS) != G.number_of_nodes():
-        _NODE_IDS = list(G.nodes)
-        _NODE_XS = np.array([G.nodes[n]["x"] for n in _NODE_IDS])
-        _NODE_YS = np.array([G.nodes[n]["y"] for n in _NODE_IDS])
+    with _GRAPH_LOCK:
+        if _NODE_IDS is None or len(_NODE_IDS) != G.number_of_nodes():
+            ids = list(G.nodes)
+            xs = np.array([G.nodes[n]["x"] for n in ids])
+            ys = np.array([G.nodes[n]["y"] for n in ids])
+            _NODE_IDS, _NODE_XS, _NODE_YS = ids, xs, ys
     i = int(np.argmin((_NODE_XS - lng) ** 2 + (_NODE_YS - lat) ** 2))
     return _NODE_IDS[i]
 
