@@ -76,7 +76,7 @@ export function StreetPicks({
           IDS.indexOf(a.layer.id as (typeof IDS)[number]) - IDS.indexOf(b.layer.id as (typeof IDS)[number]),
       );
       const f = hits[0] as (typeof hits)[number];
-      const p = f.properties as { reasons?: string; score?: number; level?: Level };
+      const p = f.properties as { reasons?: string; features?: string; score?: number; level?: Level };
       const at: LatLng = [e.lngLat.lat, e.lngLat.lng];
       const own: string[] = JSON.parse(p.reasons || "[]");
       let title: string;
@@ -106,6 +106,7 @@ export function StreetPicks({
         score: Number(p.score ?? 0),
         level: p.level ?? "ok",
         reasons,
+        features: p.features ? JSON.parse(p.features) : null,
         photo,
       });
     };

@@ -6,7 +6,7 @@ import type { UiMode } from "./theme";
 
 export type Hero = { them: number; us: number; unit: "" | "%"; label: string; icon: IconName };
 
-/** The headline: Modern = risky crossings fast -> ours; Nature = % under trees fast -> ours. */
+/** The headline: Modern = risky crossings; Nature = length-weighted vegetation score (%). */
 export function heroVals(ui: UiMode, r?: RouteResponse): Hero | null {
   if (!r) return null;
   const c = r.compare;
@@ -26,15 +26,15 @@ export function heroVals(ui: UiMode, r?: RouteResponse): Hero | null {
     for (const g of x.segments) {
       const len = Math.max(1, lenOfFast(g.coords));
       w += len;
-      s += g.score * len;
+      s += (g.features?.vegetation ?? g.score) * len;
     }
     return w ? (100 * s) / w : 0;
   };
   return {
-    them: Math.round(c.greenery_pct_fastest ?? pct(r.fastest)),
-    us: Math.round(c.greenery_pct_recommended ?? pct(r.recommended)),
+    them: Math.round((c.greenery_pct_fastest ?? pct(r.fastest)) * 10) / 10,
+    us: Math.round((c.greenery_pct_recommended ?? pct(r.recommended)) * 10) / 10,
     unit: "%",
-    label: "Under trees",
+    label: "Greenery",
     icon: "leaf",
   };
 }
