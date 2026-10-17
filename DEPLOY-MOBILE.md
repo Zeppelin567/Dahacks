@@ -21,3 +21,7 @@ docker run --rm -p 3000:3000 --env-file .env.production dahacks-bikemap
 ```
 
 Set BETTER_AUTH_SECRET (a random secret of at least 16 characters), BETTER_AUTH_URL and WEB_ORIGIN to your public HTTPS origin in that untracked env file. Put a TLS reverse proxy in front of port 3000. Python stays private on loopback port 8000. `/api/py/health` checks the routing process; exercise `/api/py/bikemap/places` and an actual route after deployment because the graph loads lazily.
+
+## Free instance memory
+
+The Docker entrypoint uses `api/src/map-server.ts`: it serves the same web build and public bike-map API without initializing the starter PGlite/auth/LLM stack. `npm start` still runs the original full API locally. The public map deployment does not expose starter account, CRUD or LLM APIs. Numerical libraries use one worker thread. This reduces startup overhead but does not guarantee the city graph fits within 512 MB; check memory and actual route requests after deployment.
