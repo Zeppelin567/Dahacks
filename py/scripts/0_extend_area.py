@@ -1,5 +1,8 @@
 """Step 0 (extended area): build a separate data/ext/ that grows the map beyond Cupertino.
 
+Done on 2026-10-17: the resulting data/ext/ was merged into data/, which is now the extended map.
+Rerun only to grow the map again (it would extend a fresh copy of data/ into data/ext/).
+
     cd py && uv run python scripts/0_extend_area.py
 
 data/ (the original Cupertino map) is only read, never written. On the first run the files the

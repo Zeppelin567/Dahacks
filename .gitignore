@@ -21,6 +21,9 @@ __pycache__/
 # Street View photos + raw LLM replies: never commit Google imagery to the public repo
 py/data/cache/
 py/data/ext/cache/
+# demo data bundle (contains Street View photos)
+Dahacks-demo-data/
+Dahacks-demo-data.zip
 
 # Editors / OS
 .DS_Store

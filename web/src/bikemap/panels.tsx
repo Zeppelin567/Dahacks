@@ -13,7 +13,7 @@ import {
   type SearchResult,
 } from "./api";
 import { LEVEL_COLORS, LEVEL_LABELS, type UiMode } from "./theme";
-import { formatKm, type Pin, placePoint, type TripPoint } from "./trip";
+import { formatKm, initial, type Pin, placePoint, type TripPoint } from "./trip";
 
 export function ModeSwitch({ ui, onChange }: { ui: UiMode; onChange: (m: UiMode) => void }) {
   return (
@@ -274,7 +274,7 @@ export function TripCard({
       {!collapsed && (
         <>
           <div className="grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-2">
-            <PointSelect label="From" dot="A" value={start} places={places} onChange={onStart} />
+            <PointSelect label="From" kind="start" value={start} places={places} onChange={onStart} />
             <button
               type="button"
               onClick={onSwap}
@@ -284,7 +284,7 @@ export function TripCard({
             >
               <ArrowUpDown className="size-4" />
             </button>
-            <PointSelect label="To" dot="B" value={end} places={places} onChange={onEnd} />
+            <PointSelect label="To" kind="end" value={end} places={places} onChange={onEnd} />
           </div>
           <p className="-mt-1 text-xs text-[var(--bm-muted)]">
             Click the map to start or go there. Right-click any street to see its score.
@@ -344,13 +344,13 @@ export function TripCard({
 
 function PointSelect({
   label,
-  dot,
+  kind,
   value,
   places,
   onChange,
 }: {
   label: string;
-  dot: string;
+  kind: "start" | "end";
   value?: TripPoint;
   places: Place[];
   onChange: (p: TripPoint) => void;
@@ -360,9 +360,12 @@ function PointSelect({
   return (
     <label className="flex min-w-0 items-center gap-2">
       <span
-        className={cn("bm-endpoint bm-endpoint-sm", dot === "A" ? "bm-endpoint-start" : "bm-endpoint-end")}
+        className={cn(
+          "bm-endpoint bm-endpoint-sm",
+          kind === "start" ? "bm-endpoint-start" : "bm-endpoint-end",
+        )}
       >
-        {dot}
+        {kind === "end" && initial(value?.name)}
       </span>
       <span className="sr-only">{label}</span>
       <select

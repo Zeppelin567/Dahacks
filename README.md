@@ -17,18 +17,20 @@ The whole plan is in [.plans/actualproject.md](.plans/actualproject.md): product
     ```
 
     The graph and scores are committed. Photos, raw LLM replies and keys are not.
-- Extended area (branch `bike`): the south-east strip bounded by I-280, San Tomas Aquino Rd and Prospect Rd → Hamilton Ave lives in its own folder, `py/data/ext/`. `py/data/` stays the original Cupertino map.
-  - `scripts/0_extend_area.py` copies the original files into `data/ext/` and merges the new streets in. Old edge and sample ids don't change, so every existing score carries over.
-  - Steps 1–4 and the app read `data/ext/` when `BIKEMAP_DATA=data/ext` is set (relative to `py/`). Unset means the original.
-  - `2_photos.py --only-new` keeps the copied samples as they are and checks/fetches only the new area. Run order is in the docstring of `0_extend_area.py`.
-  - App on the extended map (PowerShell): `$env:BIKEMAP_DATA="data/ext"; npm run dev:py`
+- Extended area: `py/data/` covers Cupertino plus the south-east strip bounded by I-280, San Tomas Aquino Rd and Prospect Rd → Hamilton Ave.
+  - Since 2026-10-17 it is the only map. The former `data/ext/` was merged into `data/`; every original street, sample and score is still there.
+  - `scripts/0_extend_area.py` is how the strip was added. Rerun it only to grow the map again.
+  - `BIKEMAP_DATA` (relative to `py/`) still points steps 1–4 and the app at another data folder. Leave it unset for the normal map.
 - Scoring spec (prompts, schemas, bake-off): [.plans/scoring-spec.md](.plans/scoring-spec.md)
 - Reference project (Aggie Street Smart): [referenceproject.md](referenceproject.md)
 
 ```
-npm install && npm run dev:py   # Python side-car
-npm run dev                     # http://localhost:5173/safe
+npm install
+npm run dev      # api + web + Python side-car (needs uv) → http://localhost:5173
+npm run dev:js   # api + web only, if uv isn't installed
 ```
+
+Street View photos are not in the repo. Without them the map and routes work, but the street card shows no photo.
 
 > Built on MVP_demo (github.com/blar-tw/MVP_demo, MIT), a generic starter written before the event.
 > Everything under `py/app/bikemap/`, `web/src/bikemap/` and `web/src/pages/{safe,green}-route.tsx` was built during DAHacks 5.0.

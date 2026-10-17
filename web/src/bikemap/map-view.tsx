@@ -14,7 +14,7 @@ import {
 } from "react-leaflet";
 import type { GreenLayers, LatLng, Level, Route, Segment } from "./api";
 import { LEVEL_COLORS, TILES, type UiMode } from "./theme";
-import type { Pin, TripPoint } from "./trip";
+import { initial, type Pin, type TripPoint } from "./trip";
 
 const CUPERTINO: LatLng = [37.318, -122.04];
 
@@ -389,16 +389,20 @@ function EndpointMarker({ point, kind }: { point: TripPoint; kind: "start" | "en
     () =>
       L.divIcon({
         className: "bm-pin-icon",
-        html: `<div class="bm-endpoint bm-endpoint-${kind}">${kind === "start" ? "A" : "B"}</div>`,
+        // Start = "you are here" dot; end = the destination's first letter.
+        html:
+          kind === "start"
+            ? '<div class="bm-endpoint bm-endpoint-start"></div>'
+            : `<div class="bm-endpoint bm-endpoint-end">${initial(point.name)}</div>`,
         iconSize: [28, 28],
         iconAnchor: [14, 14],
       }),
-    [kind],
+    [kind, point.name],
   );
   return (
     <Marker position={[point.lat, point.lng]} icon={icon} zIndexOffset={2000}>
       <Tooltip direction="top" offset={[0, -14]}>
-        {kind === "start" ? "From" : "To"}: {point.name}
+        {kind === "start" ? "You" : "To"}: {point.name}
       </Tooltip>
     </Marker>
   );

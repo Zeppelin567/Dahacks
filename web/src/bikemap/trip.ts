@@ -39,6 +39,11 @@ export function pinPoint(p: Pin): TripPoint {
   return { key: p.id, name: p.name, lat: p.lat, lng: p.lng };
 }
 
+// The destination marker shows the first letter of the place ("Main Street Cupertino" -> "M").
+export function initial(name?: string): string {
+  return name?.match(/[A-Za-z0-9]/)?.[0]?.toUpperCase() ?? "•";
+}
+
 export function ll(p: TripPoint): LatLng {
   return [p.lat, p.lng];
 }
