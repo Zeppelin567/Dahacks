@@ -448,7 +448,7 @@ export function MapLibreMap({
     });
   }, [view3d, maps]);
 
-  const ctx = useMemo(() => (maps ? { maps, ui, handle } : null), [maps, ui, handle]);
+  const ctx = useMemo(() => (maps ? { maps, ui, handle, view3d } : null), [maps, ui, handle, view3d]);
 
   return (
     <>

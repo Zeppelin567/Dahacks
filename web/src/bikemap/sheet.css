@@ -154,11 +154,11 @@
   background: var(--bm-line);
 }
 
-/* A. trip line */
+/* A. trip: Pip, two editable fields (From / To) like a maps app, and Swap */
 .bm-sheet .trip {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 .bm-sheet .bubble {
   width: 38px;
@@ -174,63 +174,180 @@
   width: 36px;
   height: 36px;
 }
-.bm-sheet .ft {
+.bm-trip {
   flex: 1;
   min-width: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 3px;
-  font-weight: 800;
-  font-size: 14px;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
+  column-gap: 6px;
 }
-.bm-sheet .ft .pt {
+.bm-trip-fields {
+  position: relative;
   min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* the dotted thread from the start dot to the end dot (they match the map's pins) */
+.bm-trip-fields::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  left: 16.5px;
+  top: 26px;
+  bottom: 26px;
+  border-left: 2px dotted var(--bm-ink3);
+  pointer-events: none;
+}
+.bm-tf {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 5px;
-  height: 32px;
-  margin: 0 -2px;
-  padding: 0 4px;
-  border-radius: 9px;
-  font-weight: 800;
-  transition: background-color 0.2s;
-}
-/* the start keeps its name; the destination gives way first (v3: "Infinite Loop → Cupertino L…") */
-.bm-sheet .ft .pt.from {
-  flex: 0 0 auto;
-  max-width: 56%;
-}
-.bm-sheet .ft .pt.to {
-  flex: 0 1 auto;
-}
-.bm-sheet .ft .pt:hover,
-.bm-sheet .ft .pt[data-state="open"] {
+  gap: 10px;
+  height: 38px;
+  padding: 0 5px 0 12px;
+  border-radius: 12px;
   background: var(--bm-chip);
+  box-shadow: inset 0 0 0 1.5px transparent;
+  cursor: text;
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s;
 }
-.bm-sheet .ft .pt span {
-  overflow: hidden;
-  text-overflow: ellipsis;
+.bm-tf:hover {
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--bm-ours) 40%, transparent);
 }
-.bm-sheet .ft .pt i {
+.bm-tf[data-editing],
+.bm-tf:focus-within {
+  z-index: 2; /* over the dotted thread */
+  background: var(--bm-card);
+  box-shadow:
+    inset 0 0 0 2px var(--bm-ours),
+    0 0 0 4px color-mix(in srgb, var(--bm-ours) 14%, transparent);
+}
+.bm-tf .dt {
+  position: relative;
+  z-index: 2;
   width: 11px;
   height: 11px;
   border-radius: 50%;
   border: 3px solid var(--bm-ink);
+  background: var(--bm-card);
   flex: none;
 }
-.bm-sheet .ft .pt i.e {
+.bm-tf .dt.e {
   background: var(--bm-ink);
 }
-.bm-sheet .ft .ft-arrow {
-  width: 16px;
-  height: 16px;
+.bm-tf input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--bm-ink);
+  font: 700 14.5px var(--bm-font);
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  cursor: text;
+  /* the sheet is user-select: none; iOS won't type into a field that inherits it */
+  user-select: text;
+  -webkit-user-select: text;
+}
+.bm-tf input::placeholder {
   color: var(--bm-ink3);
-  margin: 0 2px;
+  font-weight: 600;
+  opacity: 1;
+}
+.bm-tf-edit,
+.bm-tf-x {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--bm-ink3);
+  flex: none;
+  transition: color 0.2s;
+}
+.bm-tf-edit .bm-i {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2;
+}
+.bm-tf:hover .bm-tf-edit {
+  color: var(--bm-ours);
+}
+.bm-tf-x .bm-i {
+  width: 14px;
+  height: 14px;
+}
+.bm-tf-x:hover {
+  background: var(--bm-chip);
+  color: var(--bm-ink);
+}
+.bm-trip-swap {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--bm-ink2);
+  background: var(--bm-card);
+  border: 1px solid var(--bm-line);
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+.bm-trip-swap > span {
+  display: grid;
+  transition: transform 0.45s var(--bm-spring);
+}
+.bm-trip-swap:hover {
+  background: var(--bm-chip);
+  color: var(--bm-ours);
+}
+.bm-trip-swap:focus-visible {
+  outline: 2px solid var(--bm-ours);
+  outline-offset: 2px;
+}
+.bm-trip-swap:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.bm-trip-swap .bm-i {
+  width: 18px;
+  height: 18px;
+}
+.bm-trip-hint {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bm-ours) 10%, var(--bm-card));
+  color: var(--bm-ours);
+  font-size: 12.5px;
+  font-weight: 700;
+  animation: bm-picker-in 0.24s var(--bm-spring);
+}
+.bm-trip-hint .bm-i {
+  width: 15px;
+  height: 15px;
 }
 .bm-sheet .try-mini {
   display: none;
+}
+/* while a field is open its list must float over the map controls too */
+.bm-sheet:has(.bm-tf[data-editing]) {
+  z-index: 30;
 }
 
 /* B. hero */
@@ -825,12 +942,12 @@
   color: var(--bm-ours);
 }
 
-/* ---------- picker (From / To) ---------- */
+/* ---------- trip search list (opens under the From / To fields) ---------- */
 .bm-picker {
   z-index: 30;
-  width: 300px;
+  width: max(300px, var(--radix-popover-trigger-width, 300px));
   max-width: calc(100vw - 16px);
-  padding: 8px;
+  padding: 6px;
   border-radius: 18px;
   background: var(--bm-card);
   color: var(--bm-ink);
@@ -846,63 +963,47 @@
     transform: scale(0.92);
   }
 }
-.bm-picker-search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 40px;
-  padding: 0 10px;
-  border-radius: 12px;
-  background: var(--bm-chip);
-  color: var(--bm-ink3);
-}
-.bm-picker-search .bm-i {
-  width: 17px;
-  height: 17px;
-}
-.bm-picker-search input {
-  flex: 1;
-  min-width: 0;
-  height: 100%;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: var(--bm-ink);
-  font: 700 14px var(--bm-font);
-}
-.bm-picker-search input::placeholder {
-  color: var(--bm-ink3);
-}
-.bm-picker-search .clr .bm-i {
-  width: 14px;
-  height: 14px;
-}
 .bm-picker-list {
   display: flex;
   flex-direction: column;
-  max-height: 260px;
+  max-height: min(312px, calc(var(--radix-popover-content-available-height, 400px) - 56px));
   overflow-y: auto;
-  margin: 6px 0;
+  overscroll-behavior: contain;
   scrollbar-width: thin;
 }
-.bm-picker-row {
+.bm-picker .bm-picker-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 40px;
+  min-height: 42px;
   padding: 4px 8px;
   border-radius: 10px;
   text-align: left;
   font-weight: 700;
   color: var(--bm-ink);
+  flex: none;
 }
-.bm-picker-row:hover,
-.bm-picker-row:focus-visible {
+.bm-picker-row[data-active] {
   background: var(--bm-chip);
-  outline: none;
 }
-.bm-picker-row[aria-current] {
+.bm-picker-row[data-current] {
   color: var(--bm-ours);
+}
+.bm-picker-row:disabled {
+  cursor: progress;
+}
+.bm-picker-row.sep {
+  position: relative;
+  margin-bottom: 7px;
+}
+.bm-picker-row.sep::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -4px;
+  height: 1px;
+  background: var(--bm-line);
 }
 .bm-picker-row .ic {
   width: 22px;
@@ -911,6 +1012,9 @@
   flex: none;
   color: var(--bm-ink3);
   font-size: 16px;
+}
+.bm-picker-row[data-current] .ic {
+  color: var(--bm-ours);
 }
 .bm-picker-row .ic .bm-i {
   width: 17px;
@@ -923,6 +1027,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.bm-picker-row .nm mark {
+  background: none;
+  color: var(--bm-ours);
+}
 .bm-picker-row .nm small {
   display: block;
   font-size: 12px;
@@ -931,35 +1039,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.bm-picker-row .cur {
+  width: 16px;
+  height: 16px;
+  color: var(--bm-ours);
+}
 .bm-picker-note {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 8px;
+  padding: 8px 8px 4px;
   font-size: 12px;
   font-weight: 700;
   color: var(--bm-ink3);
-}
-.bm-picker-swap {
-  width: 100%;
-  height: 36px;
-  border-radius: 0 0 10px 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-weight: 700;
-  font-size: 13px;
-  color: var(--bm-ink2);
-  border-top: 1px solid var(--bm-line);
-}
-.bm-picker-swap:hover {
-  color: var(--bm-ink);
-  background: var(--bm-chip);
-}
-.bm-picker-swap .bm-i {
-  width: 16px;
-  height: 16px;
 }
 
 /* ---------- street / crossing card (inside a MapPopup with className "bm-popup bm-sc") ---------- */
@@ -1386,10 +1478,29 @@
     font-size: 38px;
   }
   .bm-sheet .trip {
-    gap: 8px;
+    gap: 6px;
   }
-  .bm-sheet .ft .ft-arrow {
-    margin: 0 1px;
+  .bm-trip {
+    column-gap: 6px;
+  }
+  .bm-tf {
+    gap: 8px;
+    padding: 0 3px 0 10px;
+  }
+  .bm-trip-fields::before {
+    left: 14.5px;
+  }
+  .bm-tf-edit,
+  .bm-tf-x {
+    width: 24px;
+  }
+  /* 16px keeps iOS from zooming the page when a field is focused */
+  .bm-tf input {
+    font-size: 16px;
+  }
+  .bm-trip-swap {
+    width: 32px;
+    height: 32px;
   }
   /* the sheet owns the bottom while More is open: the scale bar steps aside */
   .bm-app:has(.bm-sheet[data-more]) .bm-scale {
@@ -1407,8 +1518,8 @@
   .bm-sheet .try-mini {
     display: grid;
     place-items: center;
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 12px;
     background: var(--bm-chip);
     flex: none;

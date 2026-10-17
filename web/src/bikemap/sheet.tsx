@@ -1,23 +1,14 @@
-// The v3 sheet: one solid rounded surface. Trip line (Pip + From -> To pickers), the headline
+// The v3 sheet: one solid rounded surface. Trip (Pip + editable From / To fields + Swap), the headline
 // (fast way -> our way, counting up), Ours/Fast route buttons, Nature's Direct|Scenic, then a compact legend
 // row that is also the "More" expander (details: km, worst spot, named crossings, who can ride it / chips, trees, photos).
 // Desktop: floating card top-left. <=700px: bottom sheet (sets --bm-sheet-h on <html> for the map's padding).
 import "./sheet.css";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { GreenPrefs, LatLng, Place, Route, RoutePhoto, RouteResponse } from "./api";
-import {
-  crossingTags,
-  heroVals,
-  RIDERS,
-  shortName,
-  treesAlong,
-  tripName,
-  whoCanRide,
-  worstOf,
-} from "./derive";
+import { crossingTags, heroVals, RIDERS, shortName, treesAlong, whoCanRide, worstOf } from "./derive";
 import { Ico, RiderIco } from "./icons";
 import type { Crossing } from "./map/layers/shared";
-import { PointPicker } from "./panels";
+import { TripFields } from "./panels";
 import { LEVEL_COLORS, LEVEL_LABELS, type UiMode } from "./theme";
 import { useBikeTheme } from "./theme-context";
 import type { Pin, TripPoint } from "./trip";
@@ -197,49 +188,21 @@ export function Sheet(p: SheetProps) {
         }}
       />
 
-      {/* A. trip: Pip, then From -> To; each name opens its picker */}
+      {/* A. trip: Pip, then the editable From / To fields (type to search, or tap the map) and Swap */}
       <section className="trip">
         <div className="bubble">
           <img ref={pipRef} className="bm-pip" src={pip} alt="Pip" />
         </div>
-        <div className="ft">
-          <PointPicker
-            which="from"
-            value={p.start}
-            places={p.places}
-            pins={p.pins}
-            onPick={p.onStart}
-            onSwap={p.onSwap}
-            onLocate={p.onLocate}
-          >
-            <button
-              type="button"
-              className="pt from"
-              aria-label={`From ${p.start?.name ?? ""}. Change start`}
-            >
-              <i />
-              <span title={p.start?.name}>{p.start ? tripName(p.start.name) : "Start"}</span>
-            </button>
-          </PointPicker>
-          <Ico n="arrow" className="ft-arrow" />
-          <PointPicker
-            which="to"
-            value={p.end}
-            places={p.places}
-            pins={p.pins}
-            onPick={p.onEnd}
-            onSwap={p.onSwap}
-          >
-            <button
-              type="button"
-              className="pt to"
-              aria-label={`To ${p.end?.name ?? ""}. Change destination`}
-            >
-              <i className="e" />
-              <span title={p.end?.name}>{p.end ? tripName(p.end.name) : "Destination"}</span>
-            </button>
-          </PointPicker>
-        </div>
+        <TripFields
+          start={p.start}
+          end={p.end}
+          places={p.places}
+          pins={p.pins}
+          onStart={p.onStart}
+          onEnd={p.onEnd}
+          onSwap={p.onSwap}
+          onLocate={p.onLocate}
+        />
         {p.onTry && (
           <button type="button" className="try-mini" aria-label="Try it" onClick={p.onTry}>
             <Ico n="play" />
@@ -393,11 +356,9 @@ export function Legend({ ui }: { ui: UiMode }) {
         {l.ok}
       </span>
       <span>
-        <i
-          className={ui === "nature" ? "bare" : undefined}
-          style={ui === "nature" ? undefined : { background: c.bad }}
-        />
-        {ui === "nature" ? "Bare" : l.bad}
+        {/* same colours as the route lines (LEVEL_COLORS), Nature's sand included */}
+        <i style={{ background: c.bad }} />
+        {l.bad}
       </span>
     </span>
   );

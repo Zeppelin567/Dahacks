@@ -45,12 +45,12 @@
 @property --bm-good {
   syntax: "<color>";
   inherits: true;
-  initial-value: #9db2c6;
+  initial-value: #3b9677;
 }
 @property --bm-ok {
   syntax: "<color>";
   inherits: true;
-  initial-value: #edb49b;
+  initial-value: #e8a23a;
 }
 @property --bm-bad {
   syntax: "<color>";
@@ -60,7 +60,7 @@
 @property --bm-ok-text {
   syntax: "<color>";
   inherits: true;
-  initial-value: #b4532c;
+  initial-value: #a8670f;
 }
 @property --bm-btn {
   syntax: "<color>";
@@ -78,10 +78,11 @@
   --bm-ink3: #7d8a98; /* tertiary / fine print */
   --bm-ours: #2c5f8e; /* our route + accent */
   --bm-ghost: #6b7a8c; /* the fast route (ghost line) */
-  --bm-good: #9db2c6; /* calm street */
-  --bm-ok: #edb49b; /* busy street */
+  /* street levels = LEVEL_COLORS in theme.ts (route lines + legend): calm sage, busy amber, risky coral */
+  --bm-good: #3b9677; /* calm street */
+  --bm-ok: #e8a23a; /* busy street */
   --bm-bad: #d9653b; /* risky street / crossing bead */
-  --bm-ok-text: #b4532c; /* "busy" as text (contrast-safe) */
+  --bm-ok-text: #a8670f; /* "busy" as text / under white text (contrast-safe amber) */
   --bm-btn: #22476b; /* solid buttons (pressed 3D, active tile) */
   --bm-line: rgba(28, 29, 26, 0.11); /* hairlines + card borders */
   --bm-shadow: 0 1px 2px rgba(20, 32, 48, 0.08), 0 10px 28px rgba(20, 32, 48, 0.13);
@@ -122,10 +123,11 @@
   --bm-ink3: #8a8270;
   --bm-ours: #3f7d2a;
   --bm-ghost: #9a8c6e;
+  /* leafy dark green, some green light green; "bare" is sand (#cdaa72) on the lines, a text-safe brown here */
   --bm-good: #3f7d2a;
-  --bm-ok: #b5a86a;
+  --bm-ok: #8ebf4c;
   --bm-bad: #8a5a3c;
-  --bm-ok-text: #6e6430;
+  --bm-ok-text: #5e8a2c;
   --bm-btn: #2e4a22;
   --bm-shadow: 0 1px 2px rgba(40, 30, 15, 0.08), 0 10px 28px rgba(40, 30, 15, 0.14);
 }

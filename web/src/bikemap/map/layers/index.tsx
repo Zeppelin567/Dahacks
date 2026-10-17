@@ -21,6 +21,7 @@ import { GreenLayers } from "./green";
 import { NetworkLayer, useNetworks } from "./network";
 import { PhotoPins } from "./photos";
 import { StreetPicks } from "./picks";
+import { RouteTrees } from "./route-trees";
 import { RouteLayers, type RouteSel } from "./routes";
 import type { DrawEvent, MapPick } from "./shared";
 
@@ -93,6 +94,7 @@ export function MapLayers({
       <GreenLayers greenery={greenery} shade={prefs.shade ?? true} />
       <NetworkLayer greenery={greenery} quiet={prefs.quiet ?? true} />
       <RouteLayers routes={routes} sel={sel} onDraw={onDraw} />
+      <RouteTrees route={routes.nature} />
       <RouteNameMask routes={routes} />
       <CrossingBeads
         route={routes.modern}

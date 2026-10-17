@@ -47,12 +47,15 @@ export const PAL = {
       "atmosphere-blend": 0,
     },
     ours: "#2C5F8E",
-    ghost: "#6B7A8C",
+    // street network edges: calm stays a quiet blue-grey (it's most streets), busy a soft tint of the amber and risky
+    // the coral of LEVEL_COLORS in ../theme.ts, so the network reads like the legend and the route lines
     good: "#9DB2C6",
-    ok: "#EDB49B",
+    ok: "#F0C37C",
     bad: "#D9653B",
     okText: "#B4532C",
-    busy: "#E39A7B",
+    // route casings: ours in navy ink, the fast route on a white edge
+    recCase: "#173A5A",
+    fastCase: "#FFFFFF",
     routeInk: "#173A5A",
     halo2: "#FFFFFF",
     tree: "#B9CCC4",
@@ -91,12 +94,14 @@ export const PAL = {
       "atmosphere-blend": 0,
     },
     ours: "#3F7D2A",
-    ghost: "#9A8C6E",
     good: "#3F7D2A",
     ok: "#B5A86A",
     bad: "#6F6658",
     okText: "#8E8450",
-    busy: "#CBC291",
+    // route casings: ours in deep forest ink (so light green and sand still read as OUR line, not a green street
+    // edge), the fast route on a thin warm-taupe edge so its sand stretches don't melt into the cream roads
+    recCase: "#22301A",
+    fastCase: "#8A7E64",
     routeInk: "#1F1D16",
     halo2: "#FFFDF7",
     tree: "#8DB86A",

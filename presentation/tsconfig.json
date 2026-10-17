@@ -9,5 +9,6 @@
       "@mvp/shared": ["../shared/src/index.ts"]
     }
   },
-  "include": ["src", "vite.config.ts"]
+  // Only the deck. The old recreated-app files (src/bikemap, pages, demo, scenes...) are no longer imported.
+  "include": ["src/main.tsx", "src/presentation.tsx", "src/data.ts", "src/deck", "vite.config.ts"]
 }

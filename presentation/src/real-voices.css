@@ -1,0 +1,255 @@
+/* "Real riders. Real routes." Uses the deck tokens from deck/deck.css (.city mood). */
+
+.voices .vx {
+  display: flex;
+  flex-direction: column;
+}
+
+.vx-head .h {
+  margin-top: 14px;
+}
+
+.vx-grid {
+  display: grid;
+  grid-template-columns: 1.08fr 1fr;
+  gap: 18px;
+  margin-top: clamp(22px, 3.4vh, 36px);
+  align-items: stretch;
+}
+.vx-stack {
+  display: grid;
+  gap: 14px;
+}
+
+/* ---------- Card ---------- */
+.vx-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 22px 16px;
+  min-width: 0;
+}
+.vx-card.is-lead {
+  position: relative;
+  overflow: hidden;
+  padding: 26px 30px 22px;
+  gap: 14px;
+}
+/* A big soft closing quote mark in the lead card's bottom corner. */
+.vx-card.is-lead::after {
+  content: "\201D";
+  position: absolute;
+  right: 26px;
+  bottom: -150px;
+  font-size: 280px;
+  font-weight: 800;
+  line-height: 1;
+  color: #fbe9e1;
+  pointer-events: none;
+  z-index: 0;
+}
+.vx-card.is-lead > * {
+  position: relative;
+  z-index: 1;
+}
+
+.vx-top {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.vx-ava {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--chip);
+  color: var(--ink2);
+}
+.is-lead .vx-ava {
+  width: 42px;
+  height: 42px;
+  background: #fbe9e1;
+  color: var(--risky-text);
+}
+.vx-who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+.vx-who b {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vx-who small {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink3);
+}
+.is-lead .vx-who b {
+  font-size: 18px;
+}
+.is-lead .vx-who small {
+  font-size: 14px;
+}
+.vx-date {
+  margin-left: auto;
+  flex: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink3);
+}
+
+.vx-where {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px 4px 9px;
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--ink2);
+  font-size: 13px;
+  font-weight: 700;
+}
+.is-lead .vx-where {
+  background: #fbe9e1;
+  color: var(--risky-text);
+  font-size: 14px;
+  padding: 6px 13px 6px 10px;
+}
+
+.vx-quote {
+  margin: 0;
+  font-size: clamp(16px, 1.25vw, 18px);
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+.is-lead .vx-quote {
+  margin-block: auto;
+  padding: 4px 0 10px;
+  font-size: clamp(20px, 2.05vw, 30px);
+  line-height: 1.4;
+  letter-spacing: -0.005em;
+}
+
+/* "…" where words were cut. System font so it reads as a cut, not as the rounded font's centred dots. */
+.vx-cut {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  color: var(--ink3);
+}
+
+/* Highlighter that sweeps in when the slide arrives. */
+.vx-hl {
+  white-space: nowrap;
+  color: inherit;
+  background-color: transparent;
+  padding: 0 0.12em;
+  margin: 0 -0.04em;
+  border-radius: 0.3em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  background-repeat: no-repeat;
+  background-position: 0 88%;
+  background-size: 0% 46%;
+  transition: background-size 0.9s var(--ease);
+  transition-delay: calc(var(--i, 0) * 110ms + 500ms);
+}
+.vx-hl.risky {
+  color: var(--risky-text);
+  background-image: linear-gradient(#f7d5c6, #f7d5c6);
+}
+.vx-hl.calm {
+  color: var(--navy);
+  background-image: linear-gradient(#d6e3f0, #d6e3f0);
+}
+.vx-hl.green {
+  color: var(--forest-btn);
+  background-image: linear-gradient(#d8e8cc, #d8e8cc);
+}
+.slide.in .vx-hl {
+  background-size: 100% 46%;
+}
+
+.vx-foot-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+.vx-src {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink3);
+  text-decoration: none;
+  border-bottom: 1px dashed transparent;
+  transition: color 0.25s ease;
+}
+.vx-src:hover {
+  color: var(--accent);
+  border-bottom-color: currentColor;
+}
+.is-lead .vx-src {
+  margin-left: 0;
+  font-size: 13.5px;
+}
+
+/* ---------- Caption ---------- */
+.vx-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 24px;
+  flex-wrap: wrap;
+  margin-top: clamp(18px, 3vh, 30px);
+}
+.vx-caption {
+  margin: 0;
+  font-size: clamp(19px, 1.6vw, 24px);
+  font-weight: 700;
+  color: var(--ink2);
+}
+.vx-foot .vx-caption b {
+  color: var(--accent);
+  font-weight: 800;
+}
+.vx-note {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink3);
+}
+
+/* ---------- Smaller screens ---------- */
+@media (max-width: 960px) {
+  .vx-grid {
+    grid-template-columns: 1fr;
+  }
+  .vx-card.is-lead {
+    padding: 20px 20px 18px;
+  }
+  .vx-top {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vx-hl {
+    background-size: 100% 46%;
+  }
+}

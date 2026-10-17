@@ -49,6 +49,8 @@ export type BikeMapCtx = {
   maps: MapPair;
   ui: UiMode;
   handle: BikeMapHandle;
+  /** The tilted 3D view is on (the 2D/3D toggle). */
+  view3d: boolean;
 };
 
 export const MapCtx = createContext<BikeMapCtx | null>(null);

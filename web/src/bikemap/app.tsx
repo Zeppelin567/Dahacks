@@ -26,7 +26,7 @@ import { ModeSwitch } from "./switch";
 import { ENGINE_MODE, type UiMode } from "./theme";
 import { BikeRoot } from "./theme-context";
 import { type RaceState, TryTray } from "./tray";
-import { ll, placePoint, presetPin, type TripPoint } from "./trip";
+import { ll, placePoint, presetPin, type TripPoint, urlPoint, urlValue } from "./trip";
 import "./bikemap.css";
 
 /** Nature's "Scenic" sends this rural weight to /route; "Direct" sends 0. */
@@ -60,10 +60,11 @@ export function BikeApp() {
     const p = places.data?.find((x) => x.id === id);
     return p ? placePoint(p) : undefined;
   };
-  // Default trip = v3's demo ride (Infinite Loop -> Cupertino Library); ?from=<place id>&to=<place id> for other demos.
-  // an unknown id in the URL falls back to the demo trip (never a sheet stuck on "Finding your way…")
-  const start = startPick ?? preset(params.get("from") ?? "") ?? preset("infinite-loop");
-  const end = endPick ?? preset(params.get("to") ?? "") ?? preset("library");
+  // Default trip = v3's demo ride (Infinite Loop -> Cupertino Library). Both ends are editable in the sheet's fields;
+  // ?from= / ?to= take a place id (memorial-park) or "lat,lng[,name]" for other demos.
+  // an unknown value in the URL falls back to the demo trip (never a sheet stuck on "Finding your way…")
+  const start = startPick ?? urlPoint(params.get("from"), places.data ?? []) ?? preset("infinite-loop");
+  const end = endPick ?? urlPoint(params.get("to"), places.data ?? []) ?? preset("library");
 
   const [rural, setRural] = useState(params.get("direct") === "1" ? 0 : SCENIC_RURAL);
   const [prefs, setPrefs] = useState<GreenPrefs>({
@@ -93,9 +94,7 @@ export function BikeApp() {
       (prev) => {
         const q = new URLSearchParams(prev);
         for (const [k, p] of Object.entries(next) as ["from" | "to", TripPoint | undefined][]) {
-          if (!p) continue;
-          if (p.key.startsWith("preset/")) q.set(k, p.key.slice("preset/".length));
-          else q.delete(k);
+          if (p) q.set(k, urlValue(p));
         }
         return q;
       },

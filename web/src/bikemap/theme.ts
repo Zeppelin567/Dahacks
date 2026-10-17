@@ -8,10 +8,12 @@ export const UI_MODES: readonly UiMode[] = ["modern", "nature"];
 
 export const ENGINE_MODE: Record<UiMode, Mode> = { modern: "safe", nature: "green" };
 
-// Street score colours: calm → busy → risky in the city; leafy → some green → bare in Nature.
+// Street score colours, shared by the route lines (segment by segment), the street network and the legend:
+// calm → busy → risky in the city (sage green, amber, Harbor coral); leafy → some green → bare in Nature
+// (dark green, light green, sand).
 export const LEVEL_COLORS: Record<UiMode, Record<Level, string>> = {
-  modern: { good: "#9DB2C6", ok: "#EDB49B", bad: "#D9653B" },
-  nature: { good: "#86B85E", ok: "#CBC291", bad: "#A39E98" },
+  modern: { good: "#3B9677", ok: "#E8A23A", bad: "#D9653B" },
+  nature: { good: "#3F7D2A", ok: "#8EBF4C", bad: "#CDAA72" },
 };
 
 export const LEVEL_LABELS: Record<UiMode, Record<Level, string>> = {

@@ -1,13 +1,29 @@
-// Route lines (port of v3 addRoutes / drawRoutes / applySel): the fast route as a soft solid ghost line whose busy/risky
-// stretches take the warm ramp (Modern), and ours as an ink-cased coloured line with a soft breathing glow, plus
-// start/end dots. Each new route (and each mode switch) draws itself in: the fast ghost first, then ours; the
+// Route lines (port of v3 addRoutes / drawRoutes / applySel). Both routes are coloured stretch by stretch from the
+// API's segment levels (LEVEL_COLORS: calm / busy / risky in Modern, leafy / some green / bare in Nature), as one
+// line-gradient per route, so each route stays a single clean line with no seams at the joins. Ours is the primary
+// line (thick, cased in dark ink: navy in Modern, forest in Nature, with a soft breathing glow); the fast route wears
+// the same level colours thinner and softer on a light edge, so it still reads as the "other" route. A risky crossing
+// is shorter than its bead, so short risky runs are widened to a minimum screen length around the bead (re-cut when
+// the zoom settles). Each new route (and each mode switch) draws itself in: the fast route first, then ours; the
 // numbered beads and photo pins listen to the draw bus (./shared.ts) and pop in time.
 import type { ExpressionSpecification, Map as MlMap } from "maplibre-gl";
 import { useEffect, useRef } from "react";
-import type { LatLng, RouteResponse } from "../../api";
-import type { UiMode } from "../../theme";
+import type { LatLng, Level, Route, RouteResponse } from "../../api";
+import { LEVEL_COLORS, type UiMode } from "../../theme";
 import { addLayerOnce, setGeoJSON, useBikeMap, useMapLayers } from "../context";
-import { backOut, clamp, dedupe, easeIO, fc, line, point, prefersReducedMotion, tween } from "../geo";
+import {
+  backOut,
+  clamp,
+  dedupe,
+  easeIO,
+  fc,
+  line,
+  measure,
+  point,
+  prefersReducedMotion,
+  rad,
+  tween,
+} from "../geo";
 import { PAL, slot, zw } from "../style";
 import { type DrawEvent, emitDraw, racing } from "./shared";
 
@@ -16,7 +32,6 @@ export const ROUTE_LAYERS = [
   "fast-glow",
   "fast-case",
   "fast-line",
-  "fast-bad",
   "fast-hit",
   "rec-case",
   "rec-line",
@@ -24,7 +39,9 @@ export const ROUTE_LAYERS = [
   "ends",
 ] as const;
 
-export const RW = { core: zw(3.2, 7.5, 18), cas: zw(5.6, 12, 25), glow: zw(10, 22, 46) };
+export const RW = { core: zw(3.2, 7.5, 18), cas: zw(5.8, 12.5, 26), glow: zw(10, 22, 46) };
+/** The fast route: same level colours, thinner, on a narrow edge (PAL.fastCase). */
+const FW = { core: zw(2.6, 5.2, 11), cas: zw(4.6, 8.6, 17) };
 export const endR = (s: number): ExpressionSpecification => [
   "interpolate",
   ["linear"],
@@ -36,9 +53,142 @@ export const endR = (s: number): ExpressionSpecification => [
 ];
 
 const EMPTY = fc([]);
+const CLEAR = "rgba(0,0,0,0)";
+
+/** A level run starts at line-progress t (0..1) of the drawn line. */
+type Stop = [t: number, level: Level];
+type Stops = Record<RouteSel, Stop[]>;
+const NO_STOPS: Stops = { fast: [], rec: [] };
+
+/**
+ * Distance along the drawn line of the point nearest to p, searching forward from `from` metres (segments come in
+ * route order, so a route that passes the same corner twice still lands on the right pass).
+ */
+function alongFrom(ms: ReturnType<typeof measure>, p: LatLng, from: number): number {
+  const { coords, cum } = ms;
+  const k = Math.cos(rad(p[0]));
+  let best = Number.POSITIVE_INFINITY;
+  let at = from;
+  for (let i = 1; i < coords.length; i++) {
+    const c0 = cum[i - 1] as number;
+    const c1 = cum[i] as number;
+    if (c1 < from) continue;
+    const a = coords[i - 1] as LatLng;
+    const b = coords[i] as LatLng;
+    const ax = (a[1] - p[1]) * k;
+    const ay = a[0] - p[0];
+    const dx = (b[1] - p[1]) * k - ax;
+    const dy = b[0] - p[0] - ay;
+    const L = dx * dx + dy * dy;
+    const t = L ? clamp(-(ax * dx + ay * dy) / L) : 0;
+    const d = Math.hypot(ax + t * dx, ay + t * dy) * 111320;
+    if (d < best) {
+      best = d;
+      at = Math.max(from, c0 + t * (c1 - c0));
+      if (d < 1.5) break; // on the line: the first pass wins
+    }
+  }
+  return at;
+}
+
+/** A route's level runs on its drawn line, before widening, and that line's length in metres. */
+type Raw = { stops: Stop[]; total: number };
+type Raws = Record<RouteSel, Raw>;
+const NO_RAW: Raws = { fast: { stops: [], total: 0 }, rec: { stops: [], total: 0 } };
+
+/**
+ * Screen length (px) a run of a level is drawn at, at least. A risky crossing is ~25 m of street, smaller than its
+ * numbered bead, so its red is widened around the bead (a minimum symbol size, like any map) to stay visible.
+ */
+const MIN_PX: Record<UiMode, Partial<Record<Level, number>>> = { modern: { bad: 76 }, nature: {} };
+/** ...but never wider than this many metres each, so a zoomed-out route doesn't turn red end to end. */
+const MAX_WIDE_M = 240;
+
+/** Metres per screen pixel at the map's zoom and latitude (512 px tiles). */
+const mpp = (map: MlMap) => (40075016.686 * Math.cos(rad(map.getCenter().lat))) / (512 * 2 ** map.getZoom());
+
+/** Where each level run of a route starts on its drawn (deduped) line, as line-progress. Same-level runs merge. */
+export function levelStops(route: Route, drawn: LatLng[]): Raw {
+  const segs = route.segments.filter((s) => s.coords.length > 1);
+  const first = segs[0];
+  if (!first || drawn.length < 2) return { stops: [], total: 0 };
+  const ms = measure(drawn);
+  if (!ms.total) return { stops: [], total: 0 };
+  const out: Stop[] = [[0, first.level]];
+  let from = 0;
+  for (const s of segs.slice(1)) {
+    from = alongFrom(ms, s.coords[0] as LatLng, from);
+    const last = out[out.length - 1] as Stop;
+    if (s.level === last[1]) continue;
+    const t = from / ms.total;
+    if (t >= 0.9999) break;
+    if (t <= last[0] + 1e-5) last[1] = s.level;
+    else out.push([t, s.level]);
+  }
+  return { stops: out, total: ms.total };
+}
+
+/** Each run of level `lv` shorter than minM metres grows to minM around its middle (where its bead sits). */
+export function widen({ stops, total }: Raw, lv: Level, minM: number): Stop[] {
+  if (!total || minM <= 0) return stops;
+  const runs = stops.map(([a, l], i) => ({ a, b: stops[i + 1]?.[0] ?? 1, l }));
+  const wide: [number, number][] = [];
+  for (const r of runs) {
+    if (r.l !== lv || (r.b - r.a) * total >= minM) continue;
+    const mid = (r.a + r.b) / 2;
+    const h = minM / total / 2;
+    wide.push([Math.max(0, mid - h), Math.min(1, mid + h)]);
+  }
+  if (!wide.length) return stops;
+  const levelAt = (t: number): Level => {
+    if (wide.some(([a, b]) => t >= a && t < b)) return lv;
+    let l = runs[0]?.l ?? lv;
+    for (const r of runs) if (r.a <= t) l = r.l;
+    return l;
+  };
+  const cuts = [...new Set([...runs.map((r) => r.a), ...wide.flat()])]
+    .filter((t) => t < 1)
+    .sort((x, y) => x - y);
+  const out: Stop[] = [];
+  cuts.forEach((t, i) => {
+    const l = levelAt((t + (cuts[i + 1] ?? 1)) / 2);
+    if (out.at(-1)?.[1] !== l) out.push([out.length ? t : 0, l]);
+  });
+  return out;
+}
+
+/** The stops each route is painted with at this map's zoom (short risky runs widened to stay visible). */
+function stopsAt(map: MlMap, mode: UiMode, raw: Raws): Stops {
+  const px = MIN_PX[mode];
+  const k = mpp(map);
+  const draw = (r: Raw) => {
+    let s = r.stops;
+    for (const [lv, n] of Object.entries(px) as [Level, number][])
+      s = widen({ stops: s, total: r.total }, lv, Math.min(MAX_WIDE_M, Math.round((n * k) / 5) * 5));
+    return s;
+  };
+  return { fast: draw(raw.fast), rec: draw(raw.rec) };
+}
+
+/**
+ * line-gradient of a route's core: each level run in its colour (a step ramp keeps the joins crisp), cut off at p
+ * while the route draws itself in.
+ */
+function ramp(stops: Stop[], C: Record<Level, string>, p = 1): ExpressionSpecification {
+  const e: unknown[] = ["step", ["line-progress"], C[stops[0]?.[1] ?? "good"]];
+  let last = 0;
+  for (const [t, lv] of stops.slice(1)) {
+    if (t >= p) break;
+    e.push(t, C[lv]);
+    last = t;
+  }
+  if (p < 1) e.push(Math.max(clamp(p, 0.0001, 0.9999), last + 1e-6), CLEAR);
+  if (e.length < 5) e.push(1, e[2]); // a step needs at least one stop
+  return e as ExpressionSpecification;
+}
 
 function sources(r: RouteResponse | undefined) {
-  if (!r) return { fast: EMPTY, rec: EMPTY, fastSegs: EMPTY, recSegs: EMPTY, ends: EMPTY };
+  if (!r) return { fast: EMPTY, rec: EMPTY, fastSegs: EMPTY, recSegs: EMPTY, ends: EMPTY, raw: NO_RAW };
   const segs = (which: "fast" | "rec") =>
     fc(
       (which === "fast" ? r.fastest : r.recommended).segments.map((s, i) =>
@@ -46,23 +196,42 @@ function sources(r: RouteResponse | undefined) {
       ),
     );
   const rc = r.recommended.coords;
+  const fastLine = dedupe(r.fastest.coords);
+  const recLine = dedupe(rc);
   return {
-    fast: fc([line(dedupe(r.fastest.coords))]),
-    rec: fc([line(dedupe(rc))]),
+    fast: fc([line(fastLine)]),
+    rec: fc([line(recLine)]),
     fastSegs: segs("fast"),
     recSegs: segs("rec"),
     ends: rc.length
       ? fc([point(rc[0] as LatLng, { k: "s" }), point(rc[rc.length - 1] as LatLng, { k: "e" })])
       : EMPTY,
+    raw: { fast: levelStops(r.fastest, fastLine), rec: levelStops(r.recommended, recLine) } as Raws,
+  };
+}
+
+/** Paint of each route's layers: a flat colour, or "ramp" = that route's level colours. */
+function inks(mode: UiMode) {
+  const P = PAL[mode];
+  return {
+    fast: [
+      ["fast-case", P.fastCase],
+      ["fast-line", "ramp"],
+    ] as [string, string][],
+    rec: [
+      ["rec-glow", P.ours],
+      ["rec-case", P.recCase],
+      ["rec-line", "ramp"],
+    ] as [string, string][],
   };
 }
 
 function ensureLayers(map: MlMap, mode: UiMode) {
   if (map.getLayer("rec-line")) return;
   const P = PAL[mode];
+  const C = LEVEL_COLORS[mode];
   const before = slot(map, "labels");
   const round = { "line-cap": "round", "line-join": "round" } as const;
-  const fw = zw(2.8, 6, 12);
   addLayerOnce(
     map,
     {
@@ -104,12 +273,7 @@ function ensureLayers(map: MlMap, mode: UiMode) {
       type: "line",
       source: "r-fast",
       layout: round,
-      paint: {
-        "line-color": P.ghost,
-        "line-opacity": 0.22,
-        "line-width": zw(6, 11, 20),
-        "line-blur": zw(1, 2, 4),
-      },
+      paint: { "line-color": P.fastCase, "line-width": FW.cas, "line-blur": 0.5 },
     },
     before,
   );
@@ -120,23 +284,10 @@ function ensureLayers(map: MlMap, mode: UiMode) {
       type: "line",
       source: "r-fast",
       layout: round,
-      paint: { "line-width": fw, "line-color": P.ghost },
+      paint: { "line-width": FW.core, "line-color": C.good },
     },
     before,
   );
-  if (mode === "modern")
-    addLayerOnce(
-      map,
-      {
-        id: "fast-bad",
-        type: "line",
-        source: "r-fastSegs",
-        layout: round,
-        filter: ["in", ["get", "level"], ["literal", ["bad", "ok"]]],
-        paint: { "line-width": fw, "line-color": ["match", ["get", "level"], "bad", P.bad, P.busy] },
-      },
-      before,
-    );
   addLayerOnce(
     map,
     {
@@ -155,7 +306,7 @@ function ensureLayers(map: MlMap, mode: UiMode) {
       type: "line",
       source: "r-rec",
       layout: round,
-      paint: { "line-color": P.routeInk, "line-width": RW.cas },
+      paint: { "line-color": P.recCase, "line-width": RW.cas },
     },
     before,
   );
@@ -166,7 +317,7 @@ function ensureLayers(map: MlMap, mode: UiMode) {
       type: "line",
       source: "r-rec",
       layout: round,
-      paint: { "line-color": P.ours, "line-width": RW.core },
+      paint: { "line-color": C.good, "line-width": RW.core },
     },
     before,
   );
@@ -203,24 +354,32 @@ function applySel(map: MlMap, sel: RouteSel) {
   const us = sel === "rec";
   map.setPaintProperty("rec-line", "line-opacity", us ? 1 : 0.45);
   map.setPaintProperty("rec-case", "line-opacity", us ? 1 : 0.35);
-  map.setPaintProperty("fast-line", "line-opacity", us ? 0.9 : 1);
-  map.setPaintProperty("fast-case", "line-opacity", us ? 0.22 : 0.3);
-  if (map.getLayer("fast-bad")) map.setPaintProperty("fast-bad", "line-opacity", us ? 0.85 : 1);
+  map.setPaintProperty("fast-line", "line-opacity", us ? 0.8 : 1);
+  map.setPaintProperty("fast-case", "line-opacity", us ? 0.85 : 1);
   const before = us ? "rec-case" : slot(map, "labels");
-  for (const id of ["fast-case", "fast-line", "fast-bad", "fast-hit"])
-    if (map.getLayer(id)) map.moveLayer(id, before);
+  for (const id of ["fast-case", "fast-line", "fast-hit"]) if (map.getLayer(id)) map.moveLayer(id, before);
 }
 
-const grad = (map: MlMap, id: string, c: string, p: number) => {
-  if (map.getLayer(id))
-    map.setPaintProperty(id, "line-gradient", [
-      "step",
-      ["line-progress"],
-      c,
-      clamp(p, 0.0001, 0.9999),
-      "rgba(0,0,0,0)",
-    ]);
-};
+/** Paint one route layer drawn up to p (0..1): a flat colour, or the route's level ramp. */
+function paintTo(map: MlMap, mode: UiMode, id: string, ink: string, stops: Stop[], p: number) {
+  if (!map.getLayer(id)) return;
+  map.setPaintProperty(
+    id,
+    "line-gradient",
+    ink === "ramp"
+      ? ramp(stops, LEVEL_COLORS[mode], p)
+      : ["step", ["line-progress"], ink, clamp(p, 0.0001, 0.9999), CLEAR],
+  );
+}
+
+/** The finished look: level ramps on the cores, flat colours (no gradient) elsewhere. */
+function paintDone(map: MlMap, mode: UiMode, stops: Stops) {
+  const L = inks(mode);
+  for (const which of ["fast", "rec"] as const)
+    for (const [id, ink] of L[which])
+      if (ink === "ramp") paintTo(map, mode, id, ink, stops[which], 1);
+      else if (map.getLayer(id)) map.setPaintProperty(id, "line-gradient", undefined);
+}
 
 const routeKey = (r?: RouteResponse) =>
   r
@@ -261,6 +420,11 @@ export function RouteLayers({
   const st = useRef({
     tok: { modern: 0, nature: 0 } as Record<UiMode, number>,
     keys: { modern: "", nature: "" } as Record<UiMode, string>,
+    raw: { modern: NO_RAW, nature: NO_RAW } as Record<UiMode, Raws>,
+    stops: { modern: NO_STOPS, nature: NO_STOPS } as Record<UiMode, Stops>,
+    sig: { modern: "", nature: "" } as Record<UiMode, string>,
+    /** token of the draw-in running on each map (0 = none) */
+    busy: { modern: 0, nature: 0 } as Record<UiMode, number>,
     ui,
     sel,
     onDraw,
@@ -274,6 +438,16 @@ export function RouteLayers({
     if (mode === st.ui) st.onDraw?.({ mode, phase });
   };
 
+  /** Level colours for this map's zoom: repaint when they change (a running draw-in reads them live itself). */
+  const restop = (map: MlMap, mode: UiMode, force = false) => {
+    const stops = stopsAt(map, mode, st.raw[mode]);
+    const sig = JSON.stringify(stops);
+    if (!force && sig === st.sig[mode]) return;
+    st.sig[mode] = sig;
+    st.stops[mode] = stops;
+    if (!st.busy[mode] && map.getLayer("rec-line")) paintDone(map, mode, stops);
+  };
+
   async function draw(mode: UiMode) {
     const map = maps[mode];
     if (!map.getLayer("rec-line")) return;
@@ -281,31 +455,29 @@ export function RouteLayers({
     const live = () => st.tok[mode] === tok;
     await whenReady(map);
     if (!live()) return;
-    const P = PAL[mode];
-    const fastIds: [string, string][] = [
-      ["fast-case", P.ghost],
-      ["fast-line", P.ghost],
-    ];
-    const recIds: [string, string][] = [
-      ["rec-glow", P.ours],
-      ["rec-case", P.routeInk],
-      ["rec-line", P.ours],
-    ];
-    const later = ["fast-bad", "fast-glow"].filter((id) => map.getLayer(id));
+    const L = inks(mode);
+    // stops are read live, so a level update that lands mid-draw is picked up
+    const paint = (which: RouteSel, p: number) => {
+      for (const [id, ink] of L[which]) paintTo(map, mode, id, ink, st.stops[mode][which], p);
+    };
+    const later = ["fast-glow"].filter((id) => map.getLayer(id));
     if (prefersReducedMotion()) {
+      paintDone(map, mode, st.stops[mode]);
       fire(mode, "start");
       fire(mode, "ours");
       fire(mode, "done");
       return;
     }
-    for (const [id, c] of [...fastIds, ...recIds]) grad(map, id, c, 0);
+    st.busy[mode] = tok;
+    paint("fast", 0);
+    paint("rec", 0);
     for (const id of later) map.setLayoutProperty(id, "visibility", "none");
     map.setFilter("ends", ["==", ["get", "k"], "s"]);
     fire(mode, "start");
     await tween(
       650,
       (t) => {
-        if (live()) for (const [id, c] of fastIds) grad(map, id, c, t);
+        if (live()) paint("fast", t);
       },
       easeIO,
     );
@@ -315,12 +487,13 @@ export function RouteLayers({
     await tween(
       1050,
       (t) => {
-        if (live()) for (const [id, c] of recIds) grad(map, id, c, t);
+        if (live()) paint("rec", t);
       },
       easeIO,
     );
     if (!live()) return;
-    for (const [id] of [...fastIds, ...recIds]) map.setPaintProperty(id, "line-gradient", undefined);
+    st.busy[mode] = 0;
+    paintDone(map, mode, st.stops[mode]);
     map.setFilter("ends", null);
     void tween(
       480,
@@ -344,6 +517,8 @@ export function RouteLayers({
       const fresh = !map.getLayer("rec-line");
       ensureLayers(map, mode);
       if (fresh) applySel(map, st.sel);
+      st.raw[mode] = src.raw;
+      restop(map, mode, fresh);
       const k = routeKey(r);
       if (k && k !== st.keys[mode]) {
         st.keys[mode] = k;
@@ -370,6 +545,13 @@ export function RouteLayers({
     },
     [sel],
   );
+
+  // short risky runs are widened to a screen size, so re-cut the level stops once a zoom settles
+  useMapLayers((map, mode) => {
+    const h = () => restop(map, mode);
+    map.on("zoomend", h);
+    return () => map.off("zoomend", h);
+  }, []);
 
   // breathing glow on the visible map: Modern ours at 0.8 Hz, its risky stretches slower; Nature one breath / 4 s
   useEffect(() => {
@@ -402,11 +584,15 @@ export function RouteLayers({
     return () => cancelAnimationFrame(raf);
   }, [maps, st]);
 
-  // cancel any running draw on unmount
+  // cancel any running draw on unmount, and forget the drawn routes so a remount (React StrictMode's dev double
+  // mount included, which used to cancel the first draw-in for good) draws them in again
   useEffect(
     () => () => {
-      st.tok.modern++;
-      st.tok.nature++;
+      for (const m of ["modern", "nature"] as const) {
+        st.tok[m]++;
+        st.busy[m] = 0;
+        st.keys[m] = "";
+      }
     },
     [st],
   );
