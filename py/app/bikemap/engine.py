@@ -57,7 +57,7 @@ BONUS_CAP = 0.9  # bonus 总和上限，保证 α > 0
 DISQUALIFY_MULT = 10.0  # 论文：任一特征出 bonus window → α = 10·length
 STRICT_DISQUALIFY = False  # True = 论文硬模式；False = 出窗按距离加 penalty（demo 友好）
 PENALTY_MAX = 2.0  # 软模式下单个特征的最大 penalty 系数
-DETOUR_CAP = 1.5  # 加权路线超过最快路线 1.5 倍时，把 d 向 1 推一把重算（防绕路失控）
+DETOUR_CAP = 1.5  # Safe 路线最多比最快路线长 50%（plan §3）；Green 的上限随 slider 从 1.1 涨到这里
 SAFE_D_TOL = 0.5  # safe 地图的 detour tolerance（可调）
 
 GREEN_FEATURES = ["vegetation", "quiet", "shade"]
@@ -66,6 +66,27 @@ SAFE_FEATURES = ["safety"]
 # 团队硬性安全要求（论文之外）：这些路永远不进路网
 UNSAFE_HIGHWAYS = {"motorway", "trunk", "motorway_link", "trunk_link"}
 SAFETY_FLOOR = 0.2  # safety_score 低于此的边：推荐路线按论文 disqualify 处理（α = 10·length），不删边
+
+# ---- Routing weights (plan §3 felt distance). The bonus/penalty weight above only spans 0.85x-1.8x
+# on the Safe map and is not monotonic on the Green map, so plan_route uses these instead; the paper
+# functions stay for segmentation and apply_vote. Measured in routing_check/report.md.
+SAFE_LAMBDA = 3.0  # Safe: weight = length * (1 + λ*(1 - s)); s = 1.0 -> 1x, 0.5 -> 2.5x, 0.2 -> 3.4x
+CROSS_K = 1000.0  # Safe: + K*(1-j)^2 m entering a busy junction from a smaller street (j=0.2 -> 640 m)
+CROSS_POW = 2.0  # 1.0 with K = 200 is the plan's linear "k = 20 m per point"
+CROSS_MIN_RANK = 3  # only junctions whose busiest street is tertiary or busier
+CLUSTER_M = 35.0  # nodes of one divided-road junction (< 35 m apart) are charged once
+JUNCTION_ATTRS = ("junction_safety",)  # node score 0..1 written by 4_bake.py
+ALONG_RED_SIGNAL = True  # also charge riding along the busy street through a red signalised / ramp junction
+GREEN_ALPHA = 5.0  # Green: weight = length * (1 + r*(α*(1 - g) + β*[s < RED_BELOW])), monotonic in g
+GREEN_RED_BETA = 2.0
+GREEN_CROSS = 3.0  # Green: + r * this * junction cost, red (< RED_BELOW) junctions only
+RED_BELOW = 0.4  # "red" edge = safety < 0.4
+GREEN_CAP_MIN = 1.1  # Green detour cap = 1.1 at r=0 ... DETOUR_CAP at r=1
+RELAX_STEPS = (1.0, 0.5, 0.25, 0.125)  # weight strength per try; all over the cap -> fastest (always ends)
+CLASS_RANK = {
+    "motorway": 6, "motorway_link": 6, "trunk": 6, "trunk_link": 6, "primary": 5, "primary_link": 5,
+    "secondary": 4, "secondary_link": 4, "tertiary": 3, "tertiary_link": 3, "unclassified": 2,
+}  # fmt: skip  # everything else (residential, service, cycleway, path ...) = 1
 
 
 def _graph_path() -> Path:
@@ -79,9 +100,13 @@ def _graph_path() -> Path:
 
 
 _G = None
-_NODE_IDS: list | None = None
-_NODE_XS: np.ndarray | None = None
-_NODE_YS: np.ndarray | None = None
+
+# ---- Snapping: where a start / end point may attach to the graph (demo/lmgraph.py rule)
+SNAP_HIGHWAYS = {
+    "residential", "tertiary", "secondary", "primary", "unclassified", "living_street",
+    "cycleway", "path", "pedestrian", "track",
+}  # fmt: skip  # public streets and bike paths; not service roads (parking aisles, driveways) or ramps
+SNAP_NO_ACCESS = {"private", "no"}
 
 
 def _load_graph():
@@ -90,20 +115,53 @@ def _load_graph():
     if _G is None:
         p = _graph_path()
         if not p.exists():
-            raise RuntimeError(f"路网文件不存在: {p}，请先运行 cd py && uv run python scripts/1_build_graph.py")
+            raise RuntimeError(
+                f"路网文件不存在: {p}，请先运行 cd py && uv run python scripts/1_build_graph.py"
+            )
         _G = ox.load_graphml(str(p))
     return _G
 
 
+def _vals(x) -> list[str]:
+    """OSM tag value(s) as a list of strings (osmnx keeps merged ways' tags as lists)."""
+    if x is None:
+        return []
+    return [str(i) for i in x] if isinstance(x, list) else [str(x)]
+
+
+def _snap_edge_ok(d: dict) -> bool:
+    """A public street or bike path a rider can start on: not a service road (parking aisle, driveway),
+    not a ramp, freeway or expressway, not private / no-bikes."""
+    hw = set(_vals(d.get("highway")))
+    if hw & UNSAFE_HIGHWAYS or not hw & SNAP_HIGHWAYS:
+        return False
+    if any("Expressway" in n or "Freeway" in n for n in _vals(d.get("name"))):
+        return False
+    return not (set(_vals(d.get("access"))) | set(_vals(d.get("bicycle")))) & SNAP_NO_ACCESS
+
+
+def _snap_candidates(G, H) -> tuple[list, np.ndarray, np.ndarray]:
+    """Nodes a start / end may snap to: in the largest strongly connected piece of the routable view H (so
+    there is always a path both ways) and touching at least one _snap_edge_ok edge. Built once with _index."""
+    big = max(nx.strongly_connected_components(H), key=len)
+    ok = set()
+    for u, v, d in G.edges(data=True):
+        if (u in big or v in big) and _snap_edge_ok(d):
+            ok.update((u, v))
+    ids = [n for n in G.nodes if n in big and n in ok]
+    return ids, np.array([G.nodes[n]["x"] for n in ids]), np.array([G.nodes[n]["y"] for n in ids])
+
+
 def _nearest_node(G, lat: float, lng: float):
-    """numpy 暴力最近节点（不用 sklearn；全城几万节点也只要几毫秒）。"""
-    global _NODE_IDS, _NODE_XS, _NODE_YS
-    if _NODE_IDS is None or len(_NODE_IDS) != G.number_of_nodes():
-        _NODE_IDS = list(G.nodes)
-        _NODE_XS = np.array([G.nodes[n]["x"] for n in _NODE_IDS])
-        _NODE_YS = np.array([G.nodes[n]["y"] for n in _NODE_IDS])
-    i = int(np.argmin((_NODE_XS - lng) ** 2 + (_NODE_YS - lat) ** 2))
-    return _NODE_IDS[i]
+    """Nearest snap candidate (see _snap_candidates) to (lat, lng), equirectangular metres. A point in a
+    parking lot attaches to the street outside instead of the aisle; a point by an isolated stub attaches to
+    the main network, so every pair of points has a route. G is kept for callers; the index is the loaded
+    graph's."""
+    idx = _index(_load_graph())
+    ids, xs, ys = idx["snap"]
+    kx = math.cos(math.radians(lat))
+    i = int(np.argmin(((xs - lng) * kx) ** 2 + (ys - lat) ** 2))
+    return ids[i]
 
 
 def _num(d: dict, key: str) -> float | None:
@@ -179,27 +237,172 @@ def preference_weight(vec11: dict[str, float], prefs: dict[str, float], d_tol: f
     return (1.0 - d_tol) * alpha + d_tol * length
 
 
-def _make_weight(prefs: dict[str, float], d_tol: float, mode: Mode):
+def safe_factor(s01, strength: float = 1.0):
+    """Safe weight / length (felt distance). Monotonic: a safer edge never costs more. Works on arrays."""
+    return 1.0 + strength * SAFE_LAMBDA * (1.0 - s01)
+
+
+def green_factor(g01, r: float, s01, strength: float = 1.0):
+    """Green weight / length; g = mean of the enabled toggles (0..1). Monotonic in g for every r, and
+    r = 0 gives exactly length (City end of the slider = fastest). Works on arrays."""
+    return 1.0 + strength * r * (GREEN_ALPHA * (1.0 - g01) + GREEN_RED_BETA * (s01 < RED_BELOW))
+
+
+def junction_cost(j01: float) -> float:
+    """Metres added for crossing / turning onto a busier street at a junction scored j (0..1)."""
+    return CROSS_K * (1.0 - max(0.0, min(1.0, j01))) ** CROSS_POW
+
+
+def _rank(e: dict) -> int:
+    hw = e.get("highway", "")
+    if isinstance(hw, list):
+        hw = hw[0] if hw else ""
+    return CLASS_RANK.get(hw, 1)
+
+
+def _crossing(u, v, e: dict, idx: dict) -> float | None:
+    """Score (0..1) of the junction charged for entering v over edge e, or None. Charged when v's busiest
+    street is tertiary or busier and e is a smaller street (crossing it or turning onto it). Riding along
+    the busy street pays only at a red signalised or freeway-ramp junction (ALONG_RED_SIGNAL: the photo
+    prompt caps those at 3 for dual right turns, slip lanes, dropped bike lanes and ramp ends, which hit
+    through riders), once per intersection. Bike paths between quiet streets and the link inside one
+    divided-road junction pay nothing."""
+    cl = idx.get("cluster") or {}
+    c = cl.get(v)
+    if c is None or cl.get(u) == c:
+        return None
+    top, j = idx["ctop"].get(c, 0), idx["cj"].get(c)
+    if j is None or top < CROSS_MIN_RANK:
+        return None
+    if _rank(e) < top:
+        return j
+    if not (ALONG_RED_SIGNAL and j < RED_BELOW and idx["csig"].get(c)):
+        return None
+    cu = cl.get(u)
+    red_corner = idx["cj"].get(cu, 1.0) < RED_BELOW and idx["csig"].get(cu)
+    if red_corner and (_num(e, "length") or 0.0) < CLUSTER_M:
+        return None  # short link from another red corner of the same intersection: paid there
+    return j
+
+
+_IDX: dict | None = None
+
+
+def _index(G) -> dict:
+    """Built once per graph (first request, ~0.3 s): junction clusters + their crossing cost, and a collapsed
+    DiGraph H (one edge per u->v of the motorway-free view) with per-edge float arrays, so a request is
+    numpy math + Dijkstra on H instead of parsing graphml strings on every edge relaxation; plus the snap
+    candidates (idx["snap"]) that _nearest_node searches."""
+    global _IDX
+    if _IDX is not None and _IDX["gid"] == id(G):
+        return _IDX
+    top: dict = {}
+    for u, v, d in G.edges(data=True):
+        top[u] = max(top.get(u, 0), _rank(d))
+        top[v] = max(top.get(v, 0), _rank(d))
+    parent = {n: n for n in G.nodes}
+
+    def find(n):
+        while parent[n] != n:
+            parent[n] = parent[parent[n]]
+            n = parent[n]
+        return n
+
+    for u, v, d in G.edges(data=True):  # a divided road's two carriageways = one junction
+        lo = min(top.get(u, 0), top.get(v, 0))
+        if (_num(d, "length") or 0.0) < CLUSTER_M and lo >= CROSS_MIN_RANK and _rank(d) < lo:
+            parent[find(u)] = find(v)
+    cluster = {n: find(n) for n in G.nodes}
+    ctop: dict = {}
+    cj: dict = {}
+    csig: dict = {}  # junction has a signal or a freeway ramp
+    for n, nd in G.nodes(data=True):
+        c = cluster[n]
+        ctop[c] = max(ctop.get(c, 0), top.get(n, 0))
+        x = next((x for x in (_num(nd, a) for a in JUNCTION_ATTRS) if x is not None), None)
+        if x is not None:
+            cj[c] = min(cj.get(c, x), x)  # worst corner of the junction
+        if str(nd.get("signal")) == "True" or top.get(n, 0) >= CLASS_RANK["motorway"]:
+            csig[c] = True
+    idx: dict = {"gid": id(G), "cluster": cluster, "ctop": ctop, "cj": cj, "csig": csig}
+
+    pair_of: dict = {}
+    rows = []
+    for u, v, _k, d in _safety_floor_view(G).edges(keys=True, data=True):
+        p = pair_of.setdefault((u, v), len(pair_of))
+        vec01, _ = edge_feature_vector(d, "green")
+        rows.append((p, _num(d, "length") or 0.0, scoring.safety_score(d), vec01, _crossing(u, v, d, idx)))
+    rows.sort(key=lambda row: row[0])  # parallel edges next to each other for np.minimum.reduceat
+    pid = np.array([row[0] for row in rows])
+    idx["starts"] = np.flatnonzero(np.r_[True, pid[1:] != pid[:-1]])
+    idx["L"] = np.array([row[1] for row in rows])
+    idx["S"] = np.array([row[2] for row in rows])
+    J = [row[4] for row in rows]  # score of the junction charged on entry, or None
+    idx["X"] = np.array([0.0 if j is None else junction_cost(j) for j in J])
+    idx["XR"] = np.array([0.0 if j is None or j >= RED_BELOW else junction_cost(j) for j in J])  # Green
+    for f in GREEN_FEATURES:
+        idx[f] = np.array([row[3][f] for row in rows])
+    H = nx.DiGraph()
+    H.add_nodes_from(G.nodes)
+    min_len = np.minimum.reduceat(idx["L"], idx["starts"]).tolist()
+    H.add_edges_from((u, v, {"i": p, "length": min_len[p]}) for (u, v), p in pair_of.items())
+    idx["H"] = H
+    idx["snap"] = _snap_candidates(G, H)
+    _IDX = idx
+    return idx
+
+
+def _pair_costs(idx: dict, prefs: dict[str, float], d_tol: float, mode: Mode, strength: float = 1.0) -> list:
+    """Vector form of _make_weight's cost(), min over parallel edges: one cost per H edge (H[u][v]["i"])."""
+    L, s = idx["L"], idx["S"]
+    if mode == "safe":
+        c = L * safe_factor(s, strength) + strength * idx["X"]
+    else:
+        on = [f for f in GREEN_FEATURES if prefs.get(f, 0.0) != 0.0]
+        g = np.mean([idx[f] for f in on], axis=0) if on else 1.0
+        r = max(0.0, min(1.0, 1.0 - d_tol))
+        c = L * green_factor(g, r, s, strength) + strength * r * GREEN_CROSS * idx["XR"]
+    c = np.where(s < SAFETY_FLOOR, DISQUALIFY_MULT * L, c)
+    return np.minimum.reduceat(c, idx["starts"]).tolist()
+
+
+def _make_weight(prefs: dict[str, float], d_tol: float, mode: Mode, strength: float = 1.0):
     """造一个 Dijkstra 用的代价函数。
 
     注意 networkx 3.x 的坑：在 MultiDiGraph 上，weight 可调用时收到的 d
     是 {key: 边数据} 字典而不是单条边数据，这里做了防御处理：
     平行边之间取代价最小的那条（等价于先把图压成 DiGraph）。
-    """
 
-    def cost(e: dict) -> float:
+    Patched: Safe = felt distance + junction crossing cost; Green = monotonic greenness weight + red-edge
+    penalty, scaled by the slider r = 1 - d_tol. `strength` < 1 relaxes them for the detour cap. plan_route
+    runs Dijkstra on _pair_costs (same formula, vectorised); this one picks parallel edges for drawing.
+    """
+    idx = _index(_G) if _G is not None else {}
+    r = max(0.0, min(1.0, 1.0 - d_tol))
+    on = [f for f in GREEN_FEATURES if prefs.get(f, 0.0) != 0.0]  # enabled toggles (p = -5r)
+
+    def cost(e: dict, u, v) -> float:
         length = _num(e, "length") or 0.0
-        if scoring.safety_score(e) < SAFETY_FLOOR:
+        s = scoring.safety_score(e)
+        if s < SAFETY_FLOOR:
             # 安全底线（safe 和 green 都适用）：几乎不走，但边还在，
             # 所以最快路线照样能走 Lawrence，对比才看得出来；也不会把起终点孤立。
             return DISQUALIFY_MULT * length
-        _, v11 = edge_feature_vector(e, mode)
-        return preference_weight(v11, prefs, d_tol, length)
+        j = _crossing(u, v, e, idx)
+        jc = 0.0 if j is None else junction_cost(j)
+        if mode == "safe":
+            return length * safe_factor(s, strength) + strength * jc
+        g = 1.0  # no toggle on: only the red-edge / red-junction penalty is left
+        if on:
+            vec01, _ = edge_feature_vector(e, mode)
+            g = sum(vec01[f] for f in on) / len(on)
+        red_jc = jc if j is not None and j < RED_BELOW else 0.0
+        return length * green_factor(g, r, s, strength) + strength * r * GREEN_CROSS * red_jc
 
     def w(u, v, d):
         if "length" not in d:  # 平行边字典
-            return min(cost(e) for e in d.values())
-        return cost(d)
+            return min(cost(e, u, v) for e in d.values())
+        return cost(d, u, v)
 
     return w
 
@@ -228,7 +431,7 @@ def _cosine(a: list[float], b: list[float]) -> float:
     nb = math.sqrt(sum(x * x for x in b))
     if na < 1e-9 or nb < 1e-9:
         return 1.0
-    return sum(x * y for x, y in zip(a, b)) / (na * nb)
+    return sum(x * y for x, y in zip(a, b, strict=False)) / (na * nb)
 
 
 def _segment_by_similarity(edge_keys, edge_vecs11, prefs, G) -> list[list[int]]:
@@ -278,6 +481,56 @@ def _segment_by_similarity(edge_keys, edge_vecs11, prefs, G) -> list[list[int]]:
         if not merged:
             break
     return segs
+
+
+ROUTE_MIN_SEG_M = 20.0  # route pieces shorter than this join a neighbour (never a Safe red piece)
+_LEVEL_RANK = {"bad": 0, "ok": 1, "good": 2}
+_LEVEL_BAND = {"bad": (0.0, 0.32), "ok": (0.33, 0.65), "good": (0.66, 1.0)}  # rounded scores per _level
+
+
+def _segment_by_level(levels: list[Level], lengths: list[float], mode: Mode) -> list[tuple[Level, list[int]]]:
+    """Route segments for drawing: runs of consecutive edges with the same display level (_level of the
+    edge's own score), so an orange or red stretch is never averaged into a green one (the paper's cosine
+    split on the 1-D safety feature only cut where safety crossed 0.5). A run shorter than ROUTE_MIN_SEG_M
+    joins the neighbour with the closest level (ties: Safe -> the worse level, Green -> the longer run) and
+    keeps that neighbour's level; a Safe red run is never absorbed, however short.
+    Returns (level, edge indices) per segment, in route order."""
+    runs: list[tuple[Level, list[int]]] = []
+    for i, lv in enumerate(levels):
+        if runs and runs[-1][0] == lv:
+            runs[-1][1].append(i)
+        else:
+            runs.append((lv, [i]))
+
+    def run_m(r) -> float:
+        return sum(lengths[i] for i in r[1])
+
+    keep_red = mode == "safe"
+    while len(runs) > 1:
+        short = [k for k, r in enumerate(runs) if run_m(r) < ROUTE_MIN_SEG_M]
+        short = [k for k in short if not (keep_red and runs[k][0] == "bad")]
+        if not short:
+            break
+        k = min(short, key=lambda k: run_m(runs[k]))
+        rank_k = _LEVEL_RANK[runs[k][0]]
+        nbrs = [(j, runs[j]) for j in (k - 1, k + 1) if 0 <= j < len(runs)]
+        j = min(
+            nbrs,
+            key=lambda jr: (
+                abs(_LEVEL_RANK[jr[1][0]] - rank_k),
+                _LEVEL_RANK[jr[1][0]] if keep_red else -run_m(jr[1]),
+            ),
+        )[0]
+        runs[j] = (runs[j][0], sorted(runs[j][1] + runs[k][1]))
+        del runs[k]
+        merged: list[tuple[Level, list[int]]] = []  # the absorbed run may have split two same-level runs
+        for r in runs:
+            if merged and merged[-1][0] == r[0]:
+                merged[-1] = (r[0], merged[-1][1] + r[1])
+            else:
+                merged.append(r)
+        runs = merged
+    return runs
 
 
 def apply_vote(prefs: dict[str, float], seg_vec11: dict[str, float], like: bool) -> dict[str, float]:
@@ -334,53 +587,107 @@ def _green_reasons(d: dict) -> list[str]:
     return out or ["typical city street"]
 
 
-def _path_length(Gv, path) -> float:
-    return sum(float(next(iter(Gv[u][v].values()))["length"]) for u, v in zip(path[:-1], path[1:]))
+def _path_length(Gv, path, w=_length_weight) -> float:
+    """Length of the parallel edges the weight picks = the ones drawn (the old version read the first key)."""
+    pairs = zip(path[:-1], path[1:], strict=False)
+    return sum(float(Gv[u][v][_pick_key(Gv, u, v, w)]["length"]) for u, v in pairs)
+
+
+def _risky_spots(Gv, path, w, idx: dict) -> int:
+    """Safe compare count: red (< 0.4) street stretches + red intersections passed (once per junction).
+    The old count (segments whose *average* is 'bad') read 0 -> 0 on every preset: a short red piece is
+    averaged into its segment, and an intersection is not a segment at all."""
+    cl, cj, ctop = idx["cluster"], idx["cj"], idx["ctop"]
+
+    def corner(n) -> bool:
+        return cl.get(n) in cj and ctop.get(cl.get(n), 0) >= CROSS_MIN_RANK
+
+    n_red, in_run, seen = 0, False, set()
+    for i, (u, v) in enumerate(zip(path[:-1], path[1:], strict=False)):
+        d = Gv[u][v][_pick_key(Gv, u, v, w)]
+        # a short link between two corners of one intersection is counted as that junction, not a stretch
+        if not ((_num(d, "length") or 0.0) < CLUSTER_M and corner(u) and corner(v)):
+            red = scoring.safety_score(d) < RED_BELOW
+            n_red += red and not in_run
+            in_run = red
+        j = next((x for x in (_num(Gv.nodes[v], a) for a in JUNCTION_ATTRS) if x is not None), None)
+        if i < len(path) - 2 and j is not None and j < RED_BELOW and cl.get(v) not in seen:
+            seen.add(cl.get(v))
+            n_red += 1
+    return n_red
+
+
+def _detour_cap(req: RouteRequest) -> float:
+    if req.mode == "safe":
+        return DETOUR_CAP
+    r = max(0.0, min(1.0, req.rural))
+    return GREEN_CAP_MIN + (DETOUR_CAP - GREEN_CAP_MIN) * r
+
+
+def _coords_m(coords: list[LatLng]) -> float:
+    """Approximate length in metres of a (lat, lng) polyline (equirectangular; used as a weight)."""
+    return sum(
+        111_320.0 * math.hypot(b[0] - a[0], (b[1] - a[1]) * math.cos(math.radians(a[0])))
+        for a, b in zip(coords[:-1], coords[1:], strict=False)
+    )
 
 
 def _no_path() -> RuntimeError:
     return RuntimeError("起点和终点之间没有满足安全底线的可行路线")
 
 
+def _segment_reasons(infos: list, idxs: list[int], avg: float, mode: Mode) -> list[str]:
+    """Popup text of one route segment. Safe: the worst edge's reasons (lowest safety; ties -> a photo-scored
+    edge, then the longest), so the popup names the stress the colour shows. Green: the representative edge,
+    the photo-noted edge whose score is closest to the segment's mean (no photo note: the longest edge)."""
+    if mode == "safe":
+        i = min(idxs, key=lambda i: (infos[i][5], not infos[i][3].get("safety_note"), -_seg_len(infos[i])))
+        return scoring.safety_reasons(infos[i][3])
+    noted = [i for i in idxs if infos[i][3].get("green_note")]
+    if noted:
+        i = min(noted, key=lambda i: (abs(infos[i][5] - avg), -_seg_len(infos[i])))
+    else:
+        i = max(idxs, key=lambda i: _seg_len(infos[i]))
+    return _green_reasons(infos[i][3])
+
+
+def _seg_len(info) -> float:
+    return _num(info[3], "length") or 0.0
+
+
 def _build_route(Gv, path, w, prefs, mode: Mode, primary: str) -> Route:
-    """把节点 path 转成 Route：论文余弦分段 + 边几何拼接。"""
-    # 1) 逐边收集 (u,v,k,d,vec01,vec11)，平行边按 weight 决胜规则选
+    """把节点 path 转成 Route：按显示等级分段（_segment_by_level）+ 边几何拼接。"""
+    # 1) 逐边收集 (u,v,k,d,vec01,score)，平行边按 weight 决胜规则选
+    #    score = 有偏好特征的均值（没有就用 primary）
+    active = [f for f, p in prefs.items() if abs(p) >= NEUTRAL_EPS] or [primary]
     infos = []
-    for u, v in zip(path[:-1], path[1:]):
+    for u, v in zip(path[:-1], path[1:], strict=False):
         k = _pick_key(Gv, u, v, w)
         d = Gv[u][v][k]
-        vec01, vec11 = edge_feature_vector(d, mode)
-        infos.append((u, v, k, d, vec01, vec11))
-    total_m = sum(float(infos[i][3].get("length", 0)) for i in range(len(infos)))
+        vec01, _ = edge_feature_vector(d, mode)
+        infos.append((u, v, k, d, vec01, sum(vec01[f] for f in active) / len(active)))
+    lengths = [float(x[3].get("length", 0)) for x in infos]
+    total_m = sum(lengths)
 
-    # 2) 论文分段
-    seg_idx = _segment_by_similarity(
-        [(u, v, k) for (u, v, k, _, _, _) in infos],
-        [v11 for (_, _, _, _, _, v11) in infos],
-        prefs,
-        Gv,
-    )
+    # 2) 分段：显示等级一变就切段（橙 / 红不会被平均进绿段）
+    seg_idx = _segment_by_level([_level(x[5]) for x in infos], lengths, mode)
 
-    # 3) 每段拼几何 + 长度加权平均分（论文：segment statistics 取 length 加权平均）
-    active = [f for f, p in prefs.items() if abs(p) >= NEUTRAL_EPS] or [primary]
+    # 3) 每段拼几何 + 长度加权平均分，夹在本段等级的区间里（score 和 level 永远一致）
     segments: list[Segment] = []
-    full: list[LatLng] = []
-    for idxs in seg_idx:
+    full: list[LatLng] = [] if infos else [(Gv.nodes[path[0]]["y"], Gv.nodes[path[0]]["x"])]
+    for lv, idxs in seg_idx:
         coords: list[LatLng] = []
-        wsum, ssum = 0.0, 0.0
-        reasons: list[str] = []
         for i in idxs:
-            u, v, k, d, vec01, _ = infos[i]
+            u, v, _k, d, _, _ = infos[i]
             c = _edge_coords(Gv, u, v, d)
             coords.extend(c if not coords else c[1:])
             full.extend(c if not full else c[1:])
-            ln = float(d.get("length", 0)) or 1.0
-            ssum += sum(vec01[f] for f in active) / len(active) * ln
-            wsum += ln
-            if not reasons:
-                reasons = scoring.safety_reasons(d) if mode == "safe" else _green_reasons(d)
-        avg = ssum / wsum if wsum else 0.5
-        segments.append(Segment(coords=coords, score=round(avg, 2), level=_level(avg), reasons=reasons))
+        wts = [lengths[i] or 1.0 for i in idxs]
+        avg = sum(infos[i][5] * wt for i, wt in zip(idxs, wts, strict=True)) / sum(wts)
+        lo, hi = _LEVEL_BAND[lv]
+        score = min(hi, max(lo, round(avg, 2)))
+        reasons = _segment_reasons(infos, idxs, avg, mode)
+        segments.append(Segment(coords=coords, score=score, level=lv, reasons=reasons))
 
     return Route(
         coords=full,
@@ -394,6 +701,8 @@ def plan_route(req: RouteRequest) -> RouteResponse:
     """算 fastest + recommended 两条路线。mock=False，真路网 + 论文权重。"""
     G = _load_graph()
     Gv = _safety_floor_view(G)
+    idx = _index(G)
+    H = idx["H"]  # Gv collapsed to one edge per u->v; fastest and recommended both run on it
     o = _nearest_node(Gv, req.start[0], req.start[1])
     t = _nearest_node(Gv, req.end[0], req.end[1])
 
@@ -401,39 +710,41 @@ def plan_route(req: RouteRequest) -> RouteResponse:
     primary = "safety" if req.mode == "safe" else "vegetation"
 
     try:
-        p_fast = nx.shortest_path(Gv, o, t, weight=_length_weight)
+        p_fast = nx.shortest_path(H, o, t, weight="length")
     except nx.NetworkXNoPath:
-        raise _no_path()
+        raise _no_path() from None
     fast_len = _path_length(Gv, p_fast)
 
-    w = _make_weight(prefs, d_tol, req.mode)
-    try:
-        path = nx.shortest_path(Gv, o, t, weight=w)
-    except nx.NetworkXNoPath:
-        raise _no_path()
+    # detour cap：full-strength weights first, then relaxed a bounded number of times; if every try is
+    # still over the cap, recommend the fastest route (always ends).
+    cap = _detour_cap(req)
+    path, w = p_fast, _length_weight
+    for strength in RELAX_STEPS:
+        cp = _pair_costs(idx, prefs, d_tol, req.mode, strength)
+        cand = nx.shortest_path(H, o, t, weight=lambda u, v, d, cp=cp: cp[d["i"]])
+        wk = _make_weight(prefs, d_tol, req.mode, strength)
+        if _path_length(Gv, cand, wk) <= cap * fast_len + 1e-6:
+            path, w = cand, wk
+            break
 
-    # detour cap：绕太远就把 d 向 1 推（更看重距离）重算，防 rural=1 时绕路失控
-    if d_tol < 1.0 and _path_length(Gv, path) > DETOUR_CAP * fast_len:
-        w = _make_weight(prefs, min(1.0, d_tol + 0.3), req.mode)
-        path = nx.shortest_path(Gv, o, t, weight=w)
-
-    w0 = _make_weight(prefs, 1.0, req.mode)  # d=1 时 weight=length，用于 fastest 的平行边决胜
-    fastest = _build_route(Gv, p_fast, w0, prefs, req.mode, primary)
+    fastest = _build_route(Gv, p_fast, _length_weight, prefs, req.mode, primary)
     recommended = _build_route(Gv, path, w, prefs, req.mode, primary)
 
     extra = round(recommended.duration_min - fastest.duration_min, 1)
     if req.mode == "safe":
         compare = Comparison(
             extra_min=extra,
-            risky_segments_fastest=sum(s.level == "bad" for s in fastest.segments),
-            risky_segments_recommended=sum(s.level == "bad" for s in recommended.segments),
+            risky_segments_fastest=_risky_spots(Gv, p_fast, _length_weight, idx),
+            risky_segments_recommended=_risky_spots(Gv, path, w, idx),
         )
     else:
 
         def greenery_pct(r: Route) -> float:
+            # length-weighted: a plain mean over segments let a short grey stub outweigh a long green stretch
             if not r.segments:
                 return 0.0
-            return round(100 * sum(s.score for s in r.segments) / len(r.segments), 1)
+            ws = [max(1.0, _coords_m(s.coords)) for s in r.segments]
+            return round(100 * sum(s.score * w for s, w in zip(r.segments, ws, strict=True)) / sum(ws), 1)
 
         compare = Comparison(
             extra_min=extra,
@@ -445,20 +756,17 @@ def plan_route(req: RouteRequest) -> RouteResponse:
     return RouteResponse(mode=req.mode, mock=False, fastest=fastest, recommended=recommended, compare=compare)
 
 
+_NETWORK: dict[str, NetworkResponse] = {}
+
+
 def network(layer: Mode) -> NetworkResponse:
-    """全城底图：所有边按 layer 的主特征着色。mock=False。"""
-    G = _load_graph()
-    primary = "safety" if layer == "safe" else "vegetation"
-    segments = []
-    for u, v, k, d in G.edges(keys=True, data=True):
-        vec01, _ = edge_feature_vector(d, layer)
-        score = max(0.0, min(1.0, vec01[primary]))
-        segments.append(
-            Segment(
-                coords=_edge_coords(G, u, v, d),
-                score=round(score, 2),
-                level=_level(score),
-                reasons=scoring.safety_reasons(d) if layer == "safe" else _green_reasons(d),
-            )
-        )
-    return NetworkResponse(layer=layer, mock=False, segments=segments)
+    """City-wide base layer, display only: one Segment per homogeneous road section (sections.py).
+
+    Routing never reads this; plan_route keeps the per-edge baked scores. Built once per layer and cached
+    (the graph is static while the server runs)."""
+    if layer not in _NETWORK:
+        from . import sections  # lazy: sections imports engine
+
+        segs = sections.build(_load_graph(), layer)
+        _NETWORK[layer] = NetworkResponse(layer=layer, mock=False, segments=segs)
+    return _NETWORK[layer]
