@@ -5,7 +5,6 @@ import {
   MapContainer,
   Marker,
   Pane,
-  Polyline,
   Popup,
   TileLayer,
   Tooltip,
@@ -13,16 +12,35 @@ import {
   useMapEvents,
   ZoomControl,
 } from "react-leaflet";
-import type { LatLng, Level, Route, Segment } from "./api";
-import { ACCENT, LEVEL_COLORS, TILES, type UiMode } from "./theme";
+import type { GreenLayers, LatLng, Level, Route, Segment } from "./api";
+import { LEVEL_COLORS, TILES, type UiMode } from "./theme";
 import type { Pin, TripPoint } from "./trip";
 
 const CUPERTINO: LatLng = [37.318, -122.04];
+
+// Every line and area shares ONE canvas. Leaflet only hit-tests the top canvas, so a separate
+// canvas per layer made the risk streets under the route unclickable. Order, bottom to top:
+// green areas < street trees < risk streets < route < selected street.
+type Stack = {
+  green?: L.FeatureGroup;
+  trees?: L.FeatureGroup;
+  network?: L.FeatureGroup;
+  route?: L.FeatureGroup;
+  select?: L.Polyline;
+};
+
+function restack(s: Stack) {
+  s.route?.bringToFront();
+  s.select?.bringToFront();
+  s.trees?.bringToBack();
+  s.green?.bringToBack();
+}
 
 type Props = {
   ui: UiMode;
   network?: Segment[];
   showNetwork: boolean;
+  greenLayers?: GreenLayers;
   route?: Route;
   routeIsFresh: boolean;
   tripKey: string;
@@ -44,7 +62,8 @@ type Props = {
 export function MapView(props: Props) {
   const { ui, route, start, end } = props;
   const colors = LEVEL_COLORS[ui];
-  const accent = ACCENT[ui];
+  const renderer = useMemo(() => L.canvas({ pane: "bm-lines", tolerance: 6 }), []);
+  const stack = useMemo<Stack>(() => ({}), []);
 
   return (
     <MapContainer center={CUPERTINO} zoom={14} className="size-full" zoomControl={false} preferCanvas>
@@ -61,34 +80,35 @@ export function MapView(props: Props) {
         />
       ))}
       <ZoomControl position="bottomright" />
-      <ClickHandler onMapClick={props.onMapClick} />
+      <ClickHandler onMapClick={props.onMapClick} onStreetClick={props.onStreetClick} />
       <FlyTo target={props.flyTo} />
       <FitOnTrip tripKey={props.tripKey} coords={props.routeIsFresh ? route?.coords : undefined} />
 
-      <Pane name="bm-network" style={{ zIndex: 390 }}>
+      <Pane name="bm-lines" style={{ zIndex: 400 }}>
+        {props.greenLayers && <GreenLayer layers={props.greenLayers} renderer={renderer} stack={stack} />}
         {props.showNetwork && props.network && (
-          <NetworkLayer segments={props.network} colors={colors} onClick={props.onStreetClick} />
+          <NetworkLayer
+            segments={props.network}
+            colors={colors}
+            renderer={renderer}
+            stack={stack}
+            onClick={props.onStreetClick}
+          />
         )}
-      </Pane>
-
-      <Pane name="bm-route" style={{ zIndex: 420 }}>
-        <RouteLayer ui={ui} route={route} colors={colors} accent={accent} onClick={props.onStreetClick} />
-      </Pane>
-
-      <Pane name="bm-select" style={{ zIndex: 430 }}>
+        <RouteLayer
+          route={route}
+          colors={colors}
+          renderer={renderer}
+          stack={stack}
+          onClick={props.onStreetClick}
+        />
         {props.selectedCoords && (
-          <>
-            <Polyline
-              positions={props.selectedCoords}
-              interactive={false}
-              pathOptions={{ color: "#ffffff", weight: 12, opacity: 0.95, lineCap: "round" }}
-            />
-            <Polyline
-              positions={props.selectedCoords}
-              interactive={false}
-              pathOptions={{ color: accent, weight: 6, opacity: 1, lineCap: "round" }}
-            />
-          </>
+          <SelectLayer
+            coords={props.selectedCoords}
+            color={ui === "modern" ? "#eef2f7" : "#13261c"}
+            renderer={renderer}
+            stack={stack}
+          />
         )}
       </Pane>
 
@@ -129,8 +149,19 @@ export function MapView(props: Props) {
   );
 }
 
-function ClickHandler({ onMapClick }: { onMapClick: (at: LatLng | null) => void }) {
-  useMapEvents({ click: (e) => onMapClick([e.latlng.lat, e.latlng.lng]) });
+// Left click: drop a pin (start / go here). Right click (long-press on a phone): the nearest
+// street's card, in either mode, whether or not the street is coloured on the map.
+function ClickHandler({
+  onMapClick,
+  onStreetClick,
+}: {
+  onMapClick: (at: LatLng | null) => void;
+  onStreetClick: (at: LatLng) => void;
+}) {
+  useMapEvents({
+    click: (e) => onMapClick([e.latlng.lat, e.latlng.lng]),
+    contextmenu: (e) => onStreetClick([e.latlng.lat, e.latlng.lng]),
+  });
   return null;
 }
 
@@ -159,102 +190,171 @@ function FitOnTrip({ tripKey, coords }: { tripKey: string; coords?: LatLng[] }) 
   return null;
 }
 
-// ~10k streets: plain Leaflet on one canvas, not one React component per street.
+type LayerProps = { renderer: L.Canvas; stack: Stack };
+
+function streetClick(onClick: (at: LatLng) => void) {
+  return (e: L.LeafletMouseEvent) => {
+    L.DomEvent.stopPropagation(e); // a street click is not a "drop a pin here" click
+    onClick([e.latlng.lat, e.latlng.lng]);
+  };
+}
+
+// Parks and water from py/data/green_layers.json (baked by 1_build_graph.py). Street trees only
+// from zoom 15 up, where 3,000 dots read as trees instead of noise. Nothing here takes clicks.
+function GreenLayer({ layers, renderer, stack }: LayerProps & { layers: GreenLayers }) {
+  const map = useMap();
+  useEffect(() => {
+    const areas = L.featureGroup();
+    for (const ring of layers.parks)
+      L.polygon(ring, {
+        renderer,
+        interactive: false,
+        color: "#2f8f47",
+        weight: 0.8,
+        opacity: 0.45,
+        fillColor: "#46b366",
+        fillOpacity: 0.32,
+      }).addTo(areas);
+    for (const ring of layers.water)
+      L.polygon(ring, {
+        renderer,
+        interactive: false,
+        stroke: false,
+        fillColor: "#5aa9e6",
+        fillOpacity: 0.45,
+      }).addTo(areas);
+    areas.addTo(map);
+    stack.green = areas;
+
+    const trees = L.featureGroup(
+      layers.trees.map((t) =>
+        L.circleMarker(t, {
+          renderer,
+          interactive: false,
+          radius: 2.2,
+          stroke: false,
+          fillColor: "#2f8f47",
+          fillOpacity: 0.7,
+        }),
+      ),
+    );
+    const syncTrees = () => {
+      const show = map.getZoom() >= 15;
+      if (show && !map.hasLayer(trees)) {
+        trees.addTo(map);
+        stack.trees = trees;
+      } else if (!show && map.hasLayer(trees)) {
+        trees.remove();
+        stack.trees = undefined;
+      }
+      restack(stack);
+    };
+    syncTrees();
+    map.on("zoomend", syncTrees);
+    return () => {
+      map.off("zoomend", syncTrees);
+      areas.remove();
+      trees.remove();
+      stack.green = undefined;
+      stack.trees = undefined;
+    };
+  }, [map, layers, renderer, stack]);
+  return null;
+}
+
+// ~10k streets: plain Leaflet, not one React component per street.
 function NetworkLayer({
   segments,
   colors,
+  renderer,
+  stack,
   onClick,
-}: {
-  segments: Segment[];
-  colors: Record<Level, string>;
-  onClick: (at: LatLng) => void;
-}) {
+}: LayerProps & { segments: Segment[]; colors: Record<Level, string>; onClick: (at: LatLng) => void }) {
   const map = useMap();
   const onClickRef = useRef(onClick);
   onClickRef.current = onClick;
 
   useEffect(() => {
-    const renderer = L.canvas({ pane: "bm-network", tolerance: 6 });
-    const group = L.featureGroup();
-    for (const s of segments) {
-      L.polyline(s.coords, {
-        renderer,
-        pane: "bm-network",
-        color: colors[s.level],
-        weight: 2,
-        opacity: 0.5,
-      }).addTo(group);
-    }
-    group.on("click", (e: L.LeafletMouseEvent) => {
-      L.DomEvent.stopPropagation(e);
-      onClickRef.current([e.latlng.lat, e.latlng.lng]);
-    });
+    const group = L.featureGroup(
+      segments.map((s) =>
+        L.polyline(s.coords, { renderer, color: colors[s.level], weight: 2, opacity: 0.5 }),
+      ),
+    );
+    group.on(
+      "click",
+      streetClick((at) => onClickRef.current(at)),
+    );
     group.addTo(map);
+    stack.network = group;
+    restack(stack);
     return () => {
       group.remove();
-      renderer.remove();
+      stack.network = undefined;
     };
-  }, [map, segments, colors]);
+  }, [map, segments, colors, renderer, stack]);
   return null;
 }
 
 function RouteLayer({
-  ui,
   route,
   colors,
-  accent,
+  renderer,
+  stack,
   onClick,
-}: {
-  ui: UiMode;
-  route?: Route;
-  colors: Record<Level, string>;
-  accent: string;
-  onClick: (at: LatLng) => void;
-}) {
-  const renderer = useMemo(() => L.canvas({ pane: "bm-route", tolerance: 8 }), []);
-  if (!route) return null;
-  const click = {
-    click: (e: L.LeafletMouseEvent) => {
-      L.DomEvent.stopPropagation(e);
-      onClick([e.latlng.lat, e.latlng.lng]);
-    },
-  };
-  return (
-    <>
-      <Polyline
-        positions={route.coords}
-        renderer={renderer}
-        interactive={false}
-        pathOptions={{
-          color: ui === "modern" ? "#0b0d12" : "#ffffff",
-          weight: 15,
-          opacity: 0.9,
+}: LayerProps & { route?: Route; colors: Record<Level, string>; onClick: (at: LatLng) => void }) {
+  const map = useMap();
+  const onClickRef = useRef(onClick);
+  onClickRef.current = onClick;
+
+  useEffect(() => {
+    if (!route) return;
+    const group = L.featureGroup(
+      route.segments.map((seg) =>
+        L.polyline(seg.coords, {
+          renderer,
+          color: colors[seg.level],
+          weight: 7,
+          opacity: 1,
           lineCap: "round",
-        }}
-      />
-      <Polyline
-        positions={route.coords}
-        renderer={renderer}
-        interactive={false}
-        pathOptions={{ color: accent, weight: 12, opacity: 0.5, lineCap: "round" }}
-      />
-      {route.segments.map((seg) => (
-        <Polyline
-          key={`${seg.coords[0]}-${seg.coords.length}-${seg.level}`}
-          positions={seg.coords}
-          renderer={renderer}
-          eventHandlers={click}
-          pathOptions={{
-            color: colors[seg.level],
-            weight: 7,
-            opacity: 1,
-            lineCap: "round",
-            lineJoin: "round",
-          }}
-        />
-      ))}
-    </>
-  );
+          lineJoin: "round",
+        }),
+      ),
+    );
+    group.on(
+      "click",
+      streetClick((at) => onClickRef.current(at)),
+    );
+    group.addTo(map);
+    stack.route = group;
+    restack(stack);
+    return () => {
+      group.remove();
+      stack.route = undefined;
+    };
+  }, [map, route, colors, renderer, stack]);
+  return null;
+}
+
+function SelectLayer({ coords, color, renderer, stack }: LayerProps & { coords: LatLng[]; color: string }) {
+  const map = useMap();
+  useEffect(() => {
+    const line = L.polyline(coords, {
+      renderer,
+      interactive: false,
+      color,
+      weight: 8,
+      opacity: 1,
+      lineCap: "round",
+    });
+    line.addTo(map);
+    stack.select = line;
+    restack(stack);
+    return () => {
+      line.remove();
+      stack.select = undefined;
+    };
+  }, [map, coords, color, renderer, stack]);
+  return null;
 }
 
 function PinMarker({ pin, selected, onClick }: { pin: Pin; selected: boolean; onClick: (p: Pin) => void }) {
@@ -262,9 +362,11 @@ function PinMarker({ pin, selected, onClick }: { pin: Pin; selected: boolean; on
     () =>
       L.divIcon({
         className: "bm-pin-icon",
-        html: `<div class="bm-pin${selected ? " is-selected" : ""}">${pin.icon}</div>`,
-        iconSize: [34, 34],
-        iconAnchor: [17, 17],
+        html: pin.icon
+          ? `<div class="bm-pin${selected ? " is-selected" : ""}">${pin.icon}</div>`
+          : `<div class="bm-pin bm-pin-dot${selected ? " is-selected" : ""}"></div>`,
+        iconSize: pin.icon ? [34, 34] : [18, 18],
+        iconAnchor: pin.icon ? [17, 17] : [9, 9],
       }),
     [pin.icon, selected],
   );

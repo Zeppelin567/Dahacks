@@ -9,6 +9,7 @@ import {
   type Level,
   type Place,
   type Route,
+  type RoutePhoto,
   type SearchResult,
 } from "./api";
 import { LEVEL_COLORS, LEVEL_LABELS, type UiMode } from "./theme";
@@ -19,10 +20,10 @@ export function ModeSwitch({ ui, onChange }: { ui: UiMode; onChange: (m: UiMode)
     <fieldset className="bm-glass bm-switch" aria-label="Map mode">
       <span className="bm-switch-thumb" aria-hidden />
       <button type="button" aria-pressed={ui === "modern"} onClick={() => onChange("modern")}>
-        🏙️ Modern
+        Modern
       </button>
       <button type="button" aria-pressed={ui === "nature"} onClick={() => onChange("nature")}>
-        🌿 Nature
+        Nature
       </button>
     </fieldset>
   );
@@ -54,7 +55,7 @@ export function SearchBox({ pins, onPick }: { pins: Pin[]; onPick: (p: TripPoint
     remote && remote.q === q.trim()
       ? remote.rows.map((r, i) => ({
           key: `osm/${i}/${r.name}`,
-          icon: "📍",
+          icon: "",
           name: r.name,
           detail: r.detail,
           at: [r.lat, r.lng],
@@ -153,7 +154,7 @@ function SearchRow({ hit, onPick }: { hit: Hit; onPick: (h: Hit) => void }) {
       onClick={() => onPick(hit)}
       className="flex items-start gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-[var(--bm-chip)]"
     >
-      <span className="text-base leading-5">{hit.icon}</span>
+      {hit.icon && <span className="text-base leading-5">{hit.icon}</span>}
       <span className="min-w-0 flex-1">
         <span className="block truncate font-medium">{hit.name}</span>
         <span className="block truncate text-xs text-[var(--bm-muted)]">{hit.detail}</span>
@@ -211,9 +212,9 @@ export function LocateButton({ onLocate }: { onLocate: (p: TripPoint) => void })
 }
 
 const PREFS: { key: keyof GreenPrefs; label: string }[] = [
-  { key: "green", label: "🌳 Greenery" },
-  { key: "quiet", label: "🤫 Quiet" },
-  { key: "shade", label: "☀️ Shade" },
+  { key: "green", label: "Greenery" },
+  { key: "quiet", label: "Quiet" },
+  { key: "shade", label: "Shade" },
 ];
 
 export function TripCard({
@@ -254,9 +255,6 @@ export function TripCard({
   return (
     <section className="bm-glass grid gap-3 p-4">
       <header className="flex items-center gap-2">
-        <span className="text-xl" aria-hidden>
-          {appConfig.logo}
-        </span>
         <div className="min-w-0 flex-1">
           <h1 className="text-[15px] leading-tight font-semibold">{appConfig.name}</h1>
           <p className="truncate text-xs text-[var(--bm-muted)]">
@@ -289,7 +287,7 @@ export function TripCard({
             <PointSelect label="To" dot="B" value={end} places={places} onChange={onEnd} />
           </div>
           <p className="-mt-1 text-xs text-[var(--bm-muted)]">
-            Tip: click anywhere on the map to start or go there.
+            Click the map to start or go there. Right-click any street to see its score.
           </p>
 
           {ui === "nature" ? (
@@ -311,8 +309,8 @@ export function TripCard({
                 aria-label="Direct to scenic"
               />
               <div className="flex justify-between text-xs text-[var(--bm-muted)]">
-                <span>➡️ Direct</span>
-                <span>🌄 Scenic</span>
+                <span>Direct</span>
+                <span>Scenic</span>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {PREFS.map(({ key, label }) => (
@@ -375,7 +373,7 @@ function PointSelect({
           if (p) onChange(p);
         }}
       >
-        {custom && <option value={custom.key}>📍 {custom.name}</option>}
+        {custom && <option value={custom.key}>{custom.name}</option>}
         {presets.map((p) => (
           <option key={p.key} value={p.key}>
             {p.name}
@@ -416,40 +414,126 @@ export function StatsBar({
   route,
   loading,
   error,
+  photos,
+  photosLoading,
+  selectedAt,
+  onPhoto,
 }: {
   ui: UiMode;
   route?: Route;
   loading: boolean;
   error?: string;
+  photos?: RoutePhoto[];
+  photosLoading: boolean;
+  selectedAt?: LatLng | null;
+  onPhoto: (at: LatLng) => void;
 }) {
+  const showStrip = ui === "nature" && !error && (photosLoading || (photos?.length ?? 0) > 0);
+  return (
+    <div className="bm-glass grid gap-2 px-4 py-2.5 text-sm">
+      <div className="flex items-center">
+        {error ? (
+          <span className="font-medium text-[#fb3b64]">{error}</span>
+        ) : route ? (
+          <span className="flex items-center gap-2 font-medium tabular-nums">
+            {loading && <LoaderCircle className="size-3.5 animate-spin opacity-70" />}
+            {ui === "modern" ? "Safest route" : "Greenest route"}
+            <span className="text-[var(--bm-muted)]">·</span>
+            {formatKm(route.distance_m)}
+            <span className="text-[var(--bm-muted)]">·</span>
+            {Math.round(route.duration_min)} min
+          </span>
+        ) : (
+          <span className="flex items-center gap-2 text-[var(--bm-muted)]">
+            <LoaderCircle className="size-3.5 animate-spin" /> Planning your route…
+          </span>
+        )}
+      </div>
+      {showStrip && <PhotoStrip photos={photos} selectedAt={selectedAt} onPhoto={onPhoto} />}
+    </div>
+  );
+}
+
+// Nature mode: what the ride looks like, as the Street View photos Claude scored along the route.
+function PhotoStrip({
+  photos,
+  selectedAt,
+  onPhoto,
+}: {
+  photos?: RoutePhoto[];
+  selectedAt?: LatLng | null;
+  onPhoto: (at: LatLng) => void;
+}) {
+  const colors = LEVEL_COLORS.nature;
+  const leafy = photos?.filter((p) => p.detail.level === "good").length ?? 0;
+  return (
+    <div className="grid gap-1.5 border-t border-[var(--bm-border)] pt-2">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="bm-label">Along the way</span>
+        {photos && photos.length > 0 && (
+          <span className="text-xs text-[var(--bm-muted)]">
+            {leafy} of {photos.length} stops leafy
+          </span>
+        )}
+      </div>
+      <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+        {photos
+          ? photos.map((p) => {
+              const d = p.detail;
+              const on = !!selectedAt && selectedAt[0] === p.at[0] && selectedAt[1] === p.at[1];
+              return (
+                <button
+                  key={d.photo?.url ?? p.at.join()}
+                  type="button"
+                  onClick={() => onPhoto(p.at)}
+                  className={cn("bm-thumb", on && "is-on")}
+                  title={`${d.name}: ${d.note ?? ""}`}
+                >
+                  {d.photo && <img src={d.photo.url} alt={`Street View of ${d.name}`} loading="lazy" />}
+                  <span className="bm-thumb-score">
+                    <i style={{ background: colors[d.level] }} />
+                    {d.score10.toFixed(1)}
+                  </span>
+                </button>
+              );
+            })
+          : ["a", "b", "c", "d", "e"].map((k) => <span key={k} className="bm-thumb bm-thumb-loading" />)}
+      </div>
+    </div>
+  );
+}
+
+// Bottom-left corner, apart from the route bar. Nature mode also explains the park/water fills.
+export function Legend({ ui }: { ui: UiMode }) {
   const colors = LEVEL_COLORS[ui];
   const labels = LEVEL_LABELS[ui];
   return (
-    <div className="bm-glass flex flex-wrap items-center gap-x-4 gap-y-1.5 px-4 py-2.5 text-sm">
-      {error ? (
-        <span className="font-medium text-[#fb3b64]">{error}</span>
-      ) : route ? (
-        <span className="flex items-center gap-2 font-medium tabular-nums">
-          {loading && <LoaderCircle className="size-3.5 animate-spin opacity-70" />}
-          {ui === "modern" ? "🛡️ Safest route" : "🌿 Greenest route"}
-          <span className="text-[var(--bm-muted)]">·</span>
-          {formatKm(route.distance_m)}
-          <span className="text-[var(--bm-muted)]">·</span>
-          {Math.round(route.duration_min)} min
+    <div className="bm-glass grid gap-1.5 px-3 py-2.5 text-xs">
+      <span className="bm-label">{ui === "modern" ? "Street safety" : "Street greenery"}</span>
+      {(Object.keys(labels) as Level[]).map((lvl) => (
+        <span key={lvl} className="flex items-center gap-2">
+          <span className="inline-block h-1.5 w-5 rounded-full" style={{ background: colors[lvl] }} />
+          {labels[lvl]}
         </span>
-      ) : (
-        <span className="flex items-center gap-2 text-[var(--bm-muted)]">
-          <LoaderCircle className="size-3.5 animate-spin" /> Planning your route…
-        </span>
-      )}
-      <span className="flex items-center gap-3 text-xs text-[var(--bm-muted)]">
-        {(Object.keys(labels) as Level[]).map((lvl) => (
-          <span key={lvl} className="flex items-center gap-1.5">
-            <span className="inline-block h-1.5 w-5 rounded-full" style={{ background: colors[lvl] }} />
-            {labels[lvl]}
+      ))}
+      {ui === "nature" && (
+        <>
+          <span className="flex items-center gap-2">
+            <span
+              className="inline-block h-3 w-5 rounded-sm"
+              style={{ background: "rgba(70, 179, 102, 0.45)" }}
+            />
+            Park
           </span>
-        ))}
-      </span>
+          <span className="flex items-center gap-2">
+            <span
+              className="inline-block h-3 w-5 rounded-sm"
+              style={{ background: "rgba(90, 169, 230, 0.55)" }}
+            />
+            Water
+          </span>
+        </>
+      )}
     </div>
   );
 }

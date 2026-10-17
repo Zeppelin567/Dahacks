@@ -31,5 +31,3 @@ export const LEVEL_LABELS: Record<UiMode, Record<Level, string>> = {
   modern: { good: "Safe", ok: "Caution", bad: "Risky" },
   nature: { good: "Leafy", ok: "Some green", bad: "Concrete" },
 };
-
-export const ACCENT: Record<UiMode, string> = { modern: "#22d3ee", nature: "#059669" };

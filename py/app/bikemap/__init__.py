@@ -15,6 +15,8 @@ from .models import (
     Mode,
     NetworkResponse,
     Place,
+    RoutePhoto,
+    RoutePhotosRequest,
     RouteRequest,
     RouteResponse,
     SearchResult,
@@ -52,6 +54,12 @@ def street_detail(lat: float, lng: float, mode: Mode) -> StreetDetail:
     if detail is None:
         raise HTTPException(status_code=404, detail="No street within 60 m of that point")
     return detail
+
+
+@router.post("/route-photos", response_model=list[RoutePhoto])
+def route_photos(req: RoutePhotosRequest) -> list[RoutePhoto]:
+    """Street View photos spread along a route, for the Nature-mode preview strip."""
+    return street.route_photos(req.coords, req.mode, req.count)
 
 
 @router.get("/photo/{name}")

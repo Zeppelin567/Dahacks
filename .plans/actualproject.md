@@ -241,8 +241,10 @@ Terry builds all of it. Code lives in `web/src/bikemap/`; Hong Zhe's prototype (
 | U10 | Dropped | Recent-visits drawer, "live status" pill, GPS permission overlay. |
 | U11 | Name | "BikeMap Cupertino" for now. |
 | U12 | Demo | Local only. |
+| U13 | Green areas | Nature mode fills parks green and water blue from `py/data/green_layers.json` (757 parks, 40 water bodies, baked by `1_build_graph.py`). Street trees show as dots from zoom 15 up. No glow on routes, pins or buttons, and no emoji except on nature-spot pins. |
+| U14 | Photo strip | In Nature mode the bottom bar shows 5 Street View photos spread along the route, each with its greenery score and a "x of 5 stops leafy" count. Clicking a photo opens that street's card. Backend: `POST /bikemap/route-photos` (`street.route_photos`), which reuses the same cached photos Claude scored. |
 
-**Parked:** headline comparison numbers (after path planning) and extras: parks/water overlay, city-wide greenery layer, crash dots, 👍/👎 voting, storyboard, multiple routes.
+**Parked:** headline comparison numbers (after path planning) and extras: city-wide greenery layer, crash dots, 👍/👎 voting, multiple routes.
 
 ## 6. Not decided yet
 

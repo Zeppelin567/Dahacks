@@ -5,25 +5,25 @@ export type TripPoint = { key: string; name: string; lat: number; lng: number };
 
 export type Pin = Destination;
 
-// Modern-mode pins are the presets. The backend only knows id/name/coords; the look lives here.
-const PRESET_LOOK: Record<string, { icon: string; label: string; description: string }> = {
-  deanza: { icon: "🎓", label: "Campus", description: "De Anza College, where DAHacks happens" },
-  "main-street": { icon: "🛍️", label: "Downtown", description: "Shops and restaurants on Main Street" },
-  "apple-park": { icon: "🏢", label: "Workplace", description: "Apple Park Visitor Center" },
-  library: { icon: "📚", label: "Civic", description: "Library, City Hall and Civic Center" },
-  "memorial-park": { icon: "🌳", label: "Park", description: "The city's central park" },
-  "monta-vista": { icon: "🏫", label: "School", description: "Monta Vista High School" },
-  rancho: { icon: "🥾", label: "Trailhead", description: "Rancho San Antonio trailhead" },
+// Modern-mode pins are the presets. The backend only knows id/name/coords; the labels live here.
+const PRESET_LOOK: Record<string, { label: string; description: string }> = {
+  deanza: { label: "Campus", description: "De Anza College, where DAHacks happens" },
+  "main-street": { label: "Downtown", description: "Shops and restaurants on Main Street" },
+  "apple-park": { label: "Workplace", description: "Apple Park Visitor Center" },
+  library: { label: "Civic", description: "Library, City Hall and Civic Center" },
+  "memorial-park": { label: "Park", description: "The city's central park" },
+  "monta-vista": { label: "School", description: "Monta Vista High School" },
+  rancho: { label: "Trailhead", description: "Rancho San Antonio trailhead" },
 };
 
 export function presetPin(p: Place): Pin {
-  const look = PRESET_LOOK[p.id] ?? { icon: "📍", label: "Place", description: "" };
+  const look = PRESET_LOOK[p.id] ?? { label: "Place", description: "" };
   return {
     id: `preset/${p.id}`,
     name: p.name,
     lat: p.lat,
     lng: p.lng,
-    icon: look.icon,
+    icon: "", // only nature spots carry an icon; city places are plain dots
     category_label: look.label,
     description: look.description,
     score: null,

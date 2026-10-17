@@ -90,7 +90,6 @@
   width: calc(50% - 4px);
   border-radius: 999px;
   background: var(--bm-accent);
-  box-shadow: 0 0 18px var(--bm-accent-soft);
   transition:
     transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
     background-color 0.5s ease;
@@ -109,7 +108,8 @@
 }
 .bm-left,
 .bm-right,
-.bm-bottom {
+.bm-bottom,
+.bm-legend {
   pointer-events: auto;
 }
 .bm-top {
@@ -155,7 +155,69 @@
   bottom: 14px;
   left: 50%;
   transform: translateX(-50%);
-  max-width: calc(100% - 140px);
+  max-width: calc(100% - 340px);
+}
+.bm-legend {
+  position: absolute;
+  bottom: 14px;
+  left: 12px;
+}
+.bm-bottom-area {
+  display: contents;
+}
+
+/* ---- Nature-mode photo strip ---- */
+.bm-thumb {
+  position: relative;
+  flex: none;
+  width: 104px;
+  height: 68px;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid var(--bm-border);
+  background: var(--bm-chip);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.bm-thumb:hover {
+  transform: translateY(-2px);
+}
+.bm-thumb.is-on {
+  outline: 2px solid var(--bm-accent);
+  outline-offset: 1px;
+}
+.bm-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.bm-thumb-score {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.62);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.bm-thumb-score i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.bm-thumb-loading {
+  animation: bm-pulse 1.2s ease-in-out infinite;
+}
+@keyframes bm-pulse {
+  50% {
+    opacity: 0.45;
+  }
 }
 
 @media (max-width: 860px) {
@@ -189,11 +251,30 @@
     max-height: 55%;
     z-index: 2;
   }
-  .bm-bottom {
+  /* Phones: legend stacked above the route bar, whatever height the bar has. */
+  .bm-bottom-area {
+    position: absolute;
     left: 12px;
     right: 64px;
+    bottom: 14px;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .bm-bottom,
+  .bm-legend {
+    position: static;
     transform: none;
-    max-width: none;
+    max-width: 100%;
+  }
+  .bm-bottom {
+    width: 100%;
+  }
+  .bm-thumb {
+    width: 84px;
+    height: 56px;
   }
 }
 
@@ -273,7 +354,6 @@
   background: var(--bm-accent);
   border-color: var(--bm-accent);
   color: var(--bm-accent-fg);
-  box-shadow: 0 0 16px var(--bm-accent-soft);
 }
 .bm-btn-lg {
   padding: 10px 14px;
@@ -343,10 +423,8 @@
   height: 34px;
   border-radius: 50%;
   background: var(--bm-glass-strong);
-  border: 2px solid var(--bm-accent);
-  box-shadow:
-    0 0 0 4px var(--bm-accent-soft),
-    var(--bm-shadow);
+  border: 1px solid var(--bm-border);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
   font-size: 17px;
   line-height: 1;
   cursor: pointer;
@@ -360,6 +438,18 @@
 .bm-pin.is-selected {
   background: var(--bm-accent);
   transform: scale(1.15);
+}
+/* City places: a plain dot, no icon (only nature spots get one). */
+.bm-pin.bm-pin-dot {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--bm-glass-strong);
+  background: var(--bm-accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+}
+.bm-pin.bm-pin-dot.is-selected {
+  border-color: var(--bm-fg);
+  transform: scale(1.3);
 }
 .bm-endpoint {
   display: grid;

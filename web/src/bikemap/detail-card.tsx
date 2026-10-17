@@ -134,14 +134,16 @@ export function PinCard({
   return (
     <CardShell onClose={onClose}>
       <header className="flex items-center gap-3 pr-6">
-        <div className="bm-pin is-selected shrink-0 text-xl" style={{ width: 44, height: 44 }}>
-          {pin.icon}
-        </div>
+        {pin.icon && (
+          <div className="bm-pin is-selected shrink-0 text-xl" style={{ width: 44, height: 44 }}>
+            {pin.icon}
+          </div>
+        )}
         <div className="min-w-0">
           <h2 className="leading-tight font-semibold">{pin.name}</h2>
           <div className="mt-1 flex flex-wrap gap-1.5">
             <span className="bm-chip bm-chip-accent">{pin.category_label}</span>
-            {pin.score != null && <span className="bm-chip">🌿 {pin.score}/100</span>}
+            {pin.score != null && <span className="bm-chip">Green score {pin.score}/100</span>}
             {dist != null && <span className="bm-chip">{formatKm(dist)} away</span>}
           </div>
         </div>

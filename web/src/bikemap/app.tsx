@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router";
 import { bikemap, type GreenPrefs, type LatLng } from "./api";
 import { PinCard, StreetCard } from "./detail-card";
 import { MapView } from "./map-view";
-import { LocateButton, ModeSwitch, SearchBox, StatsBar, TripCard } from "./panels";
+import { Legend, LocateButton, ModeSwitch, SearchBox, StatsBar, TripCard } from "./panels";
 import { ENGINE_MODE, type UiMode } from "./theme";
 import { ll, type Pin, pinPoint, placePoint, presetPin, type TripPoint } from "./trip";
 import "./bikemap.css";
@@ -52,6 +52,13 @@ export function BikeApp() {
     return [...cityPins, ...naturePins].filter((p) => !seen.has(p.name) && seen.add(p.name));
   }, [cityPins, naturePins]);
 
+  // Parks, water and street trees for Nature mode (one ~300 kB file, fetched once).
+  const greenLayers = useQuery({
+    queryKey: ["bikemap", "green-layers"],
+    queryFn: bikemap.greenLayers,
+    staleTime: Infinity,
+  });
+
   const network = useQuery({
     queryKey: ["bikemap", "network", "safe"],
     queryFn: () => bikemap.network("safe"),
@@ -72,6 +79,19 @@ export function BikeApp() {
       }),
     enabled: !!start && !!end,
     placeholderData: (prev) => prev, // keep the old line on screen while the slider moves
+  });
+
+  // Nature mode's photo strip, refetched only when the route line itself changes.
+  const rec = route.data?.recommended;
+  const routeKey = rec
+    ? `${rec.distance_m}|${rec.coords.length}|${rec.coords[0]}|${rec.coords.at(-1)}`
+    : null;
+  const photos = useQuery({
+    queryKey: ["bikemap", "route-photos", mode, routeKey],
+    queryFn: () => bikemap.routePhotos((rec as NonNullable<typeof rec>).coords, mode, 5),
+    enabled: ui === "nature" && !!rec,
+    staleTime: Infinity,
+    placeholderData: (prev) => prev,
   });
 
   const streetAt = selection?.kind === "street" ? selection.at : null;
@@ -108,6 +128,7 @@ export function BikeApp() {
           ui={ui}
           network={network.data?.segments}
           showNetwork={ui === "modern" && showRisk}
+          greenLayers={ui === "nature" ? greenLayers.data : undefined}
           route={route.data?.recommended}
           routeIsFresh={!route.isPlaceholderData}
           tripKey={tripKey}
@@ -185,7 +206,9 @@ export function BikeApp() {
                 ui={ui}
                 detail={street.data}
                 loading={street.isFetching}
-                error={street.isError ? "No street within 60 m of that spot." : undefined}
+                error={
+                  street.isError ? "No scored street here. BikeMap covers Cupertino streets only." : undefined
+                }
                 onClose={() => setSelection(null)}
               />
             ) : (
@@ -202,8 +225,26 @@ export function BikeApp() {
           </div>
         )}
 
-        <div className="bm-bottom">
-          <StatsBar ui={ui} route={route.data?.recommended} loading={route.isFetching} error={routeError} />
+        <div className="bm-bottom-area">
+          <div className="bm-bottom">
+            <StatsBar
+              ui={ui}
+              route={route.data?.recommended}
+              loading={route.isFetching}
+              error={routeError}
+              photos={photos.data}
+              photosLoading={photos.isFetching && !photos.data}
+              selectedAt={streetAt}
+              onPhoto={(at) => {
+                setClickAt(null);
+                setSelection({ kind: "street", at });
+              }}
+            />
+          </div>
+
+          <div className="bm-legend">
+            <Legend ui={ui} />
+          </div>
         </div>
       </div>
     </div>

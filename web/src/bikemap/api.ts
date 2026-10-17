@@ -66,6 +66,12 @@ export type DestinationsResponse = { source: "live_osm_overpass" | "fallback"; d
 
 export type SearchResult = { name: string; detail: string; lat: number; lng: number };
 
+/** One stop of the Nature-mode photo strip: where it is and what its street card shows. */
+export type RoutePhoto = { at: LatLng; detail: StreetDetail };
+
+/** Baked by 1_build_graph.py: park and water rings, street-tree points. All [lat, lng]. */
+export type GreenLayers = { parks: LatLng[][]; water: LatLng[][]; trees: LatLng[] };
+
 const BASE = "/api/py/bikemap";
 
 export const bikemap = {
@@ -79,6 +85,13 @@ export const bikemap = {
     }).then((r) => unwrap<RouteResponse>(r)),
   street: (at: LatLng, mode: Mode) =>
     fetch(`${BASE}/street?lat=${at[0]}&lng=${at[1]}&mode=${mode}`).then((r) => unwrap<StreetDetail>(r)),
+  routePhotos: (coords: LatLng[], mode: Mode, count = 5) =>
+    fetch(`${BASE}/route-photos`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ coords, mode, count }),
+    }).then((r) => unwrap<RoutePhoto[]>(r)),
+  greenLayers: () => fetch(`${BASE}/green-layers`).then((r) => unwrap<GreenLayers>(r)),
   destinations: () => fetch(`${BASE}/destinations`).then((r) => unwrap<DestinationsResponse>(r)),
   search: (q: string) =>
     fetch(`${BASE}/search?q=${encodeURIComponent(q)}`).then((r) => unwrap<SearchResult[]>(r)),

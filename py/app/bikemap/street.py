@@ -7,6 +7,7 @@ picture and the sentence under it always match. Photos come from the local Stree
 
 from __future__ import annotations
 
+import bisect
 import json
 import math
 import re
@@ -15,7 +16,7 @@ from pathlib import Path
 import numpy as np
 
 from . import engine, scoring
-from .models import LatLng, Mode, Photo, StreetDetail
+from .models import LatLng, Mode, Photo, RoutePhoto, StreetDetail
 
 DATA = Path(__file__).resolve().parents[2] / "data"
 PHOTO_DIR = DATA / "cache" / "streetview"
@@ -218,6 +219,43 @@ def street_detail(lat: float, lng: float, mode: Mode) -> StreetDetail | None:
         streetview_url=_streetview_url(pano, heading, (lat, lng)),
         coords=coords,
     )
+
+
+def route_photos(coords: list[LatLng], mode: Mode, count: int = 5) -> list[RoutePhoto]:
+    """Photos spread evenly along a route: the "how green is this ride" preview strip.
+
+    Probes 4x more points than needed, keeps the ones whose street was scored from a photo
+    (one stop per photo), then picks `count` of them evenly from start to end.
+    """
+    if len(coords) < 2:
+        return []
+    idx = _get_index()
+    xy = [idx._xy(la, ln) for la, ln in coords]
+    cum = [0.0]
+    for (x1, y1), (x2, y2) in zip(xy[:-1], xy[1:], strict=True):
+        cum.append(cum[-1] + math.hypot(x2 - x1, y2 - y1))
+    total = cum[-1]
+    if total <= 0:
+        return []
+
+    probes = max(count * 4, 12)
+    seen: set[str] = set()
+    found: list[RoutePhoto] = []
+    for i in range(probes):
+        target = total * (i + 0.5) / probes
+        j = min(max(bisect.bisect_left(cum, target), 1), len(coords) - 1)
+        t = (target - cum[j - 1]) / ((cum[j] - cum[j - 1]) or 1.0)
+        lat = coords[j - 1][0] + t * (coords[j][0] - coords[j - 1][0])
+        lng = coords[j - 1][1] + t * (coords[j][1] - coords[j - 1][1])
+        d = street_detail(lat, lng, mode)
+        if d is None or d.photo is None or d.photo.url in seen:
+            continue
+        seen.add(d.photo.url)
+        found.append(RoutePhoto(at=(round(lat, 6), round(lng, 6)), detail=d))
+    if len(found) <= count:
+        return found
+    step = len(found) / count
+    return [found[int(k * step + step / 2)] for k in range(count)]
 
 
 def photo_path(name: str) -> Path | None:

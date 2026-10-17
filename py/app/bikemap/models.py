@@ -137,3 +137,16 @@ class SearchResult(BaseModel):
     detail: str
     lat: float
     lng: float
+
+
+class RoutePhotosRequest(BaseModel):
+    coords: list[LatLng] = Field(description="The route's line, as returned in Route.coords")
+    mode: Mode
+    count: int = Field(default=5, ge=1, le=8)
+
+
+class RoutePhoto(BaseModel):
+    """One stop of the photo strip under the route: where it is and what the street card would show."""
+
+    at: LatLng
+    detail: StreetDetail
