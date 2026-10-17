@@ -4,12 +4,28 @@ import { CountUp, reducedMotion, useInView } from "./parts";
 
 /**
  * Real Street View photos drift in from around the slide and settle into a slow ring.
- * The middle counts up to the number of photos Claude read.
+ * The middle counts up to the number of photos Claude read (8,931 Cupertino + 5,610 extended area = 14,541).
  */
-export function PhotoRing({ photos }: { photos: PhotoSample[] }) {
+export function PhotoRing({
+  photos,
+  count = FACTS.photosTotal,
+  caption = "street photos",
+  sub,
+  max = 18,
+  className = "",
+}: {
+  photos: PhotoSample[];
+  count?: number;
+  caption?: string;
+  /** Optional small line under the caption. */
+  sub?: string;
+  /** How many photos ride the ring. */
+  max?: number;
+  className?: string;
+}) {
   const [stage, seen] = useInView<HTMLDivElement>(0.35);
   const ring = useRef<HTMLDivElement>(null);
-  const picks = photos.filter((_, i) => i % 3 === 0).slice(0, 18);
+  const picks = photos.filter((_, i) => i % 3 === 0).slice(0, max);
 
   useEffect(() => {
     const el = ring.current;
@@ -42,7 +58,7 @@ export function PhotoRing({ photos }: { photos: PhotoSample[] }) {
   }, [seen]);
 
   return (
-    <div className="ring-stage" ref={stage}>
+    <div className={`ring-stage ${className}`} ref={stage}>
       <div className="ring" ref={ring}>
         {picks.map((p) => (
           <figure className="ring-card" key={p.src}>
@@ -51,8 +67,9 @@ export function PhotoRing({ photos }: { photos: PhotoSample[] }) {
         ))}
       </div>
       <div className="ring-center">
-        <CountUp to={FACTS.photosTotal} ms={2600} className="ring-num" />
-        <span className="ring-cap">street photos</span>
+        <CountUp to={count} ms={2600} className="ring-num" />
+        <span className="ring-cap">{caption}</span>
+        {sub && <span className="ring-sub">{sub}</span>}
       </div>
     </div>
   );
