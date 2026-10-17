@@ -10,6 +10,7 @@
 }
 .hw .lead {
   margin: 0;
+  max-width: none;
 }
 .hw-split {
   display: grid;
@@ -855,13 +856,20 @@
   white-space: nowrap;
 }
 .hw-team {
-  width: 46px;
-  height: 46px;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 10px;
   border-radius: 14px;
-  display: grid;
-  place-items: center;
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   color: var(--accent);
+}
+.hw-team em {
+  font-style: normal;
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
 }
 .hw-map-col {
   display: flex;
@@ -988,7 +996,7 @@
 
 /* ---------- STEP 4 · Felt distance ---------- */
 .hw-felt-slide .hw-split {
-  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
 }
 .hw-felt {
   padding: 18px 20px 16px;
@@ -1054,7 +1062,8 @@
   border-top: 2px dashed var(--line);
 }
 .hw-formula {
-  display: block;
+  display: grid;
+  gap: 2px;
   padding: 9px 12px;
   border-radius: 12px;
   background: var(--bg);
@@ -1095,7 +1104,7 @@
   position: relative;
   padding: 14px;
 }
-.hw-example svg {
+.hw-example > svg {
   display: block;
   width: 100%;
   height: auto;
@@ -1160,6 +1169,58 @@
 }
 .hw-example-legend .ln.ours {
   background: var(--navy);
+}
+
+.hw-formula span {
+  white-space: pre;
+}
+.hw-formula i {
+  font-style: normal;
+  font-family: var(--font);
+  font-weight: 700;
+  color: var(--ink3);
+}
+
+/* ---------- Short screens (720p projectors) ---------- */
+@media (max-height: 800px) {
+  .hw-read .hw-pipe {
+    margin-top: 12px;
+  }
+  .hw-read .hw-in,
+  .hw-read .hw-out {
+    padding: 12px;
+    gap: 9px;
+  }
+  .hw-read .hw-json {
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .hw-read .hw-score {
+    font-size: 40px;
+  }
+  .hw-read .hw-pair figure {
+    max-height: 26vh;
+  }
+  .hw-read .hw-facts .chip {
+    padding: 5px 10px;
+    font-size: 14px;
+  }
+  .hw-rider-text,
+  .hw-green-call {
+    padding: 5px 10px;
+    font-size: 13px;
+  }
+  .hw-read .hw-notes {
+    margin-top: 12px;
+  }
+  .hw-note {
+    padding: 9px 12px;
+    font-size: 14px;
+  }
+  .hw-formula {
+    font-size: 12.5px;
+  }
 }
 
 /* ---------- Smaller screens ---------- */

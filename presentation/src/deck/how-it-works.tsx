@@ -306,8 +306,8 @@ export function EveryStreetSlide() {
                 <MapPin size={17} />
               </i>
               <span>
-                <b>A dot every {FACTS.sampleEveryM} m</b>
-                <small>and at every junction</small>
+                <b>Every {FACTS.sampleEveryM} m</b>
+                <small>a photo stop, plus every junction</small>
               </span>
             </li>
             <li>
@@ -456,7 +456,7 @@ export function ReadingStreetSlide() {
           <span className="hw-note rv" style={d(9)}>
             <Gauge size={17} />
             <span>
-              <b>LTS</b>, the traffic engineers’ stress scale: 1 = a child could ride it, 4 = only the fearless
+              <b>LTS</b> = traffic stress: 1 a child could ride it, 4 only the fearless
             </span>
           </span>
           <span className="hw-note rv" style={d(10)}>
@@ -628,11 +628,12 @@ export function SpotsToStreetsSlide() {
             </div>
             <div className="hw-row card rv" style={d(5)}>
               <span className="hw-team">
-                <Users size={22} />
+                <Users size={20} />
+                <em>Set by the team</em>
               </span>
               <p>
                 <b>5 team-set scores,</b> on streets we ride.
-                <small>Each one says “set by the team”.</small>
+                <small>Labelled that way on the map.</small>
               </p>
             </div>
           </div>
@@ -670,7 +671,7 @@ const FELT_ROWS: { score: string; label: string; felt: string; w: number; level:
 function FeltScale() {
   return (
     <div className="hw-felt card rv" style={d(3)}>
-      <span className="hw-felt-head">100 m of street feels like…</span>
+      <span className="hw-felt-head">100 m of street feels like:</span>
       {FELT_ROWS.map((r, i) => (
         <div className="hw-felt-row" key={r.score}>
           <span className="hw-pill" style={{ background: SAFE_COLORS[r.level] }}>
@@ -697,7 +698,10 @@ function FeltScale() {
         <span className="hw-felt-val">+ 490 m</span>
       </div>
       <code className="hw-formula">
-        felt = length × (1 + 3 × (1 − safety)) + 1000 m × (1 − junction)²
+        <span>felt = length × (1 + 3 × (1 − safety))</span>
+        <span>
+          {"     "}+ 1000 m × (1 − junction)² <i>at a busy crossing</i>
+        </span>
       </code>
     </div>
   );
@@ -729,7 +733,7 @@ function FeltExample() {
             !
           </text>
         </g>
-        <text x="30" y="214" className="hw-svg-small">
+        <text x="88" y="160" textAnchor="end" className="hw-svg-small">
           3/10 crossing
         </text>
         <circle cx="100" cy="40" r="9" fill="#fff" stroke="var(--ink)" strokeWidth="4" />
