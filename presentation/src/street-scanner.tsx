@@ -368,7 +368,7 @@ export default function StreetScanner() {
               <div className="bs-metric-item">
                 <div className="bs-metric-header">
                   <span className="bs-metric-label">
-                    <Flower2 size={14} style={{ color: "#a3e635" }} />
+                    <Flower2 size={14} style={{ color: "#2e4a22" }} />
                     Living Plants & Flora
                   </span>
                   <span className="bs-metric-val bs-val-lime">{animatedFlora}%</span>
@@ -390,7 +390,7 @@ export default function StreetScanner() {
               <div className="bs-metric-item">
                 <div className="bs-metric-header">
                   <span className="bs-metric-label">
-                    <Waves size={14} style={{ color: "#38bdf8" }} />
+                    <Waves size={14} style={{ color: "#2c5f8e" }} />
                     Quietness & Creek Water
                   </span>
                   <span className="bs-metric-val bs-val-blue">{animatedWater}%</span>
@@ -455,7 +455,7 @@ export default function StreetScanner() {
                     <span className="bs-db-cell-val" style={{ color: "var(--bs-emerald)" }}>
                       {sample.trees}%
                     </span>
-                    <span className="bs-db-cell-val" style={{ color: "#a3e635" }}>
+                    <span className="bs-db-cell-val" style={{ color: "#2e4a22" }}>
                       {sample.flora}%
                     </span>
                     <span className="bs-db-cell-commit">
@@ -525,7 +525,7 @@ export default function StreetScanner() {
 
             <div className="bs-eval-score-card bs-card-dijkstra">
               <span className="bs-eval-metric-name">Dijkstra Cost Weight</span>
-              <strong className="bs-eval-score" style={{ color: "#34d399" }}>
+              <strong className="bs-eval-score" style={{ color: "#2e4a22" }}>
                 1.14×
               </strong>
               <small>Recommended Route</small>

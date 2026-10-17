@@ -31,21 +31,21 @@ export function PathfindingDecisionDiagram() {
             <defs>
               {/* Gradients */}
               <linearGradient id="gradDanger" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#f87171" stopOpacity="0.85" />
-                <stop offset="50%" stopColor="#ef4444" stopOpacity="1" />
-                <stop offset="100%" stopColor="#dc2626" stopOpacity="0.85" />
+                <stop offset="0%" stopColor="#d9653b" stopOpacity="0.85" />
+                <stop offset="50%" stopColor="#d9653b" stopOpacity="1" />
+                <stop offset="100%" stopColor="#d9653b" stopOpacity="0.85" />
               </linearGradient>
 
               <linearGradient id="gradSafe" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.9" />
-                <stop offset="50%" stopColor="#22d3ee" stopOpacity="1" />
-                <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.9" />
+                <stop offset="0%" stopColor="#2c5f8e" stopOpacity="0.9" />
+                <stop offset="50%" stopColor="#2c5f8e" stopOpacity="1" />
+                <stop offset="100%" stopColor="#2c5f8e" stopOpacity="0.9" />
               </linearGradient>
 
               <linearGradient id="gradNature" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#34d399" stopOpacity="0.9" />
-                <stop offset="50%" stopColor="#10b981" stopOpacity="1" />
-                <stop offset="100%" stopColor="#059669" stopOpacity="0.9" />
+                <stop offset="0%" stopColor="#3f7d2a" stopOpacity="0.9" />
+                <stop offset="50%" stopColor="#3f7d2a" stopOpacity="1" />
+                <stop offset="100%" stopColor="#3f7d2a" stopOpacity="0.9" />
               </linearGradient>
 
               {/* Glowing Filters */}
@@ -71,7 +71,7 @@ export function PathfindingDecisionDiagram() {
               <path
                 d="M 40 0 L 0 0 0 40"
                 fill="none"
-                stroke="rgba(255, 255, 255, 0.04)"
+                stroke="rgba(29, 43, 58, 0.04)"
                 strokeWidth="1"
               />
             </pattern>
@@ -81,13 +81,13 @@ export function PathfindingDecisionDiagram() {
             <path
               d="M 160 205 C 280 205, 340 75, 530 75 C 720 75, 780 205, 900 205"
               fill="none"
-              stroke="rgba(248, 113, 113, 0.3)"
+              stroke="rgba(217, 101, 59, 0.3)"
               strokeWidth="11"
             />
             <path
               d="M 160 205 C 280 205, 340 75, 530 75 C 720 75, 780 205, 900 205"
               fill="none"
-              stroke="#f87171"
+              stroke="#d9653b"
               strokeWidth="4.5"
               strokeDasharray="8 6"
               className="bs-anim-pulse-red"
@@ -97,13 +97,13 @@ export function PathfindingDecisionDiagram() {
             <path
               d="M 160 205 L 900 205"
               fill="none"
-              stroke="rgba(34, 211, 238, 0.35)"
+              stroke="rgba(44, 95, 142, 0.35)"
               strokeWidth="12"
             />
             <path
               d="M 160 205 L 900 205"
               fill="none"
-              stroke="#22d3ee"
+              stroke="#2c5f8e"
               strokeWidth="5"
               strokeDasharray="8 6"
               className="bs-anim-pulse-cyan"
@@ -113,13 +113,13 @@ export function PathfindingDecisionDiagram() {
             <path
               d="M 160 205 C 280 205, 340 335, 530 335 C 720 335, 780 205, 900 205"
               fill="none"
-              stroke="rgba(52, 211, 153, 0.3)"
+              stroke="rgba(63, 125, 42, 0.3)"
               strokeWidth="11"
             />
             <path
               d="M 160 205 C 280 205, 340 335, 530 335 C 720 335, 780 205, 900 205"
               fill="none"
-              stroke="#34d399"
+              stroke="#3f7d2a"
               strokeWidth="4.5"
               strokeDasharray="8 6"
               className="bs-anim-pulse-emerald"
@@ -133,8 +133,8 @@ export function PathfindingDecisionDiagram() {
                 width="490"
                 height="72"
                 rx="10"
-                fill="rgba(24, 18, 20, 0.94)"
-                stroke="rgba(248, 113, 113, 0.75)"
+                fill="rgba(255, 255, 255, 0.94)"
+                stroke="rgba(217, 101, 59, 0.75)"
                 strokeWidth="1.5"
               />
               {/* Badge Pill */}
@@ -144,14 +144,14 @@ export function PathfindingDecisionDiagram() {
                 width="195"
                 height="18"
                 rx="4"
-                fill="rgba(239, 68, 68, 0.22)"
-                stroke="rgba(239, 68, 68, 0.55)"
+                fill="rgba(217, 101, 59, 0.22)"
+                stroke="rgba(217, 101, 59, 0.55)"
               />
               <text
                 x="-132"
                 y="-15"
                 textAnchor="middle"
-                fill="#f87171"
+                fill="#d9653b"
                 fontSize="9"
                 fontWeight="800"
                 letterSpacing="0.06em"
@@ -162,7 +162,7 @@ export function PathfindingDecisionDiagram() {
               <text
                 x="-230"
                 y="8"
-                fill="#ffffff"
+                fill="#1d2b3a"
                 fontSize="13"
                 fontWeight="700"
               >
@@ -172,7 +172,7 @@ export function PathfindingDecisionDiagram() {
                 x="230"
                 y="8"
                 textAnchor="end"
-                fill="#f87171"
+                fill="#d9653b"
                 fontSize="10.5"
                 fontWeight="700"
                 fontFamily="monospace"
@@ -182,7 +182,7 @@ export function PathfindingDecisionDiagram() {
               <text
                 x="-230"
                 y="25"
-                fill="#fda4af"
+                fill="#d9653b"
                 fontSize="10"
                 fontFamily="monospace"
               >
@@ -198,8 +198,8 @@ export function PathfindingDecisionDiagram() {
                 width="500"
                 height="72"
                 rx="10"
-                fill="rgba(12, 22, 32, 0.94)"
-                stroke="rgba(34, 211, 238, 0.85)"
+                fill="rgba(255, 255, 255, 0.94)"
+                stroke="rgba(44, 95, 142, 0.85)"
                 strokeWidth="1.8"
               />
               {/* Badge Pill */}
@@ -209,14 +209,14 @@ export function PathfindingDecisionDiagram() {
                 width="240"
                 height="18"
                 rx="4"
-                fill="rgba(34, 211, 238, 0.22)"
-                stroke="rgba(34, 211, 238, 0.65)"
+                fill="rgba(44, 95, 142, 0.22)"
+                stroke="rgba(44, 95, 142, 0.65)"
               />
               <text
                 x="-115"
                 y="-15"
                 textAnchor="middle"
-                fill="#38bdf8"
+                fill="#2c5f8e"
                 fontSize="9"
                 fontWeight="800"
                 letterSpacing="0.06em"
@@ -227,7 +227,7 @@ export function PathfindingDecisionDiagram() {
               <text
                 x="-235"
                 y="8"
-                fill="#ffffff"
+                fill="#1d2b3a"
                 fontSize="13"
                 fontWeight="700"
               >
@@ -237,7 +237,7 @@ export function PathfindingDecisionDiagram() {
                 x="235"
                 y="8"
                 textAnchor="end"
-                fill="#22d3ee"
+                fill="#2c5f8e"
                 fontSize="10.5"
                 fontWeight="700"
                 fontFamily="monospace"
@@ -247,7 +247,7 @@ export function PathfindingDecisionDiagram() {
               <text
                 x="-235"
                 y="25"
-                fill="#67e8f9"
+                fill="#2c5f8e"
                 fontSize="10"
                 fontFamily="monospace"
               >
@@ -263,8 +263,8 @@ export function PathfindingDecisionDiagram() {
                 width="500"
                 height="72"
                 rx="10"
-                fill="rgba(12, 28, 20, 0.94)"
-                stroke="rgba(52, 211, 153, 0.85)"
+                fill="rgba(255, 255, 255, 0.94)"
+                stroke="rgba(63, 125, 42, 0.85)"
                 strokeWidth="1.8"
               />
               {/* Badge Pill */}
@@ -274,14 +274,14 @@ export function PathfindingDecisionDiagram() {
                 width="255"
                 height="18"
                 rx="4"
-                fill="rgba(52, 211, 153, 0.22)"
-                stroke="rgba(52, 211, 153, 0.65)"
+                fill="rgba(63, 125, 42, 0.22)"
+                stroke="rgba(63, 125, 42, 0.65)"
               />
               <text
                 x="-107"
                 y="-15"
                 textAnchor="middle"
-                fill="#34d399"
+                fill="#3f7d2a"
                 fontSize="9"
                 fontWeight="800"
                 letterSpacing="0.06em"
@@ -292,7 +292,7 @@ export function PathfindingDecisionDiagram() {
               <text
                 x="-235"
                 y="8"
-                fill="#ffffff"
+                fill="#1d2b3a"
                 fontSize="13"
                 fontWeight="700"
               >
@@ -302,7 +302,7 @@ export function PathfindingDecisionDiagram() {
                 x="235"
                 y="8"
                 textAnchor="end"
-                fill="#34d399"
+                fill="#3f7d2a"
                 fontSize="10.5"
                 fontWeight="700"
                 fontFamily="monospace"
@@ -312,7 +312,7 @@ export function PathfindingDecisionDiagram() {
               <text
                 x="-235"
                 y="25"
-                fill="#6ee7b7"
+                fill="#3f7d2a"
                 fontSize="10"
                 fontFamily="monospace"
               >
@@ -322,24 +322,24 @@ export function PathfindingDecisionDiagram() {
 
             {/* Origin Node A */}
             <g transform="translate(130, 205)">
-              <circle r="34" fill="rgba(34, 211, 238, 0.1)" stroke="var(--bs-cyan)" strokeWidth="2" />
+              <circle r="34" fill="rgba(44, 95, 142, 0.1)" stroke="var(--bs-cyan)" strokeWidth="2" />
               <circle r="8" fill="var(--bs-cyan)" />
-              <text x="0" y="-44" textAnchor="middle" fill="#fafafa" fontSize="13" fontWeight="800">
+              <text x="0" y="-44" textAnchor="middle" fill="#1d2b3a" fontSize="13" fontWeight="800">
                 [NODE A] START
               </text>
-              <text x="0" y="52" textAnchor="middle" fill="#a1a1aa" fontSize="11" fontFamily="monospace">
+              <text x="0" y="52" textAnchor="middle" fill="#4b5a6a" fontSize="11" fontFamily="monospace">
                 4199 Hamilton Ave
               </text>
             </g>
 
             {/* Destination Node B */}
             <g transform="translate(930, 205)">
-              <circle r="34" fill="rgba(52, 211, 153, 0.1)" stroke="var(--bs-emerald)" strokeWidth="2" />
+              <circle r="34" fill="rgba(63, 125, 42, 0.1)" stroke="var(--bs-emerald)" strokeWidth="2" />
               <circle r="8" fill="var(--bs-emerald)" />
-              <text x="0" y="-44" textAnchor="middle" fill="#fafafa" fontSize="13" fontWeight="800">
+              <text x="0" y="-44" textAnchor="middle" fill="#1d2b3a" fontSize="13" fontWeight="800">
                 [NODE B] END
               </text>
-              <text x="0" y="52" textAnchor="middle" fill="#a1a1aa" fontSize="11" fontFamily="monospace">
+              <text x="0" y="52" textAnchor="middle" fill="#4b5a6a" fontSize="11" fontFamily="monospace">
                 De Anza College
               </text>
             </g>

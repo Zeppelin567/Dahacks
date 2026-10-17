@@ -207,7 +207,7 @@ export function BikeApp() {
                 detail={street.data}
                 loading={street.isFetching}
                 error={
-                  street.isError ? "No scored street here. BikeScape covers Cupertino streets only." : undefined
+                  street.isError ? "No scored street here. BikeMap covers Cupertino streets only." : undefined
                 }
                 onClose={() => setSelection(null)}
               />

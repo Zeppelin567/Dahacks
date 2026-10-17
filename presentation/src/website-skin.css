@@ -1,0 +1,49 @@
+/* Website look for Hong Zhe's deck: the same palettes and type as the BikeScape website
+   (web/src/bikemap/theme.css). Modern "Harbor" = navy + coral on #EEF1F4, Nature = greens on cream.
+   Colour and type only: the deck's sections, order, layout and text are unchanged. */
+
+html,
+body {
+  background: #eef1f4;
+}
+
+.bs-showcase {
+  background: #eef1f4;
+  color: #1d2b3a;
+}
+
+/* The Modern ↔ Nature slider thumb has inline neon gradients; give it the website's solid buttons. */
+.bs-scroll-slider-thumb {
+  background: #22476b !important;
+  border-color: #22476b !important;
+  box-shadow: 0 1px 2px rgba(20, 32, 48, 0.12), 0 6px 16px rgba(20, 32, 48, 0.14) !important;
+}
+.bs-demo-container:has(.bs-slider-tab:nth-of-type(2).is-active) .bs-scroll-slider-thumb {
+  background: #2e4a22 !important;
+  border-color: #2e4a22 !important;
+}
+.bs-slider-tab.is-active {
+  color: #ffffff;
+}
+
+/* Hero phone: a real-phone bezel in the website's ink colour around the live website. */
+.bs-phone-mockup {
+  background: #1d2b3a;
+  box-shadow:
+    0 1px 2px rgba(20, 32, 48, 0.1),
+    0 28px 60px -14px rgba(20, 32, 48, 0.35);
+}
+.bs-phone-screen {
+  background: #eef1f4;
+}
+
+/* "13,000" over the photo ring: website navy with a paper halo so it reads over photos. */
+.rs-orbit-count strong {
+  color: #22476b;
+  font-weight: 800;
+  text-shadow:
+    0 0 2px #ffffff,
+    0 0 18px rgba(238, 241, 244, 0.95),
+    0 0 42px rgba(238, 241, 244, 0.85);
+  filter: none;
+}

@@ -1,4 +1,4 @@
-/* BikeScape: Hong Zhe's glass-card look, with two palettes the Modern ↔ Nature switch flips between.
+/* BikeMap: Hong Zhe's glass-card look, with two palettes the Modern ↔ Nature switch flips between.
    Everything here is scoped to .bm-app so the starter's other pages keep the shadcn theme. */
 
 .bm-app {
@@ -14,33 +14,33 @@
 }
 
 .bm-app[data-ui="modern"] {
-  color-scheme: dark;
-  --bm-map-bg: #0e1015;
-  --bm-glass: rgba(16, 19, 27, 0.82);
-  --bm-glass-strong: rgba(16, 19, 27, 0.95);
-  --bm-fg: #eef2f7;
-  --bm-muted: #94a3b8;
-  --bm-border: rgba(255, 255, 255, 0.09);
-  --bm-chip: rgba(255, 255, 255, 0.07);
-  --bm-accent: #22d3ee;
-  --bm-accent-fg: #03181d;
-  --bm-accent-soft: rgba(34, 211, 238, 0.16);
-  --bm-shadow: 0 10px 34px rgba(0, 0, 0, 0.5);
+  color-scheme: light;
+  --bm-map-bg: #eef1f4;
+  --bm-glass: rgba(255, 255, 255, 0.9);
+  --bm-glass-strong: #ffffff;
+  --bm-fg: #1d2b3a;
+  --bm-muted: #4b5a6a;
+  --bm-border: rgba(29, 43, 58, 0.1);
+  --bm-chip: #e6ebf0;
+  --bm-accent: #2c5f8e;
+  --bm-accent-fg: #ffffff;
+  --bm-accent-soft: rgba(44, 95, 142, 0.14);
+  --bm-shadow: 0 1px 2px rgba(20, 32, 48, 0.07), 0 12px 32px rgba(20, 32, 48, 0.1);
 }
 
 .bm-app[data-ui="nature"] {
   color-scheme: light;
-  --bm-map-bg: #f2efe9;
-  --bm-glass: rgba(255, 255, 252, 0.8);
-  --bm-glass-strong: rgba(255, 255, 252, 0.96);
-  --bm-fg: #13261c;
-  --bm-muted: #56645c;
-  --bm-border: rgba(19, 38, 28, 0.1);
-  --bm-chip: rgba(19, 38, 28, 0.06);
-  --bm-accent: #059669;
+  --bm-map-bg: #f5efe1;
+  --bm-glass: rgba(255, 252, 245, 0.92);
+  --bm-glass-strong: #fffcf5;
+  --bm-fg: #1f1d16;
+  --bm-muted: #514b3c;
+  --bm-border: rgba(40, 30, 15, 0.1);
+  --bm-chip: #f0e8d5;
+  --bm-accent: #3f7d2a;
   --bm-accent-fg: #ffffff;
-  --bm-accent-soft: rgba(5, 150, 105, 0.15);
-  --bm-shadow: 0 10px 30px rgba(31, 52, 40, 0.16);
+  --bm-accent-soft: rgba(63, 125, 42, 0.15);
+  --bm-shadow: 0 1px 2px rgba(40, 30, 15, 0.07), 0 12px 32px rgba(40, 30, 15, 0.11);
 }
 
 .bm-glass {

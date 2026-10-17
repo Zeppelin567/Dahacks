@@ -1,5 +1,5 @@
 // The Modern ↔ Nature switch flips everything visual: basemap, cards, accent, line colours.
-// Modern = Safe route on a dark city map; Nature = Green route on a light map.
+// Modern = Safe route on the light Harbor map; Nature = Green route on cream (same palettes as the website).
 import type { Level, Mode } from "./api";
 
 export type UiMode = "modern" | "nature";
@@ -12,7 +12,7 @@ const STADIA =
 
 export const TILES: Record<UiMode, { url: string; attribution: string }> = {
   modern: {
-    url: "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png",
+    url: "https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png",
     attribution: STADIA,
   },
   nature: {
@@ -21,10 +21,10 @@ export const TILES: Record<UiMode, { url: string; attribution: string }> = {
   },
 };
 
-// Neon traffic light on the dark map; leaf → concrete on the light one.
+// Calm / busy / risky (Harbor) and leafy / some green / bare (Nature), as on the website.
 export const LEVEL_COLORS: Record<UiMode, Record<Level, string>> = {
-  modern: { good: "#4ade80", ok: "#fbbf24", bad: "#fb3b64" },
-  nature: { good: "#15803d", ok: "#84b83a", bad: "#a39e98" },
+  modern: { good: "#3B9677", ok: "#E8A23A", bad: "#D9653B" },
+  nature: { good: "#3F7D2A", ok: "#8EBF4C", bad: "#CDAA72" },
 };
 
 export const LEVEL_LABELS: Record<UiMode, Record<Level, string>> = {

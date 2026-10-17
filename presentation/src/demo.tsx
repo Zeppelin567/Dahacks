@@ -90,7 +90,7 @@ export function ProductDemo({
     <div className="rs-product" data-deck-interactive>
       <div className="rs-product-top">
         <div className="rs-product-brand">
-          <span className="rs-brand-dot" /> RideScape <span>Cupertino</span>
+          <span className="rs-brand-dot" /> BikeScape <span>Cupertino</span>
         </div>
         <fieldset className="rs-mode" aria-label="Presentation route mode">
           <button type="button" aria-pressed={ui === "modern"} onClick={() => switchUi("modern")}>

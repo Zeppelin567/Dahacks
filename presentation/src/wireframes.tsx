@@ -25,18 +25,18 @@ export function CityWireframe() {
           </feMerge>
         </filter>
         <linearGradient id="cyan-fade-down" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.85" />
-          <stop offset="60%" stopColor="#0ea5e9" stopOpacity="0.45" />
-          <stop offset="100%" stopColor="#0369a1" stopOpacity="0.1" />
+          <stop offset="0%" stopColor="#2c5f8e" stopOpacity="0.85" />
+          <stop offset="60%" stopColor="#2c5f8e" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="#2c5f8e" stopOpacity="0.1" />
         </linearGradient>
         <linearGradient id="cyan-beam-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
+          <stop offset="0%" stopColor="#2c5f8e" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#2c5f8e" stopOpacity="0" />
         </linearGradient>
       </defs>
 
       {/* Receding Perspective Street Grid */}
-      <g stroke="#22d3ee" strokeWidth="0.8" opacity="0.35">
+      <g stroke="#2c5f8e" strokeWidth="0.8" opacity="0.35">
         {/* Horizon line */}
         <line x1="0" y1="480" x2="800" y2="480" strokeDasharray="4 6" />
         
@@ -59,7 +59,7 @@ export function CityWireframe() {
       </g>
 
       {/* Animated Traffic Vector Pulse */}
-      <g stroke="#38bdf8" strokeWidth="1.5" opacity="0.65">
+      <g stroke="#2c5f8e" strokeWidth="1.5" opacity="0.65">
         <line
           x1="200"
           y1="720"
@@ -92,13 +92,13 @@ export function CityWireframe() {
         <polygon points="65,160 110,90 155,160" />
 
         {/* Antenna Spire & Beacon */}
-        <line x1="110" y1="90" x2="110" y2="35" stroke="#22d3ee" strokeWidth="1.6" />
-        <circle cx="110" cy="35" r="3.5" fill="#22d3ee" className="bs-beacon-pulse" />
-        <circle cx="110" cy="35" r="8" stroke="#22d3ee" strokeWidth="0.8" opacity="0.5" className="bs-beacon-ring" />
+        <line x1="110" y1="90" x2="110" y2="35" stroke="#2c5f8e" strokeWidth="1.6" />
+        <circle cx="110" cy="35" r="3.5" fill="#2c5f8e" className="bs-beacon-pulse" />
+        <circle cx="110" cy="35" r="8" stroke="#2c5f8e" strokeWidth="0.8" opacity="0.5" className="bs-beacon-ring" />
       </g>
 
       {/* Tower A Interior Wireframe Floors & Cross-Trusses */}
-      <g stroke="#22d3ee" strokeWidth="0.75" opacity="0.45" fill="none">
+      <g stroke="#2c5f8e" strokeWidth="0.75" opacity="0.45" fill="none">
         {/* Setback floors */}
         <line x1="65" y1="230" x2="155" y2="230" />
         <line x1="65" y1="200" x2="155" y2="200" />
@@ -134,17 +134,17 @@ export function CityWireframe() {
       <g stroke="url(#cyan-fade-down)" strokeWidth="1.4" fill="none" filter="url(#neon-cyan-glow)">
         {/* Main Tower Silhouette with 3D Isometric Facets */}
         <polygon points="195,680 195,150 295,100 340,140 340,680" />
-        <line x1="295" y1="100" x2="295" y2="680" stroke="#22d3ee" strokeWidth="1.2" />
+        <line x1="295" y1="100" x2="295" y2="680" stroke="#2c5f8e" strokeWidth="1.2" />
 
         {/* Dual Antenna Mast */}
-        <line x1="240" y1="125" x2="240" y2="60" stroke="#22d3ee" strokeWidth="1.2" />
-        <circle cx="240" cy="60" r="2.5" fill="#22d3ee" />
-        <line x1="315" y1="120" x2="315" y2="40" stroke="#22d3ee" strokeWidth="1.5" />
-        <circle cx="315" cy="40" r="3" fill="#22d3ee" className="bs-beacon-pulse" />
+        <line x1="240" y1="125" x2="240" y2="60" stroke="#2c5f8e" strokeWidth="1.2" />
+        <circle cx="240" cy="60" r="2.5" fill="#2c5f8e" />
+        <line x1="315" y1="120" x2="315" y2="40" stroke="#2c5f8e" strokeWidth="1.5" />
+        <circle cx="315" cy="40" r="3" fill="#2c5f8e" className="bs-beacon-pulse" />
       </g>
 
       {/* Tower B High-Density Wireframe Window Matrix */}
-      <g stroke="#22d3ee" strokeWidth="0.7" opacity="0.4" fill="none">
+      <g stroke="#2c5f8e" strokeWidth="0.7" opacity="0.4" fill="none">
         {/* Front Facet Horizontal Floor Plates */}
         {[140, 175, 210, 245, 280, 315, 350, 385, 420, 455, 490, 525, 560, 595, 630, 665].map((y) => (
           <React.Fragment key={y}>
@@ -168,7 +168,7 @@ export function CityWireframe() {
         <polygon points="365,680 365,220 440,160 515,230 515,680" />
         
         {/* Angular Fold Ridge */}
-        <line x1="440" y1="160" x2="440" y2="680" stroke="#22d3ee" strokeWidth="1.2" />
+        <line x1="440" y1="160" x2="440" y2="680" stroke="#2c5f8e" strokeWidth="1.2" />
 
         {/* Angled Roof Slices */}
         <line x1="365" y1="220" x2="440" y2="280" />
@@ -176,7 +176,7 @@ export function CityWireframe() {
       </g>
 
       {/* Tower C Faceted Wireframe Diagonals */}
-      <g stroke="#22d3ee" strokeWidth="0.8" opacity="0.38" fill="none">
+      <g stroke="#2c5f8e" strokeWidth="0.8" opacity="0.38" fill="none">
         {[220, 270, 320, 370, 420, 470, 520, 570, 620].map((y) => (
           <React.Fragment key={y}>
             <line x1="365" y1={y} x2="440" y2={y - 25} />
@@ -189,13 +189,13 @@ export function CityWireframe() {
       {/* ========================================================
           SKYSCRAPER 4: Mid-Ground Tech High-Rise (Tower D)
           ======================================================== */}
-      <g stroke="#22d3ee" strokeWidth="1.1" fill="none" opacity="0.75" filter="url(#neon-cyan-glow)">
+      <g stroke="#2c5f8e" strokeWidth="1.1" fill="none" opacity="0.75" filter="url(#neon-cyan-glow)">
         <polygon points="535,680 535,320 625,320 625,680" />
         <polygon points="550,320 550,270 610,270 610,320" />
         <line x1="580" y1="270" x2="580" y2="220" strokeWidth="1.4" />
-        <circle cx="580" cy="220" r="2.5" fill="#22d3ee" />
+        <circle cx="580" cy="220" r="2.5" fill="#2c5f8e" />
       </g>
-      <g stroke="#22d3ee" strokeWidth="0.65" opacity="0.35" fill="none">
+      <g stroke="#2c5f8e" strokeWidth="0.65" opacity="0.35" fill="none">
         {[350, 385, 420, 455, 490, 525, 560, 595, 630, 665].map((y) => (
           <line key={y} x1="535" y1={y} x2="625" y2={y} />
         ))}
@@ -204,7 +204,7 @@ export function CityWireframe() {
       </g>
 
       {/* Far Right Stepped Silhouette */}
-      <g stroke="#22d3ee" strokeWidth="0.9" fill="none" opacity="0.5">
+      <g stroke="#2c5f8e" strokeWidth="0.9" fill="none" opacity="0.5">
         <polyline points="645,680 645,410 705,410 705,370 760,370 760,680" />
         {[440, 480, 520, 560, 600, 640].map((y) => (
           <line key={y} x1="645" y1={y} x2="760" y2={y} strokeDasharray="3 4" opacity="0.4" />
@@ -214,9 +214,9 @@ export function CityWireframe() {
       {/* ========================================================
           CYBER HUD TELEMETRY LABELS & COORDINATE BRACKETS
           ======================================================== */}
-      <g fontFamily="var(--bs-font-mono, monospace)" fontSize="9" fill="#22d3ee" letterSpacing="0.1em">
+      <g fontFamily="var(--bs-font-mono, monospace)" fontSize="9" fill="#2c5f8e" letterSpacing="0.1em">
         {/* HUD Target Brackets */}
-        <g opacity="0.6" stroke="#22d3ee" strokeWidth="1" fill="none">
+        <g opacity="0.6" stroke="#2c5f8e" strokeWidth="1" fill="none">
           <path d="M 40,70 L 30,70 L 30,80" />
           <path d="M 180,70 L 190,70 L 190,80" />
           <path d="M 40,130 L 30,130 L 30,120" />
@@ -228,8 +228,8 @@ export function CityWireframe() {
 
         {/* Commute Corridor Annotation */}
         <g opacity="0.5">
-          <line x1="335" y1="80" x2="390" y2="50" stroke="#22d3ee" strokeWidth="0.8" />
-          <line x1="390" y1="50" x2="480" y2="50" stroke="#22d3ee" strokeWidth="0.8" />
+          <line x1="335" y1="80" x2="390" y2="50" stroke="#2c5f8e" strokeWidth="0.8" />
+          <line x1="390" y1="50" x2="480" y2="50" stroke="#2c5f8e" strokeWidth="0.8" />
           <text x="395" y="44">COMMUTE SECTOR // 50 MPH</text>
         </g>
       </g>
@@ -263,16 +263,16 @@ export function NatureWireframe() {
           </feMerge>
         </filter>
         <linearGradient id="emerald-fade-down" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#34d399" stopOpacity="0.85" />
-          <stop offset="60%" stopColor="#10b981" stopOpacity="0.45" />
-          <stop offset="100%" stopColor="#065f46" stopOpacity="0.1" />
+          <stop offset="0%" stopColor="#3f7d2a" stopOpacity="0.85" />
+          <stop offset="60%" stopColor="#3f7d2a" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="#3f7d2a" stopOpacity="0.1" />
         </linearGradient>
       </defs>
 
       {/* ========================================================
           TOPOGRAPHIC CONTOUR ELEVATION LINES (Undulating Landscape)
           ======================================================== */}
-      <g fill="none" stroke="#34d399" strokeWidth="1" opacity="0.45">
+      <g fill="none" stroke="#3f7d2a" strokeWidth="1" opacity="0.45">
         {/* Ridge Contours */}
         <path d="M 0,220 C 180,180 320,260 520,200 C 640,160 740,220 800,210" strokeWidth="1.2" />
         <path d="M 0,265 C 160,230 300,310 490,250 C 610,210 720,270 800,255" />
@@ -287,7 +287,7 @@ export function NatureWireframe() {
       {/* ========================================================
           TRIANGULATED TERRAIN MESH (Rolling Foothills & Creek Bed)
           ======================================================== */}
-      <g stroke="#10b981" strokeWidth="0.75" fill="none" opacity="0.32">
+      <g stroke="#3f7d2a" strokeWidth="0.75" fill="none" opacity="0.32">
         {/* Foothill Slope Wireframe Triangles */}
         <polygon points="120,480 220,430 190,520" />
         <polygon points="220,430 320,470 190,520" />
@@ -310,7 +310,7 @@ export function NatureWireframe() {
           [190, 520], [320, 470], [430, 530], [540, 560], [660, 520],
           [280, 560], [380, 620], [480, 630], [620, 610],
         ].map(([cx, cy], i) => (
-          <circle key={i} cx={cx} cy={cy} r="2" fill="#34d399" opacity="0.6" />
+          <circle key={i} cx={cx} cy={cy} r="2" fill="#3f7d2a" opacity="0.6" />
         ))}
       </g>
 
@@ -339,11 +339,11 @@ export function NatureWireframe() {
         <polygon points="455,580 455,670 485,670 485,580" strokeWidth="1.2" />
 
         {/* Apex Glowing Spore */}
-        <circle cx="470" cy="180" r="3.5" fill="#34d399" className="bs-beacon-pulse" />
+        <circle cx="470" cy="180" r="3.5" fill="#3f7d2a" className="bs-beacon-pulse" />
       </g>
 
       {/* Tree 1 Faceted Wireframe Cross-Edges */}
-      <g stroke="#34d399" strokeWidth="0.8" opacity="0.5" fill="none">
+      <g stroke="#3f7d2a" strokeWidth="0.8" opacity="0.5" fill="none">
         <line x1="470" y1="180" x2="470" y2="270" />
         <line x1="435" y1="270" x2="470" y2="240" />
         <line x1="505" y1="270" x2="470" y2="240" />
@@ -368,9 +368,9 @@ export function NatureWireframe() {
         <polygon points="210,325 160,430 260,430" />
         <polygon points="210,400 135,530 285,530" />
         <polygon points="198,530 198,620 222,620 222,530" />
-        <circle cx="210" cy="270" r="2.5" fill="#34d399" />
+        <circle cx="210" cy="270" r="2.5" fill="#3f7d2a" />
       </g>
-      <g stroke="#34d399" strokeWidth="0.75" opacity="0.4" fill="none">
+      <g stroke="#3f7d2a" strokeWidth="0.75" opacity="0.4" fill="none">
         <line x1="210" y1="270" x2="210" y2="530" />
         <line x1="180" y1="350" x2="210" y2="325" />
         <line x1="240" y1="350" x2="210" y2="325" />
@@ -383,10 +383,10 @@ export function NatureWireframe() {
         <polygon points="680,240 655,315 705,315" />
         <polygon points="680,290 635,390 725,390" />
         <polygon points="680,360 615,480 745,480" />
-        <line x1="680" y1="480" x2="680" y2="560" strokeWidth="1.5" stroke="#34d399" />
-        <circle cx="680" cy="240" r="2" fill="#34d399" />
+        <line x1="680" y1="480" x2="680" y2="560" strokeWidth="1.5" stroke="#3f7d2a" />
+        <circle cx="680" cy="240" r="2" fill="#3f7d2a" />
       </g>
-      <g stroke="#34d399" strokeWidth="0.7" opacity="0.35" fill="none">
+      <g stroke="#3f7d2a" strokeWidth="0.7" opacity="0.35" fill="none">
         <line x1="680" y1="240" x2="680" y2="480" />
         <line x1="655" y1="315" x2="680" y2="290" />
         <line x1="705" y1="315" x2="680" y2="290" />
@@ -395,14 +395,14 @@ export function NatureWireframe() {
       {/* ========================================================
           BOTANICAL WIREFRAME FERNS & SHRUB VEINS
           ======================================================== */}
-      <g stroke="#34d399" strokeWidth="1" fill="none" opacity="0.55">
+      <g stroke="#3f7d2a" strokeWidth="1" fill="none" opacity="0.55">
         {/* Fern 1 (Bottom Left) */}
         <path d="M 90,660 Q 120,580 160,530" strokeWidth="1.4" />
         <line x1="105" y1="620" x2="80" y2="605" />
         <line x1="118" y1="595" x2="145" y2="585" />
         <line x1="132" y1="570" x2="105" y2="550" />
         <line x1="145" y1="550" x2="175" y2="540" />
-        <circle cx="160" cy="530" r="2" fill="#34d399" />
+        <circle cx="160" cy="530" r="2" fill="#3f7d2a" />
 
         {/* Fern 2 (Far Right Edge) */}
         <path d="M 750,650 Q 720,570 690,520" strokeWidth="1.3" />
@@ -414,9 +414,9 @@ export function NatureWireframe() {
       {/* ========================================================
           CYBER NATURE HUD LABELS & TOPOGRAPHIC ELEVATION TAGS
           ======================================================== */}
-      <g fontFamily="var(--bs-font-mono, monospace)" fontSize="9" fill="#34d399" letterSpacing="0.1em">
+      <g fontFamily="var(--bs-font-mono, monospace)" fontSize="9" fill="#3f7d2a" letterSpacing="0.1em">
         {/* HUD Target Brackets */}
-        <g opacity="0.6" stroke="#34d399" strokeWidth="1" fill="none">
+        <g opacity="0.6" stroke="#3f7d2a" strokeWidth="1" fill="none">
           <path d="M 760,70 L 770,70 L 770,80" />
           <path d="M 620,70 L 610,70 L 610,80" />
           <path d="M 760,130 L 770,130 L 770,120" />
