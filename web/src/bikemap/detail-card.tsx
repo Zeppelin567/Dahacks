@@ -22,6 +22,7 @@ type CardData = {
   photo?: Photo | null;
   streetview: string;
   ui: UiMode;
+  manual?: boolean;
 };
 
 /** Everything a card shows, from whatever was tapped on the map. */
@@ -48,6 +49,7 @@ export function cardData(pick: MapPick): CardData {
       photo: d.photo,
       streetview: d.streetview_url,
       ui: "nature",
+      manual: d.source === "manual",
     };
   }
   const d = pick.photo?.detail;
@@ -61,6 +63,7 @@ export function cardData(pick: MapPick): CardData {
     photo: pick.mode === "nature" ? (d?.photo ?? null) : null,
     streetview: d?.streetview_url ?? streetViewAt(pick.at),
     ui: pick.mode,
+    manual: d?.source === "manual",
   };
 }
 
@@ -211,7 +214,7 @@ export function StreetCard({
           {pick.kind !== "crossing" && d.reasons.length > 0 && (
             <span className="ai-tag">
               <Ico n="spark" />
-              Claude
+              {d.manual ? "Set by team" : "Claude"}
             </span>
           )}
         </div>
