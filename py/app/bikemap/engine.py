@@ -83,6 +83,7 @@ GREEN_CROSS = 3.0  # Green: + r * this * junction cost, red (< RED_BELOW) juncti
 RED_BELOW = 0.4  # "red" edge = safety < 0.4
 GREEN_CAP_MIN = 1.1  # Green detour cap = 1.1 at r=0 ... DETOUR_CAP at r=1
 RELAX_STEPS = (1.0, 0.5, 0.25, 0.125)  # weight strength per try; all over the cap -> fastest (always ends)
+MARK_M = 12.0  # Safe: a red intersection is drawn as a red piece this far either side of its node
 CLASS_RANK = {
     "motorway": 6, "motorway_link": 6, "trunk": 6, "trunk_link": 6, "primary": 5, "primary_link": 5,
     "secondary": 4, "secondary_link": 4, "tertiary": 3, "tertiary_link": 3, "unclassified": 2,
@@ -609,9 +610,9 @@ def _path_length(Gv, path, w=_length_weight) -> float:
 
 
 def _risky_spots(Gv, path, w, idx: dict) -> int:
-    """Safe compare count: red (< 0.4) street stretches + red intersections passed (once per junction).
-    The old count (segments whose *average* is 'bad') read 0 -> 0 on every preset: a short red piece is
-    averaged into its segment, and an intersection is not a segment at all."""
+    """Edge-level count: red (< 0.4) street stretches + red intersections passed (once per junction).
+    Kept for the measurement harnesses. The panel now counts the red pieces drawn (_risky_count), which
+    include the same red intersections as clickable marks (_red_junctions)."""
     cl, cj, ctop = idx["cluster"], idx["cj"], idx["ctop"]
 
     def corner(n) -> bool:
@@ -630,6 +631,114 @@ def _risky_spots(Gv, path, w, idx: dict) -> int:
             seen.add(cl.get(v))
             n_red += 1
     return n_red
+
+
+def _junction_score(nd: dict) -> float | None:
+    return next((x for x in (_num(nd, a) for a in JUNCTION_ATTRS) if x is not None), None)
+
+
+def _red_junctions(Gv, path, idx: dict) -> dict[int, tuple]:
+    """Red intersections a Safe route passes: {position in path: (node, score)} for interior nodes with
+    junction_safety < RED_BELOW, once per junction cluster (the same spots _risky_spots counts). Each one is
+    drawn as a red mark on the route, so every risky spot the panel counts can be seen and clicked."""
+    cl, seen, out = idx["cluster"], set(), {}
+    for i in range(1, len(path) - 1):
+        j = _junction_score(Gv.nodes[path[i]])
+        c = cl.get(path[i], path[i])
+        if j is not None and j < RED_BELOW and c not in seen:
+            seen.add(c)
+            out[i] = (path[i], j)
+    return out
+
+
+_JNOTES: dict | None = None
+
+
+def _junction_notes() -> dict:
+    """node -> Claude's photo verdict for that intersection (note, hazards, confidence), read once from the
+    scoring outputs (samples.jsonl maps a junction sample to its node). 4_bake.py bakes only the score onto
+    the node, so this is where a red mark's popup text comes from. Missing files -> {} (score-only text)."""
+    global _JNOTES
+    if _JNOTES is None:
+        import json
+
+        data, node_of, out = Path(__file__).resolve().parents[2] / "data", {}, {}
+        try:
+            with open(data / "samples.jsonl", encoding="utf-8") as f:
+                for line in f:
+                    if '"kind": "junction"' in line:
+                        s = json.loads(line)
+                        node_of[s["sample_id"]] = s["node"]
+            with open(data / "safety_scores.jsonl", encoding="utf-8") as f:
+                for line in f:
+                    if '"sample_id": "x' not in line[:60]:  # junction samples are "x<node>"
+                        continue
+                    r = json.loads(line)
+                    n = node_of.get(r["sample_id"])
+                    # safe-v2 = scripts/score_prompts.SAFE_VERSION, the version 4_bake.py baked
+                    if n is not None and r.get("status") == "ok" and r.get("prompt_version") == "safe-v2":
+                        out[str(n)] = r["result"]
+        except (OSError, ValueError, KeyError):
+            out = {}
+        _JNOTES = out
+    return _JNOTES
+
+
+def _junction_reasons(n, j: float, nd: dict) -> list[str]:
+    src = "street photos" if nd.get("junction_src") == "photo" else "map data"
+    out = [f"Risky intersection: scored {round(j * 10)}/10 from {src}"]
+    r = _junction_notes().get(str(n))
+    if r:
+        if r.get("note"):
+            out.append(str(r["note"]))
+        out += [scoring.HAZARD_TEXT.get(h, h) for h in (r.get("hazards") or [])[:3]]
+        if r.get("confidence") == "low":
+            out.append("⚠️ uncertain: the street photo was hard to read")
+    return out
+
+
+def _cut(coords: list[LatLng], m: float) -> tuple[list[LatLng], list[LatLng]]:
+    """Split a (lat, lng) polyline m metres from its start (_coords_m metric); both halves share the cut."""
+    acc = 0.0
+    for i in range(len(coords) - 1):
+        a, b = coords[i], coords[i + 1]
+        seg = _coords_m([a, b])
+        if seg > 0 and acc + seg >= m:
+            f = max(0.0, (m - acc) / seg)
+            p = (round(a[0] + f * (b[0] - a[0]), 6), round(a[1] + f * (b[1] - a[1]), 6))
+            return _dedup(coords[: i + 1] + [p]), _dedup([p] + coords[i + 1 :])
+        acc += seg
+    return list(coords), [coords[-1]]
+
+
+def _dedup(coords: list[LatLng]) -> list[LatLng]:
+    out: list[LatLng] = []
+    for c in coords:
+        if not out or c != out[-1]:
+            out.append(c)
+    return out
+
+
+def _risky_count(r: Route) -> int:
+    """Safe panel 'Risky segments': the red pieces drawn on the route (red stretches and red intersection
+    marks; touching red pieces are one). What the panel counts is exactly what the rider can see and click."""
+    return sum(s.level == "bad" for s in r.segments)
+
+
+def _greenery_pct(r: Route) -> float:
+    """Green panel 'Greenery': length-weighted mean segment score (a plain mean let a short grey stub
+    outweigh a long green stretch)."""
+    if not r.segments:
+        return 0.0
+    ws = [max(1.0, _coords_m(s.coords)) for s in r.segments]
+    return round(100 * sum(s.score * w for s, w in zip(r.segments, ws, strict=True)) / sum(ws), 1)
+
+
+def _not_worse(rec: Route, fast: Route, mode: Mode) -> bool:
+    """The recommended route may never read worse than fastest on its panel's own headline metric."""
+    if mode == "safe":
+        return _risky_count(rec) <= _risky_count(fast)
+    return _greenery_pct(rec) >= _greenery_pct(fast)
 
 
 def _detour_cap(req: RouteRequest) -> float:
@@ -651,13 +760,27 @@ def _no_path() -> RuntimeError:
     return RuntimeError("起点和终点之间没有满足安全底线的可行路线")
 
 
-def _segment_reasons(infos: list, idxs: list[int], avg: float, mode: Mode) -> list[str]:
-    """Popup text of one route segment. Safe: the worst edge's reasons (lowest safety; ties -> a photo-scored
-    edge, then the longest), so the popup names the stress the colour shows. Green: the representative edge,
-    the photo-noted edge whose score is closest to the segment's mean (no photo note: the longest edge)."""
+def _segment_reasons(
+    infos: list, idxs: list[int], avg: float, mode: Mode, marks: list | None = None
+) -> list[str]:
+    """Popup text of one route segment (idxs = the edges it covers). Safe: the worst edge's reasons (lowest
+    safety; ties -> a photo-scored edge, then the longest), so the popup names the stress the colour shows;
+    a red segment holding red intersection marks lists each intersection first, then its worst red street
+    if it has one. Green: the representative edge, the photo-noted edge whose score is closest to the
+    segment's mean (no photo note: the longest edge)."""
     if mode == "safe":
-        i = min(idxs, key=lambda i: (infos[i][5], not infos[i][3].get("safety_note"), -_seg_len(infos[i])))
-        return scoring.safety_reasons(infos[i][3])
+
+        def worst(ks: list[int]) -> int:
+            return min(
+                ks, key=lambda i: (infos[i][5], not infos[i][3].get("safety_note"), -_seg_len(infos[i]))
+            )
+
+        if marks:
+            out = [line for m in marks for line in m]
+            red = [i for i in idxs if _level(infos[i][5]) == "bad"]
+            out += scoring.safety_reasons(infos[worst(red)][3]) if red else []
+            return list(dict.fromkeys(out))  # unique lines (the UI keys popup rows by their text)
+        return scoring.safety_reasons(infos[worst(idxs)][3])
     noted = [i for i in idxs if infos[i][3].get("green_note")]
     if noted:
         i = min(noted, key=lambda i: (abs(infos[i][5] - avg), -_seg_len(infos[i])))
@@ -670,8 +793,40 @@ def _seg_len(info) -> float:
     return _num(info[3], "length") or 0.0
 
 
+def _route_pieces(Gv, path, infos: list, lengths: list[float], marks: dict) -> list[tuple]:
+    """Drawable pieces in route order: (coords, length_m, score, level, edge indices, mark reasons or None).
+    Without marks each edge is one piece (Green, and Safe routes with no red intersection). A red
+    intersection at path[i] becomes its own red piece: the last MARK_M m of edge i-1 + the first MARK_M m of
+    edge i (shared out evenly when two marks sit on one short edge); the rest of each edge keeps its level."""
+    pieces: list[tuple] = []
+    tail: list[LatLng] = []  # the previous edge's last MARK_M m, waiting for the mark it belongs to
+    for k, (u, v, _k, d, _vec, score) in enumerate(infos):
+        c = _edge_coords(Gv, u, v, d)
+        if not marks:
+            pieces.append((c, lengths[k], score, _level(score), [k], None))
+            continue
+        geo = _coords_m(c)
+        a = MARK_M if k in marks else 0.0  # path[k] = this edge's start node
+        b = MARK_M if k + 1 in marks else 0.0  # path[k + 1] = its end node
+        if a + b > geo:
+            a, b = (geo / 2, geo / 2) if a and b else (min(a, geo), min(b, geo))
+        head, mid = _cut(c, a) if a else ([], c)
+        mid, tl = _cut(mid, _coords_m(mid) - b) if b else (mid, [])
+        if a:
+            n, j = marks[k]
+            mc = _dedup(tail + head)
+            reasons = _junction_reasons(n, j, Gv.nodes[n])
+            pieces.append((mc, _coords_m(mc), min(j, _LEVEL_BAND["bad"][1]), "bad", [k - 1, k], reasons))
+        if len(mid) >= 2:
+            frac = _coords_m(mid) / geo if (a or b) and geo > 0 else 1.0
+            pieces.append((mid, lengths[k] * frac, score, _level(score), [k], None))
+        tail = tl
+    return pieces
+
+
 def _build_route(Gv, path, w, prefs, mode: Mode, primary: str) -> Route:
-    """把节点 path 转成 Route：按显示等级分段（_segment_by_level）+ 边几何拼接。"""
+    """把节点 path 转成 Route：按显示等级分段（_segment_by_level）+ 边几何拼接。Safe 路线上的红色路口
+    （_red_junctions）画成一小段红色（可点击），所以面板数的每个 risky spot 都看得见。"""
     # 1) 逐边收集 (u,v,k,d,vec01,score)，平行边按 weight 决胜规则选
     #    score = 有偏好特征的均值（没有就用 primary）
     active = [f for f, p in prefs.items() if abs(p) >= NEUTRAL_EPS] or [primary]
@@ -684,25 +839,29 @@ def _build_route(Gv, path, w, prefs, mode: Mode, primary: str) -> Route:
     lengths = [float(x[3].get("length", 0)) for x in infos]
     total_m = sum(lengths)
 
-    # 2) 分段：显示等级一变就切段（橙 / 红不会被平均进绿段）
-    seg_idx = _segment_by_level([_level(x[5]) for x in infos], lengths, mode)
+    # 2) 分段：显示等级一变就切段（橙 / 红不会被平均进绿段）；Safe 的红路口是单独的红色小段
+    marks = _red_junctions(Gv, path, _index(_load_graph())) if mode == "safe" else {}
+    pieces = _route_pieces(Gv, path, infos, lengths, marks)
+    seg_idx = _segment_by_level([p[3] for p in pieces], [p[1] for p in pieces], mode)
 
     # 3) 每段拼几何 + 长度加权平均分，夹在本段等级的区间里（score 和 level 永远一致）
     segments: list[Segment] = []
     full: list[LatLng] = [] if infos else [(Gv.nodes[path[0]]["y"], Gv.nodes[path[0]]["x"])]
-    for lv, idxs in seg_idx:
+    for x in infos:
+        c = _edge_coords(Gv, x[0], x[1], x[3])
+        full.extend(c if not full else c[1:])
+    for lv, pidx in seg_idx:
         coords: list[LatLng] = []
-        for i in idxs:
-            u, v, _k, d, _, _ = infos[i]
-            c = _edge_coords(Gv, u, v, d)
+        for i in pidx:
+            c = pieces[i][0]
             coords.extend(c if not coords else c[1:])
-            full.extend(c if not full else c[1:])
-        wts = [lengths[i] or 1.0 for i in idxs]
-        avg = sum(infos[i][5] * wt for i, wt in zip(idxs, wts, strict=True)) / sum(wts)
+        wts = [pieces[i][1] or 1.0 for i in pidx]
+        avg = sum(pieces[i][2] * wt for i, wt in zip(pidx, wts, strict=True)) / sum(wts)
         lo, hi = _LEVEL_BAND[lv]
         score = min(hi, max(lo, round(avg, 2)))
-        reasons = _segment_reasons(infos, idxs, avg, mode)
-        segments.append(Segment(coords=coords, score=score, level=lv, reasons=reasons))
+        edges = list(dict.fromkeys(k for i in pidx for k in pieces[i][4]))
+        reasons = _segment_reasons(infos, edges, avg, mode, [pieces[i][5] for i in pidx if pieces[i][5]])
+        segments.append(Segment(coords=_dedup(coords), score=score, level=lv, reasons=reasons))
 
     return Route(
         coords=full,
@@ -730,41 +889,37 @@ def plan_route(req: RouteRequest) -> RouteResponse:
         raise _no_path() from None
     fast_len = _path_length(Gv, p_fast)
 
-    # detour cap：full-strength weights first, then relaxed a bounded number of times; if every try is
-    # still over the cap, recommend the fastest route (always ends).
+    fastest = _build_route(Gv, p_fast, _length_weight, prefs, req.mode, primary)
+
+    # detour cap：full-strength weights first, then relaxed a bounded number of times. A try is kept only if
+    # it is within the cap AND not worse than fastest on the panel's own metric (Safe: no more red pieces;
+    # Green: no less greenery), so the panel never reads "Risky 0 -> 1" or "greenery 70% -> 60%". If no try
+    # passes, recommend the fastest route (always ends; at most len(RELAX_STEPS) Dijkstra runs).
     cap = _detour_cap(req)
-    path, w = p_fast, _length_weight
+    recommended = fastest
     for strength in RELAX_STEPS:
         cp = _pair_costs(idx, prefs, d_tol, req.mode, strength)
         cand = nx.shortest_path(H, o, t, weight=lambda u, v, d, cp=cp: cp[d["i"]])
         wk = _make_weight(prefs, d_tol, req.mode, strength)
-        if _path_length(Gv, cand, wk) <= cap * fast_len + 1e-6:
-            path, w = cand, wk
+        if _path_length(Gv, cand, wk) > cap * fast_len + 1e-6:
+            continue
+        r = _build_route(Gv, cand, wk, prefs, req.mode, primary)
+        if _not_worse(r, fastest, req.mode):
+            recommended = r
             break
-
-    fastest = _build_route(Gv, p_fast, _length_weight, prefs, req.mode, primary)
-    recommended = _build_route(Gv, path, w, prefs, req.mode, primary)
 
     extra = round(recommended.duration_min - fastest.duration_min, 1)
     if req.mode == "safe":
         compare = Comparison(
             extra_min=extra,
-            risky_segments_fastest=_risky_spots(Gv, p_fast, _length_weight, idx),
-            risky_segments_recommended=_risky_spots(Gv, path, w, idx),
+            risky_segments_fastest=_risky_count(fastest),
+            risky_segments_recommended=_risky_count(recommended),
         )
     else:
-
-        def greenery_pct(r: Route) -> float:
-            # length-weighted: a plain mean over segments let a short grey stub outweigh a long green stretch
-            if not r.segments:
-                return 0.0
-            ws = [max(1.0, _coords_m(s.coords)) for s in r.segments]
-            return round(100 * sum(s.score * w for s, w in zip(r.segments, ws, strict=True)) / sum(ws), 1)
-
         compare = Comparison(
             extra_min=extra,
-            greenery_pct_fastest=greenery_pct(fastest),
-            greenery_pct_recommended=greenery_pct(recommended),
+            greenery_pct_fastest=_greenery_pct(fastest),
+            greenery_pct_recommended=_greenery_pct(recommended),
             # noise_reduction_db 等 B 的真实计算，目前诚实留空（前端类型允许 null）
             noise_reduction_db=None,
         )

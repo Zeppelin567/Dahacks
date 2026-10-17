@@ -1,0 +1,209 @@
+/* BikeMap design tokens (prototype v3). Modern = "Harbor" (paper/ink/blue), Nature = greens on cream.
+   Everything is scoped to .bm-app[data-ui] so the starter's other pages keep the shadcn theme.
+   The colour tokens are registered with @property so a mode switch cross-fades them (0.9s) instead of snapping. */
+
+@property --bm-paper {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #eef1f4;
+}
+@property --bm-card {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ffffff;
+}
+@property --bm-chip {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #e6ebf0;
+}
+@property --bm-ink {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #1d2b3a;
+}
+@property --bm-ink2 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #4b5a6a;
+}
+@property --bm-ink3 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #7d8a98;
+}
+@property --bm-ours {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #2c5f8e;
+}
+@property --bm-ghost {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #6b7a8c;
+}
+@property --bm-good {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #9db2c6;
+}
+@property --bm-ok {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #edb49b;
+}
+@property --bm-bad {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #d9653b;
+}
+@property --bm-ok-text {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #b4532c;
+}
+@property --bm-btn {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #22476b;
+}
+
+.bm-app {
+  /* --- Modern "Harbor" (default) --- */
+  --bm-paper: #eef1f4; /* map paper + page background */
+  --bm-card: #ffffff; /* sheet, cards, switch */
+  --bm-chip: #e6ebf0; /* chips, pressed tabs, bubbles */
+  --bm-ink: #1d2b3a; /* main text */
+  --bm-ink2: #4b5a6a; /* secondary text */
+  --bm-ink3: #7d8a98; /* tertiary / fine print */
+  --bm-ours: #2c5f8e; /* our route + accent */
+  --bm-ghost: #6b7a8c; /* the fast route (ghost line) */
+  --bm-good: #9db2c6; /* calm street */
+  --bm-ok: #edb49b; /* busy street */
+  --bm-bad: #d9653b; /* risky street / crossing bead */
+  --bm-ok-text: #b4532c; /* "busy" as text (contrast-safe) */
+  --bm-btn: #22476b; /* solid buttons (pressed 3D, active tile) */
+  --bm-line: rgba(28, 29, 26, 0.11); /* hairlines + card borders */
+  --bm-shadow: 0 1px 2px rgba(20, 32, 48, 0.08), 0 10px 28px rgba(20, 32, 48, 0.13);
+  --bm-font: "M PLUS Rounded 1c", system-ui, -apple-system, sans-serif;
+  --bm-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --bm-ease: cubic-bezier(0.65, 0, 0.35, 1);
+  --bm-mode-ms: 0.9s;
+
+  color-scheme: light;
+  background: var(--bm-paper);
+  color: var(--bm-ink);
+  font: 500 15px / 1.3 var(--bm-font);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  -webkit-font-smoothing: antialiased;
+  transition:
+    --bm-paper var(--bm-mode-ms) ease,
+    --bm-card var(--bm-mode-ms) ease,
+    --bm-chip var(--bm-mode-ms) ease,
+    --bm-ink var(--bm-mode-ms) ease,
+    --bm-ink2 var(--bm-mode-ms) ease,
+    --bm-ink3 var(--bm-mode-ms) ease,
+    --bm-ours var(--bm-mode-ms) ease,
+    --bm-ghost var(--bm-mode-ms) ease,
+    --bm-good var(--bm-mode-ms) ease,
+    --bm-ok var(--bm-mode-ms) ease,
+    --bm-bad var(--bm-mode-ms) ease,
+    --bm-ok-text var(--bm-mode-ms) ease,
+    --bm-btn var(--bm-mode-ms) ease;
+}
+
+.bm-app[data-ui="nature"] {
+  --bm-paper: #f5efe1;
+  --bm-card: #fffcf5;
+  --bm-chip: #f0e8d5;
+  --bm-ink: #1f1d16;
+  --bm-ink2: #514b3c;
+  --bm-ink3: #8a8270;
+  --bm-ours: #3f7d2a;
+  --bm-ghost: #9a8c6e;
+  --bm-good: #3f7d2a;
+  --bm-ok: #b5a86a;
+  --bm-bad: #8a5a3c;
+  --bm-ok-text: #6e6430;
+  --bm-btn: #2e4a22;
+  --bm-shadow: 0 1px 2px rgba(40, 30, 15, 0.08), 0 10px 28px rgba(40, 30, 15, 0.14);
+}
+
+.bm-app *,
+.bm-app *::before,
+.bm-app *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bm-app button {
+  font: inherit;
+  color: inherit;
+}
+
+/* Shared Pip animations (use on any Pip <img>). */
+@keyframes bm-breathe {
+  50% {
+    transform: scale(1.025, 0.97);
+  }
+}
+@keyframes bm-hop {
+  0% {
+    transform: translateY(0) scale(1.08, 0.9);
+  }
+  45% {
+    transform: translateY(-9px) scale(0.95, 1.06);
+  }
+  80% {
+    transform: translateY(0) scale(1.05, 0.95);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes bm-pop {
+  0% {
+    transform: scale(0.8);
+  }
+  60% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes bm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* Pip: breathes at rest; add .hop (route drawn) or .pop (mode switch) for a one-shot, then remove it. */
+.bm-pip {
+  transform-origin: 50% 92%;
+  animation: bm-breathe 3.6s ease-in-out infinite;
+}
+.bm-pip.pop {
+  animation:
+    bm-pop 0.3s var(--bm-spring),
+    bm-breathe 3.6s ease-in-out 0.3s infinite;
+}
+.bm-pip.hop {
+  animation:
+    bm-hop 0.55s cubic-bezier(0.3, 1.5, 0.5, 1),
+    bm-breathe 3.6s ease-in-out 0.55s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bm-app *,
+  .bm-app *::before,
+  .bm-app *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must beat every component animation */
+    animation: none !important;
+    /* biome-ignore lint/complexity/noImportantStyles: same */
+    transition: none !important;
+  }
+  .bm-app {
+    transition: none;
+  }
+}

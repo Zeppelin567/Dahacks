@@ -1,0 +1,538 @@
+/* biome-ignore-all lint/style/noDescendingSpecificity: ported from prototype v3 in cascade order; the order is intentional */
+/* Map stage, seam, boot splash, controls, scale bar, attribution (prototype v3). */
+
+.bm-stage {
+  position: absolute;
+  inset: 0;
+  --seam: 100%;
+}
+.bm-map {
+  position: absolute;
+  inset: 0;
+}
+.bm-map-nature {
+  clip-path: inset(0 0 0 var(--seam));
+}
+.bm-app .maplibregl-map {
+  font: 500 15px / 1.3 var(--bm-font);
+}
+.bm-app .maplibregl-canvas:focus-visible {
+  outline: none;
+}
+
+/* the seam: a white edge that rides the sweep between the two maps */
+.bm-seam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--seam);
+  width: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.bm-seam.on {
+  opacity: 1;
+}
+.bm-seam::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -2px;
+  width: 4px;
+  background: #fff;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 0 18px rgba(40, 30, 15, 0.25);
+}
+
+/* boot: one quiet Pip until the visible map is idle */
+.bm-boot {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: var(--bm-paper);
+  transition: opacity 0.4s;
+}
+.bm-boot.done {
+  opacity: 0;
+  pointer-events: none;
+}
+.bm-boot > div {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: grid;
+  place-items: center;
+}
+.bm-boot img {
+  width: 60px;
+  height: 60px;
+}
+.bm-boot svg {
+  position: absolute;
+  inset: 0;
+  width: 96px;
+  height: 96px;
+  animation: bm-spin 1.4s linear infinite;
+}
+.bm-map-error {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, 60px);
+  z-index: 51;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: var(--bm-card);
+  color: var(--bm-ink2);
+  font-weight: 700;
+  font-size: 13px;
+  box-shadow: var(--bm-shadow);
+}
+
+/* any floating UI marked .bm-ui stays hidden until the map has drawn */
+.bm-ui {
+  transition: opacity 0.35s;
+}
+.bm-app:not([data-ready]) .bm-ui {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- controls (bottom-right): recenter · zoom · 3D ---------- */
+.bm-ctrls {
+  position: absolute;
+  right: 20px;
+  bottom: 24px;
+  z-index: 11;
+  width: 50px;
+  border-radius: 12px;
+  background: var(--bm-card);
+  border: 1px solid var(--bm-line);
+  box-shadow: var(--bm-shadow);
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  gap: 2px;
+  user-select: none;
+}
+.bm-ctrls button {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  display: grid;
+  place-items: center;
+  color: var(--bm-ink);
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+.bm-ctrls button:hover {
+  background: var(--bm-chip);
+}
+.bm-ctrls button[aria-pressed="true"],
+.bm-ctrls button[aria-pressed="true"]:hover {
+  background: var(--bm-btn);
+  color: #fff;
+}
+.bm-ctrls hr {
+  width: 28px;
+  height: 1px;
+  border: 0;
+  background: var(--bm-line);
+  margin: 2px auto;
+}
+.bm-ctrls svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- scale bar (bottom-left): zoom + two-tone feet/mile bar ---------- */
+.bm-scale {
+  position: absolute;
+  left: 20px;
+  bottom: 26px;
+  z-index: 9;
+  padding: 6px 12px 4px 9px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bm-card) 90%, transparent);
+  box-shadow: 0 1px 3px rgba(20, 32, 48, 0.12);
+  font: 700 10.5px / 1 var(--bm-font);
+  color: var(--bm-ink);
+  pointer-events: none;
+}
+.bm-scale .z {
+  color: var(--bm-ink3);
+  margin-bottom: 5px;
+}
+.bm-scale .bar {
+  display: flex;
+  height: 5px;
+  border: 1px solid var(--bm-ink);
+  border-radius: 1px;
+  transition: width 0.18s ease;
+}
+.bm-scale .bar i {
+  flex: 1;
+  background: var(--bm-ink);
+}
+.bm-scale .bar i + i {
+  background: #fff;
+}
+.bm-scale .lab {
+  position: relative;
+  height: 12px;
+  margin-top: 4px;
+}
+.bm-scale .lab span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  transition: left 0.18s ease;
+}
+.bm-scale .lab span:first-child {
+  left: 0;
+  transform: none;
+}
+.bm-scale .lab span:last-child {
+  transform: translateX(-100%);
+}
+
+/* ---------- attribution ---------- */
+.bm-attrib {
+  position: absolute;
+  left: 20px;
+  bottom: 4px;
+  z-index: 9;
+  font-size: 10px;
+  line-height: 1.3;
+  color: var(--bm-ink2);
+  background: color-mix(in srgb, var(--bm-paper) 80%, transparent);
+  padding: 1px 6px;
+  border-radius: 5px;
+}
+.bm-attrib a {
+  color: inherit;
+  text-decoration: none;
+}
+.bm-attrib .ic {
+  display: none;
+}
+
+/* phone: the sheet is a bottom sheet, so the scale bar and controls sit above it (--bm-sheet-h set by the sheet) */
+@media (max-width: 700px) {
+  .bm-scale {
+    left: auto;
+    right: 62px;
+    bottom: calc(var(--bm-sheet-h, 200px) + 18px);
+    padding: 5px 10px 3px 8px;
+  }
+  .bm-ctrls {
+    right: 8px;
+    bottom: calc(var(--bm-sheet-h, 200px) + 12px);
+    width: 46px;
+  }
+  .bm-ctrls .zoom,
+  .bm-ctrls hr.zoom {
+    display: none;
+  }
+  /* phone: credits fold into a small ⓘ under the switch (the bottom sheet covers the bottom edge) */
+  .bm-attrib {
+    left: 10px;
+    right: auto;
+    top: 66px;
+    bottom: auto;
+    max-width: calc(100% - 20px);
+    font-size: 10px;
+    cursor: pointer;
+  }
+  .bm-attrib:not(.open) {
+    font-size: 0;
+    padding: 0;
+    background: none;
+  }
+  .bm-attrib .ic {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    font-size: 13px;
+    color: var(--bm-ink2);
+    background: color-mix(in srgb, var(--bm-card) 85%, transparent);
+    box-shadow: 0 1px 3px rgba(20, 32, 48, 0.15);
+    cursor: pointer;
+  }
+  .bm-attrib.open .ic {
+    display: none;
+  }
+}
+
+/* ---------- popups (rounded card) ---------- */
+.bm-app .maplibregl-popup.bm-popup .maplibregl-popup-content {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--bm-card);
+  color: var(--bm-ink);
+  font: 500 14px / 1.3 var(--bm-font);
+  box-shadow: var(--bm-shadow);
+  border: 1px solid var(--bm-line);
+}
+.bm-app .maplibregl-popup.bm-popup .maplibregl-popup-tip {
+  border-color: transparent;
+}
+.bm-app .maplibregl-popup.bm-popup[class*="anchor-bottom"] .maplibregl-popup-tip {
+  border-top-color: var(--bm-card);
+}
+.bm-app .maplibregl-popup.bm-popup[class*="anchor-top"] .maplibregl-popup-tip {
+  border-bottom-color: var(--bm-card);
+}
+.bm-app .maplibregl-popup.bm-popup.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: var(--bm-card);
+}
+.bm-app .maplibregl-popup.bm-popup.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: var(--bm-card);
+}
+
+/* ---------- numbered crossing beads ON the fast line (Modern) ---------- */
+.bm-xing {
+  width: var(--bm-bead, 22px);
+  height: var(--bm-bead, 22px);
+  pointer-events: auto;
+  cursor: pointer;
+}
+.bm-xing .disc {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--bm-bad);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  transform: scale(0);
+  font: 800 calc(var(--bm-bead, 22px) * 0.55) / 1 var(--bm-font);
+  box-shadow:
+    0 0 0 2.5px #fff,
+    0 2px 6px rgba(20, 32, 48, 0.28);
+  transition:
+    background-color 0.2s,
+    transform 0.42s var(--bm-spring);
+}
+.bm-xing.hit .disc {
+  background: #b44e2a;
+}
+.bm-xing.in .disc {
+  transform: scale(1);
+}
+.bm-xing.in:hover .disc {
+  transform: scale(1.12);
+}
+.bm-xing.in.focus .disc {
+  transform: scale(1.3);
+}
+.bm-xing::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--bm-bad);
+  opacity: 0;
+  pointer-events: none;
+}
+.bm-xing.in:not(.hit)::after {
+  animation: bm-ping 5s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+  animation-delay: var(--d, 0s);
+}
+.bm-xing .ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 3px solid var(--bm-bad);
+  opacity: 0;
+  pointer-events: none;
+}
+.bm-xing.burst .ring {
+  animation: bm-burst 0.5s ease-out;
+}
+@keyframes bm-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.35;
+  }
+  40%,
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+@keyframes bm-burst {
+  from {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  to {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+/* ---------- Street View photo pins (Nature), clustered ---------- */
+.bm-ppin {
+  width: var(--bm-pin, 44px);
+  height: var(--bm-pin, 44px);
+  cursor: pointer;
+}
+.bm-ppin .pi {
+  position: relative;
+  width: var(--bm-pin, 44px);
+  height: var(--bm-pin, 44px);
+  border-radius: 50%;
+  background: var(--bm-chip);
+  box-shadow:
+    0 0 0 3px #fff,
+    0 5px 14px rgba(40, 30, 15, 0.28);
+  transition:
+    transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.2s ease;
+  will-change: transform, opacity;
+}
+.bm-ppin .pi img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 50%;
+}
+.bm-ppin .pi b {
+  position: absolute;
+  right: -6px;
+  top: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--bm-btn);
+  color: #fff;
+  font: 800 12px / 20px var(--bm-font);
+  text-align: center;
+  box-shadow: 0 0 0 2px #fff;
+}
+.bm-ppin.one .pi b {
+  display: none;
+}
+.bm-ppin:hover .pi {
+  transform: scale(1.08);
+}
+.bm-ppin.focus .pi {
+  box-shadow:
+    0 0 0 3px #fff,
+    0 0 0 6px var(--bm-ours),
+    0 5px 14px rgba(40, 30, 15, 0.28);
+}
+.bm-pins-off .bm-ppin {
+  visibility: hidden;
+}
+
+/* crossing cards sit beside the bead: no tip */
+.bm-app .maplibregl-popup.notip .maplibregl-popup-tip {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bm-app .bm-xing .disc,
+  .bm-app .bm-ppin .pi {
+    transition: none;
+  }
+  .bm-app .bm-xing.in::after,
+  .bm-app .bm-xing.burst .ring {
+    animation: none;
+  }
+}
+
+/* ---------- Race riders (ghost Pip vs Pip) ---------- */
+.bm-rider {
+  width: 56px;
+  height: 56px;
+  pointer-events: none;
+}
+.bm-rider img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transition: transform 0.15s;
+  filter: drop-shadow(0 4px 4px rgba(30, 25, 15, 0.35));
+}
+.bm-rider.ghost img {
+  filter: grayscale(1) opacity(0.6) drop-shadow(0 4px 4px rgba(30, 25, 15, 0.25));
+}
+.bm-rider.shake img {
+  animation: bm-shake 0.12s ease-in-out 3;
+}
+.bm-rider .place {
+  position: absolute;
+  left: 50%;
+  top: -22px;
+  transform: translateX(-50%);
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 11px;
+  background: var(--bm-btn);
+  color: #fff;
+  font: 800 12px / 22px var(--bm-font);
+  white-space: nowrap;
+  animation: bm-pop 0.3s var(--bm-spring);
+}
+.bm-rider.ghost .place {
+  background: var(--bm-ghost);
+}
+@keyframes bm-shake {
+  0%,
+  100% {
+    rotate: 0deg;
+    translate: 0;
+  }
+  33% {
+    rotate: -6deg;
+    translate: -3px 0;
+  }
+  66% {
+    rotate: 6deg;
+    translate: 3px 0;
+  }
+}
+.bm-leaf {
+  position: fixed;
+  z-index: 20;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+  transition:
+    transform 0.8s cubic-bezier(0.5, 0, 0.6, 1),
+    opacity 0.8s;
+}
+.bm-leaf svg {
+  width: 18px;
+  height: 18px;
+  fill: #6fa046;
+  stroke: #3f7d2a;
+  stroke-width: 1.5;
+}
