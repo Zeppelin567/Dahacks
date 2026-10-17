@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import collections
 import json
+import os
 import statistics
 import sys
 from pathlib import Path
@@ -30,8 +31,11 @@ from pathlib import Path
 import osmnx as ox
 import score_prompts as sp  # noqa: I001  (sibling module: scripts/ is on sys.path)
 
-DATA = Path(__file__).resolve().parents[1] / "data"
+DATA = (
+    Path(__file__).resolve().parents[1] / os.environ.get("BIKEMAP_DATA", "data")
+).resolve()  # data/ext = extended area
 REPORTS = DATA / "cache" / "reports"
+OVERRIDES = DATA / "overrides.json"
 
 # Fallback for streets without a photo (1-10). Plan §3 "4. Bake".
 RULE_BY_HIGHWAY = {
@@ -122,6 +126,22 @@ def main() -> None:
             d["shade_vlm"] = round(statistics.median(r["shade_sky_pct"] for r in gs["results"]) / 100, 2)
             d["green_note"] = gs["rep"]["note"]
             src["green_photo"] += 1
+
+    # Hand-set scores (DATA/overrides.json, optional). Labelled safety_src="manual" so they never pass
+    # for photo scores; the LLM results stay untouched in the score files. Delete the file to undo.
+    for o in json.loads(OVERRIDES.read_text(encoding="utf-8")) if OVERRIDES.exists() else []:
+        keep = {tuple(e) for e in o.get("except_edges", [])}  # [u, v, key]: these keep their own score
+        only = {tuple(e) for e in o.get("edges", [])}  # [u, v, key]: these exact edges
+        for u, v, k, d in G.edges(keys=True, data=True):
+            if (u, v, k) in keep:
+                continue
+            if (u, v, k) in only or any(s in str(d.get("name") or "") for s in o.get("name_contains", [])):
+                src[d["safety_src"]] -= 1
+                d["safety_score"], d["safety_src"] = o["safety_score"], "manual"
+                d["safety_note"], d["safety_hazards"] = o["note"], ""
+                if o.get("photo_sample"):  # the sample whose Street View the detail card shows
+                    d["manual_sample"] = o["photo_sample"]
+                src["manual"] += 1
 
     for n, d in G.nodes(data=True):
         if int(d.get("street_count", 0)) < 3:

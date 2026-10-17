@@ -2,6 +2,17 @@
 
 Two bike maps for Cupertino: a Safe route map and a Green route map with a City ↔ Rural slider.
 
+## Integrated redesign
+
+The `ui/redesign` branch combines the MapLibre Harbor/Nature interface and Race with the expanded map from `demo` (`4d5eec5`), the personal ride features from `mobile-web` (`cb489d7`), and the routing guarantees already merged from `fix/routing` (`d9a7500`). The standalone presentation app on `demo` is separate from the rider-facing map.
+
+Open **More** for presets, the scenic slider, spoken route overview and hazard reporting. Tap a Nature route stretch to vote for more/less like it. Preferences and hazards are stored per browser. See [DEPLOY-MOBILE.md](DEPLOY-MOBILE.md) for mobile use, deployment and testing.
+
+```sh
+npm ci
+npm run dev   # web + Node API + Python, requires uv
+```
+
 ## Tech plan
 
 The whole plan is in **[.plans/actualproject.md](.plans/actualproject.md)**: product, team, contract, and the Safe route pipeline (decided 2026-10-16).
@@ -21,8 +32,8 @@ The whole plan is in **[.plans/actualproject.md](.plans/actualproject.md)**: pro
 - Reference project (Aggie Street Smart): [referenceproject.md](referenceproject.md)
 
 ```
-npm install && npm run dev:py   # Python side-car
-npm run dev                     # http://localhost:5173/safe
+npm ci
+npm run dev                     # all three services → http://localhost:5173
 ```
 
 > Built on **MVP_demo** (github.com/blar-tw/MVP_demo, MIT), a generic starter written before the event.

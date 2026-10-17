@@ -1,22 +1,16 @@
-# Render Blueprint — New → Blueprint → pick this repo. Untested as of writing; see DEPLOY.md.
+# Select the ui/redesign branch when creating this Blueprint.
 services:
   - type: web
-    name: mvp-demo
-    runtime: node
+    name: dahacks-bikemap
+    branch: ui/redesign
+    runtime: docker
     plan: free
-    buildCommand: npm ci && npm run build
-    startCommand: npm start
-    healthCheckPath: /api/health
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/py/health
     envVars:
       - key: NODE_ENV
         value: production
-      - key: DATABASE_URL
-        sync: false # paste the Neon pooled connection string
       - key: BETTER_AUTH_SECRET
         generateValue: true
-      - key: BETTER_AUTH_URL
-        sync: false # https://<this-service>.onrender.com — set after the first deploy
       - key: LLM_PROVIDER
-        value: anthropic
-      - key: ANTHROPIC_API_KEY
-        sync: false # optional; leave empty for mock mode
+        value: mock

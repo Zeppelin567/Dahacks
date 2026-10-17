@@ -17,6 +17,7 @@ export type MapPick =
       score: number;
       level: Level;
       reasons: string[];
+      features?: Record<string, number> | null;
       /** Nature: the nearest Street View stop on the same street, if any */
       photo?: RoutePhoto;
     }
