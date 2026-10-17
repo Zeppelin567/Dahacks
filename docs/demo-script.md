@@ -7,8 +7,8 @@ Two routes, one per mode, chained into one story. Every number below was measure
 | Trip | **Apple Infinite Loop → Cupertino Library** | **Cupertino Library → Main Street Cupertino** |
 | Fastest / Direct | 7.6 min, straight down De Anza Blvd, **4 risky spots** | 8.5 min along Stevens Creek Blvd, **42% green** |
 | Recommended | 7.7 min on parallel side streets, **0 risky spots** | 9.4 min down the **Regnart Creek Trail past Wilson Park**, **80% green** |
-| Cost | **+6 seconds** | **+0.9 min** |
-| Backup | Blackberry Farm → Cupertino High: 2 → 0 risky, +0.3 min | Library → Apple Park: 46% → 74% green, +1.4 min |
+| Cost | **+0.1 min (about 9 s)** | **+0.9 min** |
+| Backup | Blackberry Farm → Cupertino High: 2 → 0 risky, +0.3 min | Library → Apple Park: 45% → 74% green, +1.4 min |
 
 ## Before you go on stage
 
@@ -29,10 +29,10 @@ Two routes, one per mode, chained into one story. Every number below was measure
 | Step | Do | Screen | Say |
 |---|---|---|---|
 | 1 | Modern mode. Turn on **Show risk on every street**. | City map: arterials orange, neighbourhoods green, red at expressways and the worst junctions | "Claude looked at 8,931 street photos and rated every street in Cupertino. Green is calm, orange is stressful, red is where most people won't ride." |
-| 2 | Click **De Anza Blvd** near Infinite Loop. | Card: "Painted bike lane on a five-lane road… traffic is busy" + "Cars pass at 40 mph or more" | "Every colour has a reason. This one is Claude's own note from the photo." |
-| 3 | From **Apple Infinite Loop**, To **Cupertino Library / Civic Center**. | Recommended route on quiet parallel streets. Fastest (if drawn) straight down De Anza | "Google would send you straight down De Anza: six lanes at 40 mph, and four risky crossings." |
-| 4 | Click a red spot on the fastest route (if drawn), or on the map at De Anza × Stevens Creek. | "Risky intersection: scored 2/10 from street photos" + "Signalised crossing of a wide, fast arterial…" | "That's a 2 out of 10 crossing." |
-| 5 | Point at the comparison. | **Risky 4 → 0, +0.1 min** | "Our route avoids all four, for six extra seconds." |
+| 2 | Click **De Anza Blvd** just south of Mariani Ave. | Card: North De Anza Boulevard 4.0, "Painted bike lane beside 40 mph multi-lane traffic; lane is narrow with little buffer from fast cars." + "Cars pass at 40 mph or more" | "Every colour has a reason. This one is Claude's own note from the photo." |
+| 3 | From **Apple Infinite Loop**, To **Cupertino Library / Civic Center**. | Recommended route on quiet parallel streets. Fastest (if drawn) straight down De Anza | "Google would send you straight down De Anza: four to six lanes at 40 mph, and four risky crossings." |
+| 4 | Click the first red spot on the fastest route, at De Anza × Mariani Ave (only if the fastest route is drawn and a click on it shows the segment `reasons`; the street card has no intersection score). | "Risky intersection: scored 2/10 from street photos" + "Signalised crossing of a wide, fast arterial…" | "That's a 2 out of 10 crossing." |
+| 5 | Point at the comparison. | **Risky 4 → 0, +0.1 min** | "Our route avoids all four, for under ten extra seconds." |
 
 **Fallback:** if a route is slow or the server hiccups, swap From and To. Library → Infinite Loop gives 1 → 0 risky for +0.5 min.
 
@@ -43,7 +43,7 @@ Two routes, one per mode, chained into one story. Every number below was measure
 | 1 | Switch to **Nature**. Keep **Greenery + Quiet** on. Set the slider to **Direct** (all the way left). | Parks, creeks and trees appear | "Same city, other half of the theme: can a city ride feel like a country ride?" |
 | 2 | From **Cupertino Library**, To **Main Street Cupertino**. | Direct route along Stevens Creek Blvd, **42% green**, 8.5 min | "At Direct, distance is all that counts. That's the modern commute." |
 | 3 | Drag the slider **slowly** toward **Scenic**. The route changes in the first fifth of the slider (at about 0.05 and 0.15), so go slowly there. | The route leaves Stevens Creek, then bends onto the **Regnart Creek Trail past Wilson Park** | "As I slide toward Scenic, bare streets start to feel longer than tree-lined ones, so the route bends into the creek trail." |
-| 4 | Leave it at Scenic. | **80% green, 9.4 min (+0.9 min)** | "Nearly double the greenery for under a minute, and it never puts you on a dangerous road for the sake of trees." |
+| 4 | Leave it at Scenic. | Panel: **45% → 80% green, 9.4 min (+0.9 min)**. At Scenic the panel scores both routes on Greenery + Quiet, so the fastest reads 45% here (42% at Direct, where only Greenery counts) | "Nearly double the greenery for under a minute, and it never puts you on a dangerous road for the sake of trees." |
 | 5 | Optional: click a green stretch. | Claude's green note, e.g. "Tall mature trees line both sides of this residential street" | "Claude rated the greenery from the same photos, in a separate call." |
 
 **Toggles, if a judge asks.** At Scenic on this trip:
@@ -53,7 +53,7 @@ Two routes, one per mode, chained into one story. Every number below was measure
 
 Every combination still leaves the arterial.
 
-**Fallback:** the reverse trip (Main Street → Library) gives 50% → 80% green for +0.8 min. Library → Apple Park changes most gradually: 5 distinct routes, 46% → 74%.
+**Fallback:** the reverse trip (Main Street → Library) gives 53% → 80% green for +0.8 min. Library → Apple Park changes most gradually: 5 distinct routes, 45% → 74%.
 
 ## Numbers to say (all verified)
 
@@ -64,8 +64,8 @@ Every combination still leaves the arterial.
 | 95% | Share of drivable street length scored from photos (the rest from map rules) |
 | 688 → 63 | Safe-map colour flips along the same street, before → after the map clean-up (−91%) |
 | ~25 ms | Time per route (p95) after the routing fix; it was ~180 ms before |
-| 4 → 0 risky, +6 s | Demo 1 |
-| 42% → 80% green, +0.9 min | Demo 2 |
+| 4 → 0 risky, +0.1 min (about 9 s) | Demo 1 |
+| 45% → 80% green, +0.9 min | Demo 2 |
 
 ## If judges push back
 

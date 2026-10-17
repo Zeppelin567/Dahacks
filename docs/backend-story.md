@@ -39,10 +39,10 @@ We built a bike map of Cupertino that rates how every street feels to ride: from
 | **54%** | Share of the *whole* network (629 km) scored from photos. The rest is mostly parking aisles, driveways and off-street paths, which Street View doesn't cover | baked graph |
 | **542** | Junctions with a photo-based safety score. The other 5,559 use a rule | baked graph |
 | **17** | Fixed hazard types Claude may report (door zone, freeway ramp, no bike lane …) | `score_prompts.py` |
-| **< 1 s / ~9 ms** | Graph load + index at the first request / one route request: 9 ms typical, 25 ms p95 (was 62 / 182 ms before the routing fix) | measured (§6.7) |
+| **< 1 s / ~9 ms** | Graph load + index at the first request / one route request: 9 ms typical, 25 ms p95 (was 61 / 184 ms before the routing fix) | measured (§6.7) |
 | **19,817 → 1,626** | Lines drawn on the Safe map before → after the map clean-up (4.8 MB → 0.66 MB); Safe colour flips along streets 688 → 63 (each remaining one is a real change in the road or the edge of a hazard spot) | measured (§5.4) |
-| **4 → 0 risky, +6 s** | Safe demo: Apple Infinite Loop → Library | API, `docs/demo-script.md` |
-| **42% → 80% green, +0.9 min** | Green demo: Library → Main Street via the Regnart Creek Trail | API, `docs/demo-script.md` |
+| **4 → 0 risky, +0.1 min (about 9 s)** | Safe demo: Apple Infinite Loop → Library | API, `docs/demo-script.md` |
+| **45% → 80% green, +0.9 min** | Green demo at Scenic: Library → Main Street via the Regnart Creek Trail (at Direct the same fastest route reads 42%, because below r = 0.1 only Greenery counts) | API, `docs/demo-script.md` |
 | **737 → 72** | The same on the Green map. 17 are real changes in the road; 55 are the ends of dark-green "green stretches" | measured (§5.4) |
 
 ---
@@ -378,7 +378,7 @@ The engine's code comments are in Chinese. This section is the English walk-thro
 
 ### 6.1 Start-up and snapping
 
-- **Load once:** the baked graph (`cupertino_bike.graphml`) loads at the first request and stays in memory. The first request also builds an index of per-street costs (about 0.5–1 s). After that, a route takes about **9 ms typical and 25 ms at p95**. Before the fix it was 62 / 182 ms.
+- **Load once:** the baked graph (`cupertino_bike.graphml`) loads at the first request and stays in memory. The first request also builds an index of per-street costs (about 0.3 s; with the graph load, under 1 s). After that, a route takes about **9 ms typical and 25 ms at p95**. Before the fix it was 61 / 184 ms.
 - **No expressways:** `trunk`, `trunk_link`, `motorway` and `motorway_link` edges are hidden from both routes (`_safety_floor_view`).
 - **Snapping:** start and end snap to the nearest of **4,571 rider-reachable nodes**. A node qualifies when it is in the main connected network and touches a real street or bike path, never a parking aisle, driveway, expressway or private road. Before, 4 of the 7 presets started inside parking lots, and about 4% of random map points snapped to disconnected scraps and returned "no path". Both are now 0.
 
@@ -418,20 +418,20 @@ crossing cost = 1000 × (1 − j)² metres                       j = junction sc
 felt = length × (1 + r × (5 × (1 − g) + 2 × [street is red]))  +  r × 3 × crossing cost at red junctions
 ```
 
-- **r = 0:** felt = real length, so the route is exactly the fastest. Verified on 242 of 242 test trips.
+- **r = 0:** felt = real length (only the 10× safety floor for streets scored below 2/10 still applies; in the routable network that is one 74 m piece of Stevens Creek Blvd), so the route is the fastest. Verified on 242 of 242 test trips.
 - **r = 1:** a fully green street feels 1×, a half-green one 3.5×, a bare one 6×, and a red street costs extra on top. That is the **safety floor**: trees never pull a route onto a dangerous road.
 - The cost always rises as greenery drops (it is monotonic). So moving the slider bends the route step by step, and it never jumps back.
 
 ### 6.4 Detour cap that always ends
 
 - **The cap:** Safe allows at most **1.5×** the fastest route's length. Green allows **1.1×** at Direct, rising to 1.5× at Scenic.
-- **Relaxing:** if the recommended route is too long, the extra felt length is softened (strength 1 → 0.5 → 0.25 → 0.125) and the route recomputed. At most 4 tries; then it falls back to the fastest route.
-- **Never worse:** a relaxed route is kept only if it is no worse than the fastest on the panel's own number. Safe must have no more risky pieces; Green must have no less greenery.
+- **Relaxing:** if the recommended route is too long, or reads worse than the fastest (next point), the extra felt length is softened (strength 1 → 0.5 → 0.25 → 0.125) and the route recomputed. At most 4 tries; then it falls back to the fastest route.
+- **Never worse:** every try, the full-strength one included, is kept only if it is no worse than the fastest on the panel's own number. Safe must have no more risky pieces; Green must have no less greenery.
 - **Measured:** 0 cap violations, and 0 recommended routes that read worse than the fastest on 650 preset pairs. Before this rule there were 10 Safe and 13 Green.
 
 ### 6.5 Segments and reasons
 
-- **Split by colour:** the route is cut into segments wherever its colour level changes (good ≥ 0.66, ok ≥ 0.33, else bad). Pieces under 20 m join a neighbour, but a red piece is never absorbed. Before, Model C's cosine segmentation on a single feature merged orange stretches into green.
+- **Split by colour:** the route is cut into segments wherever its colour level changes (good ≥ 0.66, ok ≥ 0.33, else bad). Pieces under 20 m join a neighbour, but on the Safe map a red piece is never absorbed. Before, Model C's cosine segmentation on a single feature merged orange stretches into green.
 - **Red intersections:** each red intersection on a Safe route is drawn as its own red piece, 12 m either side of the node. Clicking it shows "Risky intersection: scored N/10 from street photos", Claude's junction note and up to 3 hazards.
 - **Reasons:**
   - **Safe:** taken from the worst street in the segment: Claude's note plus hazard sentences, or "No street imagery — scored from map data".
@@ -442,7 +442,7 @@ felt = length × (1 + r × (5 × (1 − g) + 2 × [street is red]))  +  r × 3 �
 | Map | Fields |
 |---|---|
 | Safe | `extra_min`, and `risky_segments_fastest` → `risky_segments_recommended` = **the red pieces drawn** on each route (red stretches and red intersections). The number always matches what is red on screen |
-| Green | `extra_min`, and `greenery_pct_fastest` → `greenery_pct_recommended` = the **length-weighted** average score of the switched-on toggles × 100. `noise_reduction_db` is always `null` (no noise data) |
+| Green | `extra_min`, and `greenery_pct_fastest` → `greenery_pct_recommended` = the **length-weighted** average of the route's segment scores × 100, where a segment's score is the average of the switched-on toggles. Below r = 0.1 the toggles count as off and Greenery alone is used, so the same fastest route reads 42% at Direct and 45% at Scenic on Library → Main Street. `noise_reduction_db` is always `null` (no noise data) |
 
 ### 6.7 Before vs after, measured on the real baked scores
 
@@ -450,10 +450,10 @@ felt = length × (1 + r × (5 × (1 − g) + 2 × [street is red]))  +  r × 3 �
 
 | Metric | Before (`161c005`) | After (`fix/routing`) |
 |---|---|---|
-| Time per route, p50 / p95 | 62 / 182 ms | **9 / 25 ms** |
+| Time per route, p50 / p95 | 61 / 184 ms | **9 / 25 ms** |
 | Safe route identical to the fastest | 20% of trips | **7%** |
 | km on red streets, Safe routes, all trips (fastest: 8.1) | 4.2 | **3.1** |
-| Red busy crossings on Safe routes (fastest: 84) | 89 (more than fastest!) | **57** |
+| Red busy crossings on Safe routes (fastest: 84) | 89 (more than fastest!) | **69** |
 | Green at r = 0.5: share of the route on arterials (fastest: 64%) | 64% | **35%** |
 | Green cost rises steadily with lost greenery | no | **yes** |
 
@@ -461,8 +461,8 @@ felt = length × (1 + r × (5 × (1 − g) + 2 × [street is red]))  +  r × 3 �
 
 | Trip | Result |
 |---|---|
-| Safe: Apple Infinite Loop → Library | Risky **4 → 0**, 7.6 → 7.7 min (+6 s) |
-| Green: Library → Main Street | Greenery **42% → 80%**, 8.5 → 9.4 min, via the Regnart Creek Trail |
+| Safe: Apple Infinite Loop → Library | Risky **4 → 0**, 7.6 → 7.7 min (+0.1 min, about 9 s) |
+| Green: Library → Main Street | Greenery **45% → 80%** at Scenic (42% at Direct, where only Greenery counts), 8.5 → 9.4 min, via the Regnart Creek Trail |
 
 **Say it like this:** *"Every street has a felt length. A stressful arterial feels 2.5× longer, and a dangerous crossing adds half a kilometre. The router finds the ride that feels shortest, never more than 50% longer than the fastest, and never worse than it."*
 
@@ -505,7 +505,7 @@ felt = length × (1 + r × (5 × (1 − g) + 2 × [street is red]))  +  r × 3 �
 
 | Endpoint | Request | Response | What the frontend does with it |
 |---|---|---|---|
-| `GET /bikemap/places` | none | `Place[]`: `id, name, lat, lng` (7 presets: De Anza College, Main Street, Apple Park Visitor Center, Library / Civic Center, Memorial Park, Monta Vista HS, Rancho San Antonio) | Fills the From / To pickers (`controls.tsx`) |
+| `GET /bikemap/places` | none | `Place[]`: `id, name, lat, lng` (26 presets: the 7 originals, De Anza College, Main Street, Apple Park Visitor Center, Library / Civic Center, Memorial Park, Monta Vista HS and Rancho San Antonio, plus landmarks, schools, parks and trails such as Apple Infinite Loop, Cupertino High School and Blackberry Farm Park) | Fills the From / To pickers (`controls.tsx`) |
 | `POST /bikemap/route` | `RouteRequest`: `start [lat,lng]`, `end [lat,lng]`, `mode "safe"\|"green"`, `rural 0..1` (default 0.5), `prefs {green, quiet, shade}` | `RouteResponse`: `mode`, `mock` (false), `fastest: Route`, `recommended: Route`, `compare: Comparison` | Draws the fastest route as a grey dashed line, the recommended route as a thick halo plus coloured segments with click-up reasons, and the stat cards (`map-page.tsx`, `route-map.tsx`, `safe-route.tsx`, `green-route.tsx`) |
 | `GET /bikemap/network?layer=safe\|green` | `layer` | `NetworkResponse`: `layer`, `mock`, `segments: Segment[]`, one per continuous line of a road section, plus hazard spots or green stretches (1,626 Safe, 0.66 MB; 1,552 Green, 0.59 MB; §5.4). Built once, then cached on the server | Modern (safe) mode: the "Show risk on every street" layer; clickable. A suggested style (red thicker, base dimmed under a route) was handed to the UI team as a snippet |
 | `GET /bikemap/green-layers` | none | `{parks: [[lat,lng]…][], water: …, trees: [lat,lng][]}`, or empty lists if the file is missing | Not used by the React app yet |
@@ -664,7 +664,7 @@ Tables describe branch `fix/routing`. `engine.py` (§10.7) is listed by function
 | `_vals(x)`, `_num(d, key)` | Read GraphML values (stored as text) |
 | `build_preferences(req)` | Slider and toggles → per-feature preferences (−5 × r for each switched-on toggle) |
 | `edge_feature_vector(edge, mode)` | A street's feature scores 0..1 (from `scoring.py`) |
-| `safe_factor(s, strength)` | Safe felt-length multiplier: 1 + 3 × (1 − s); 10× below the 0.2 safety floor |
+| `safe_factor(s, strength)` | Safe felt-length multiplier: 1 + strength × 3 × (1 − s). The 10× cost below the 0.2 safety floor is applied in `_pair_costs` / `_make_weight`, on both maps |
 | `green_factor(g, r, s, strength)` | Green felt-length multiplier: 1 + r × (5 × (1 − g) + 2 × [red]) |
 | `junction_cost(j)` | Crossing cost in metres: 1000 × (1 − j)² |
 | `_rank(e)`, `_crossing(u, v, e, idx)` | Road rank, and whether entering a junction counts as a busy or red crossing (divided roads counted once) |
@@ -672,8 +672,9 @@ Tables describe branch `fix/routing`. `engine.py` (§10.7) is listed by function
 | `_pair_costs(...)`, `_make_weight(...)` | Per-request edge costs for the chosen mode, slider, toggles and relax strength |
 | `_length_weight(u, v, d)` | Plain length, for the fastest route |
 | `_safety_floor_view(G)` | Graph view without motorway or trunk (expressway) edges |
-| `preference_weight(...)`, `_cosine(...)`, `_segment_by_similarity(...)`, `apply_vote(...)` | Model C's BikeButler-paper functions, kept in the file. Routing no longer uses the first three; `apply_vote` is for segment voting |
-| `_segment_by_level(levels, lengths, mode)` | Cuts a route into segments where the colour level changes; pieces under 20 m join a neighbour (never a red one) |
+| `_no_path()` | The error raised when start and end have no route between them |
+| `preference_weight(...)`, `_cosine(...)`, `_segment_by_similarity(...)`, `apply_vote(...)` | Model C's BikeButler-paper functions, kept in the file but no longer called: routing uses the felt length, segments come from `_segment_by_level`, and `apply_vote` (like/dislike voting on a segment) has no endpoint |
+| `_segment_by_level(levels, lengths, mode)` | Cuts a route into segments where the colour level changes; pieces under 20 m join the neighbour with the closest level (on Safe a red piece is never absorbed) |
 | `_level(score)` | 0..1 score → good (≥ 0.66) / ok (≥ 0.33) / bad |
 | `_pick_key(...)`, `_edge_coords(...)` | The parallel edge Dijkstra used, and its real shape as `(lat, lng)` |
 | `_green_reasons(d)` | Green click text: Claude's note, park, trees, water |
