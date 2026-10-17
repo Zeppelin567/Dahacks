@@ -1,15 +1,30 @@
 [
  {
-  "name_contains": ["Stelling Road", "Prospect Road"],
+  "name_contains": [
+   "Stelling Road",
+   "Prospect Road"
+  ],
   "safety_score": 0.9,
   "note": "Score set by hand by the team (overrides.json), not from the photos."
  },
  {
   "edges_note": "Prospect Rd westbound, ~95 m where the right-turn lane opens and the bike lane crosses it, ending ~60 m before De Anza Blvd (Street View YIuVwlMhFGLeAbubqJiS3g, w43fmmGOTJtBvlNaMFOdVg, 818Z9k9jZgxVlPLnQGuDGA).",
   "edges": [
-   [317525338, 3709914598, 0],
-   [3709914598, 317525339, 0],
-   [317525339, 9789336722, 0]
+   [
+    317525338,
+    3709914598,
+    0
+   ],
+   [
+    3709914598,
+    317525339,
+    0
+   ],
+   [
+    317525339,
+    9789336722,
+    0
+   ]
   ],
   "safety_score": 0.2,
   "photo_sample": "r317525338_3709914598_0_0",
@@ -18,12 +33,45 @@
  {
   "edges_note": "De Anza Blvd southbound, the last ~90 m into Prospect Rd: the photos rated it 2-3/10; shown at the street's typical 4/10 so the intersection itself is not red.",
   "edges": [
-   [2922185399, 2400757272, 0],
-   [2922185705, 2922185399, 0],
-   [5918505189, 2922185705, 0],
-   [5918505193, 5918505189, 0]
+   [
+    2922185399,
+    2400757272,
+    0
+   ],
+   [
+    2922185705,
+    2922185399,
+    0
+   ],
+   [
+    5918505189,
+    2922185705,
+    0
+   ],
+   [
+    5918505193,
+    5918505189,
+    0
+   ]
   ],
   "safety_score": 0.4,
   "note": "Set by hand by the team to De Anza's typical 4/10: a busy 40 mph arterial with a painted bike lane next to a right-turn lane."
+ },
+ {
+  "junctions": [
+   317525477,
+   317526506,
+   2404221988
+  ],
+  "junction_safety": 0.6,
+  "note": "Prospect Rd x Lawrence Expressway: set by the team, who ride it. A signalised crossing on Prospect's bike lane; easier than crossing Lawrence at Moorpark/Bollinger. Claude's photo score was 1/10."
+ },
+ {
+  "junctions": [
+   289831378,
+   65482356
+  ],
+  "junction_safety": 0.5,
+  "note": "Prospect Rd x Miller Ave: set by the team, who ride it. Claude's photo score was 3/10."
  }
 ]

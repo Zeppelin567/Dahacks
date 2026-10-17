@@ -120,7 +120,26 @@ def _load_graph():
                 f"路网文件不存在: {p}，请先运行 cd py && uv run python scripts/1_build_graph.py"
             )
         _G = ox.load_graphml(str(p))
+        _apply_junction_overrides(_G, p.parent / "overrides.json")
     return _G
+
+
+def _apply_junction_overrides(G, path: Path) -> None:
+    """Hand-set intersection scores from overrides.json entries with "junctions": [node ids] (the team rode
+    them). Labelled junction_src="manual" so the card says "set by the team", never "from street photos";
+    the photo scores stay untouched in the score files. Street overrides are applied by 4_bake.py."""
+    if not path.exists():
+        return
+    import json
+
+    for o in json.loads(path.read_text(encoding="utf-8")):
+        if "junctions" not in o:
+            continue
+        for n in o["junctions"]:
+            if n in G.nodes:
+                G.nodes[n]["junction_safety"] = float(o["junction_safety"])
+                G.nodes[n]["junction_src"] = "manual"
+                G.nodes[n]["junction_note"] = str(o.get("note", ""))
 
 
 _BOUNDS: tuple[float, float, float, float] | None = None
@@ -638,16 +657,28 @@ def _junction_score(nd: dict) -> float | None:
 
 
 def _red_junctions(Gv, path, idx: dict) -> dict[int, tuple]:
-    """Red intersections a Safe route passes: {position in path: (node, score)} for interior nodes with
-    junction_safety < RED_BELOW, once per junction cluster (the same spots _risky_spots counts). Each one is
-    drawn as a red mark on the route, so every risky spot the panel counts can be seen and clicked."""
-    cl, seen, out = idx["cluster"], set(), {}
+    """Red intersections a Safe route really has to deal with: {position in path: (node, score)}, once per
+    junction cluster with a (worst-corner) score < RED_BELOW. Counted only where the rider crosses or turns
+    onto the busy street (the same rule the routing cost charges, _crossing) or turns off it across traffic.
+    Riding straight along a main road past side streets is not a crossing (except at red signals or ramps,
+    which _crossing already charges). Each one is drawn as a clickable red mark on the route."""
+    cl, cj, ctop, seen, out = idx["cluster"], idx["cj"], idx["ctop"], set(), {}
+
+    def edge(a, b) -> dict:
+        return min(Gv[a][b].values(), key=lambda d: _num(d, "length") or 0.0)
+
     for i in range(1, len(path) - 1):
-        j = _junction_score(Gv.nodes[path[i]])
-        c = cl.get(path[i], path[i])
-        if j is not None and j < RED_BELOW and c not in seen:
+        a, v, b = path[i - 1], path[i], path[i + 1]
+        c = cl.get(v, v)
+        j, top = cj.get(c), ctop.get(c, 0)
+        if j is None or j >= RED_BELOW or c in seen or top < CROSS_MIN_RANK:
+            continue
+        if cl.get(a) == c and cl.get(b) == c:
+            continue  # the link inside one divided-road junction: counted where the rider enters it
+        e_in, e_out = edge(a, v), edge(v, b)
+        if _crossing(a, v, e_in, idx) is not None or (_rank(e_in) >= top and _rank(e_out) < top):
             seen.add(c)
-            out[i] = (path[i], j)
+            out[i] = (v, j)
     return out
 
 
@@ -685,8 +716,10 @@ def _junction_notes() -> dict:
 
 
 def _junction_reasons(n, j: float, nd: dict) -> list[str]:
-    src = "street photos" if nd.get("junction_src") == "photo" else "map data"
+    src = {"photo": "street photos", "manual": "the team, who rode it"}.get(str(nd.get("junction_src")), "map data")
     out = [f"Risky intersection: scored {round(j * 10)}/10 from {src}"]
+    if nd.get("junction_src") == "manual":
+        return out + ([str(nd["junction_note"])] if nd.get("junction_note") else [])
     r = _junction_notes().get(str(n))
     if r:
         if r.get("note"):

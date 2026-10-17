@@ -5,7 +5,7 @@ Two routes, one per mode, chained into one story. Every number below was measure
 | | Modern (safe) | Nature (green) |
 |---|---|---|
 | Trip | **Apple Infinite Loop → Cupertino Library** | **Cupertino Library → Main Street Cupertino** |
-| Fastest / Direct | 7.6 min, straight down De Anza Blvd, **4 risky spots** | 8.5 min along Stevens Creek Blvd, **42% green** |
+| Fastest / Direct | 7.6 min, straight down De Anza Blvd, **3 risky spots** | 8.5 min along Stevens Creek Blvd, **42% green** |
 | Recommended | 7.7 min on parallel side streets, **0 risky spots** | 9.4 min down the **Regnart Creek Trail past Wilson Park**, **80% green** |
 | Cost | **+0.1 min (about 9 s)** | **+0.9 min** |
 | Backup | Blackberry Farm → Cupertino High: 2 → 0 risky, +0.3 min | Library → Apple Park: 45% → 74% green, +1.4 min |
@@ -30,9 +30,9 @@ Two routes, one per mode, chained into one story. Every number below was measure
 |---|---|---|---|
 | 1 | Modern mode. Turn on **Show risk on every street**. | City map: arterials orange, neighbourhoods green, red at expressways and the worst junctions | "Claude looked at 8,931 street photos and rated every street in Cupertino. Green is calm, orange is stressful, red is where most people won't ride." |
 | 2 | Click **De Anza Blvd** just south of Mariani Ave. | Card: North De Anza Boulevard 4.0, "Painted bike lane beside 40 mph multi-lane traffic; lane is narrow with little buffer from fast cars." + "Cars pass at 40 mph or more" | "Every colour has a reason. This one is Claude's own note from the photo." |
-| 3 | From **Apple Infinite Loop**, To **Cupertino Library / Civic Center**. | Recommended route on quiet parallel streets. Fastest (if drawn) straight down De Anza | "Google would send you straight down De Anza: four to six lanes at 40 mph, and four risky crossings." |
+| 3 | From **Apple Infinite Loop**, To **Cupertino Library / Civic Center**. | Recommended route on quiet parallel streets. Fastest (if drawn) straight down De Anza | "Google would send you straight down De Anza: four to six lanes at 40 mph, and three risky crossings." |
 | 4 | Click the first red spot on the fastest route, at De Anza × Mariani Ave (only if the fastest route is drawn and a click on it shows the segment `reasons`; the street card has no intersection score). | "Risky intersection: scored 2/10 from street photos" + "Signalised crossing of a wide, fast arterial…" | "That's a 2 out of 10 crossing." |
-| 5 | Point at the comparison. | **Risky 4 → 0, +0.1 min** | "Our route avoids all four, for under ten extra seconds." |
+| 5 | Point at the comparison. | **Risky 3 → 0, +0.1 min** | "Our route avoids all three, for under ten extra seconds." |
 
 **Fallback:** if a route is slow or the server hiccups, swap From and To. Library → Infinite Loop gives 1 → 0 risky for +0.5 min.
 
@@ -64,7 +64,7 @@ Every combination still leaves the arterial.
 | 95% | Share of drivable street length scored from photos (the rest from map rules) |
 | 688 → 63 | Safe-map colour flips along the same street, before → after the map clean-up (−91%) |
 | ~25 ms | Time per route (p95) after the routing fix; it was ~180 ms before |
-| 4 → 0 risky, +0.1 min (about 9 s) | Demo 1 |
+| 3 → 0 risky, +0.1 min (about 9 s) | Demo 1 |
 | 45% → 80% green, +0.9 min | Demo 2 |
 
 ## If judges push back

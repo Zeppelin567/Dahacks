@@ -41,7 +41,7 @@ We built a bike map of Cupertino that rates how every street feels to ride: from
 | **17** | Fixed hazard types Claude may report (door zone, freeway ramp, no bike lane …) | `score_prompts.py` |
 | **< 1 s / ~9 ms** | Graph load + index at the first request / one route request: 9 ms typical, 25 ms p95 (was 61 / 184 ms before the routing fix) | measured (§6.7) |
 | **19,817 → 1,626** | Lines drawn on the Safe map before → after the map clean-up (4.8 MB → 0.66 MB); Safe colour flips along streets 688 → 63 (each remaining one is a real change in the road or the edge of a hazard spot) | measured (§5.4) |
-| **4 → 0 risky, +0.1 min (about 9 s)** | Safe demo: Apple Infinite Loop → Library | API, `docs/demo-script.md` |
+| **3 → 0 risky, +0.1 min (about 9 s)** | Safe demo: Apple Infinite Loop → Library | API, `docs/demo-script.md` |
 | **45% → 80% green, +0.9 min** | Green demo at Scenic: Library → Main Street via the Regnart Creek Trail (at Direct the same fastest route reads 42%, because below r = 0.1 only Greenery counts) | API, `docs/demo-script.md` |
 | **737 → 72** | The same on the Green map. 17 are real changes in the road; 55 are the ends of dark-green "green stretches" | measured (§5.4) |
 
@@ -461,7 +461,7 @@ felt = length × (1 + r × (5 × (1 − g) + 2 × [street is red]))  +  r × 3 �
 
 | Trip | Result |
 |---|---|
-| Safe: Apple Infinite Loop → Library | Risky **4 → 0**, 7.6 → 7.7 min (+0.1 min, about 9 s) |
+| Safe: Apple Infinite Loop → Library | Risky **3 → 0**, 7.6 → 7.7 min (+0.1 min, about 9 s) |
 | Green: Library → Main Street | Greenery **45% → 80%** at Scenic (42% at Direct, where only Greenery counts), 8.5 → 9.4 min, via the Regnart Creek Trail |
 
 **Say it like this:** *"Every street has a felt length. A stressful arterial feels 2.5× longer, and a dangerous crossing adds half a kilometre. The router finds the ride that feels shortest, never more than 50% longer than the fastest, and never worse than it."*
