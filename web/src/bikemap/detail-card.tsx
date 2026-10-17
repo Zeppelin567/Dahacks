@@ -82,12 +82,22 @@ export function StreetCard({
             className="aspect-[16/10] w-full rounded-xl border border-[var(--bm-border)] object-cover"
           />
           <figcaption className="text-[11px] text-[var(--bm-muted)]">
-            The photo Claude scored · Google Street View{photo.date ? ` · ${photo.date}` : ""}
+            {detail.source === "manual" ? "Street View at this spot" : "The photo Claude scored"}
+            {` · Google Street View${photo.date ? ` · ${photo.date}` : ""}`}
           </figcaption>
         </figure>
       )}
 
-      {detail.source === "photo" ? (
+      {detail.source === "manual" ? (
+        detail.note && (
+          <blockquote className="border-l-2 pl-3 text-sm leading-snug" style={{ borderColor: color }}>
+            {detail.note}
+            <span className="mt-1 block text-[11px] text-[var(--bm-muted)]">
+              Score set by the team from the Street View photo
+            </span>
+          </blockquote>
+        )
+      ) : detail.source === "photo" ? (
         detail.note && (
           <blockquote className="border-l-2 pl-3 text-sm leading-snug" style={{ borderColor: color }}>
             {detail.note}

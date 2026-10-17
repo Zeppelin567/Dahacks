@@ -28,7 +28,7 @@ import osmnx as ox
 import score_prompts as sp  # noqa: I001  (sibling module: scripts/ is on sys.path)
 
 PY = Path(__file__).resolve().parents[1]
-DATA = PY / "data"
+DATA = (PY / os.environ.get("BIKEMAP_DATA", "data")).resolve()  # data/ext = extended area
 PHOTOS = DATA / "cache" / "streetview"
 RAW = DATA / "cache" / "llm"
 OUT = {"safe": DATA / "safety_scores.jsonl", "green": DATA / "green_scores.jsonl"}

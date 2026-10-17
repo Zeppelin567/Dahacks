@@ -4,10 +4,10 @@ Two bike maps for Cupertino: a Safe route map and a Green route map with a City 
 
 ## Tech plan
 
-The whole plan is in **[.plans/actualproject.md](.plans/actualproject.md)**: product, team, contract, and the Safe route pipeline (decided 2026-10-16).
+The whole plan is in [.plans/actualproject.md](.plans/actualproject.md): product, team, contract, and the Safe route pipeline (decided 2026-10-16).
 
-- **Safe route**
-  - Every street and intersection gets a 1–10 safety score. Street View photos plus OSM and City of Cupertino facts go to Claude (vision), which returns the score.
+- Safe route:
+  - Every street and intersection gets a 1 to 10 safety score. Street View photos plus OSM and City of Cupertino facts go to Claude (vision), which returns the score.
   - Routing runs Dijkstra on "felt distance" (λ = 3, intersection penalty 20 m per point, 50% detour cap).
   - Real CCRS bike crashes are used only to validate the scores, never to compute them.
   - Pipeline:
@@ -17,6 +17,11 @@ The whole plan is in **[.plans/actualproject.md](.plans/actualproject.md)**: pro
     ```
 
     The graph and scores are committed. Photos, raw LLM replies and keys are not.
+- Extended area (branch `bike`): the south-east strip bounded by I-280, San Tomas Aquino Rd and Prospect Rd → Hamilton Ave lives in its own folder, `py/data/ext/`. `py/data/` stays the original Cupertino map.
+  - `scripts/0_extend_area.py` copies the original files into `data/ext/` and merges the new streets in. Old edge and sample ids don't change, so every existing score carries over.
+  - Steps 1–4 and the app read `data/ext/` when `BIKEMAP_DATA=data/ext` is set (relative to `py/`). Unset means the original.
+  - `2_photos.py --only-new` keeps the copied samples as they are and checks/fetches only the new area. Run order is in the docstring of `0_extend_area.py`.
+  - App on the extended map (PowerShell): `$env:BIKEMAP_DATA="data/ext"; npm run dev:py`
 - Scoring spec (prompts, schemas, bake-off): [.plans/scoring-spec.md](.plans/scoring-spec.md)
 - Reference project (Aggie Street Smart): [referenceproject.md](referenceproject.md)
 
@@ -25,13 +30,13 @@ npm install && npm run dev:py   # Python side-car
 npm run dev                     # http://localhost:5173/safe
 ```
 
-> Built on **MVP_demo** (github.com/blar-tw/MVP_demo, MIT), a generic starter written before the event.
+> Built on MVP_demo (github.com/blar-tw/MVP_demo, MIT), a generic starter written before the event.
 > Everything under `py/app/bikemap/`, `web/src/bikemap/` and `web/src/pages/{safe,green}-route.tsx` was built during DAHacks 5.0.
 > The rest of this README is the starter's original documentation.
 
 ---
 
-# MVP Demo: a hackathon starter that already does the boring parts 
+# MVP Demo: a hackathon starter that already does the boring parts
 
 It bundles auth, database, typed API with live docs, realtime, streaming LLM chat, API keys for scripts and hardware, and an optional Python side-car, wired together so a team can spend the 48 hours on the idea rather than on plumbing.
 
@@ -65,10 +70,10 @@ npm run dev:py        # optional Python service (needs uv) → /app/python
 
 ## First 10 minutes at a hackathon
 
-1. **Rename it.** Edit [`web/src/app.config.ts`](web/src/app.config.ts): name, tagline, logo, brand color, and which modules show in the sidebar. Commit. The landing page and app shell are now yours.
-2. **Model your thing.** Copy the `items` chain and rename it: [`api/src/db/schema.ts`](api/src/db/schema.ts) → `npm run db:generate` → [`shared/src/items.ts`](shared/src/items.ts) → [`api/src/routes/items.ts`](api/src/routes/items.ts) → [`web/src/lib/items.ts`](web/src/lib/items.ts) + [`web/src/pages/items.tsx`](web/src/pages/items.tsx). Each file says what to change at the top.
-3. **Add your key.** `cp .env.example .env`, set `ANTHROPIC_API_KEY` (or another provider + `LLM_PROVIDER`). Restart the api. The chat badge flips from *mock mode* to the model name.
-4. **Delete what you don't need.** Turn a module off in `app.config.ts` first (instant); delete its files later if ever.
+1. Rename it. Edit [`web/src/app.config.ts`](web/src/app.config.ts): name, tagline, logo, brand color, and which modules show in the sidebar. Commit. The landing page and app shell are now yours.
+2. Model your thing. Copy the `items` chain and rename it: [`api/src/db/schema.ts`](api/src/db/schema.ts) → `npm run db:generate` → [`shared/src/items.ts`](shared/src/items.ts) → [`api/src/routes/items.ts`](api/src/routes/items.ts) → [`web/src/lib/items.ts`](web/src/lib/items.ts) + [`web/src/pages/items.tsx`](web/src/pages/items.tsx). Each file says what to change at the top.
+3. Add your key. `cp .env.example .env`, set `ANTHROPIC_API_KEY` (or another provider + `LLM_PROVIDER`). Restart the api. The chat badge flips from *mock mode* to the model name.
+4. Delete what you don't need. Turn a module off in `app.config.ts` first (instant); delete its files later if ever.
 
 If your sponsor credits are for a different LLM vendor, set `LLM_PROVIDER=openai` (or `google`) plus that vendor's key. Nothing else changes.
 

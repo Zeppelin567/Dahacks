@@ -42,7 +42,7 @@ export type StreetDetail = {
   road: string;
   score10: number;
   level: Level;
-  source: "photo" | "map";
+  source: "photo" | "map" | "manual";
   note: string | null;
   chips: string[];
   photo: Photo | null;

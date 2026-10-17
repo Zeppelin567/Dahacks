@@ -18,7 +18,6 @@ from typing import Any
 
 from . import engine
 from .models import Destination, DestinationsResponse, SearchResult
-from .places import BBOX
 
 log = logging.getLogger("bikemap.destinations")
 
@@ -250,7 +249,7 @@ def nature_destinations(limit: int = 60) -> DestinationsResponse:
 
 def search(q: str) -> list[SearchResult]:
     """Nominatim, bounded to the routing area (a result outside it couldn't be routed to)."""
-    south, west, north, east = BBOX
+    south, west, north, east = engine.graph_bounds()
     pad = 0.01
     params = {
         "q": q,

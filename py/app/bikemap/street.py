@@ -10,6 +10,7 @@ from __future__ import annotations
 import bisect
 import json
 import math
+import os
 import re
 from pathlib import Path
 
@@ -18,7 +19,8 @@ import numpy as np
 from . import engine, scoring
 from .models import LatLng, Mode, Photo, RoutePhoto, StreetDetail
 
-DATA = Path(__file__).resolve().parents[2] / "data"
+# BIKEMAP_DATA picks the data folder, relative to py/: unset = data/ (original), data/ext = extended area.
+DATA = (Path(__file__).resolve().parents[2] / os.environ.get("BIKEMAP_DATA", "data")).resolve()
 PHOTO_DIR = DATA / "cache" / "streetview"
 PHOTO_NAME = re.compile(r"^[A-Za-z0-9_-]{5,100}_\d{1,3}\.jpg$")
 MAX_CLICK_DIST_M = 60.0
@@ -141,6 +143,10 @@ def _pick_sample(u, v, note: str | None, layer: Mode, lat: float, lng: float) ->
     return min(scored, key=lambda s: (s["lat_lng"][0] - lat) ** 2 + (s["lat_lng"][1] - lng) ** 2)
 
 
+def _sample_by_id(sample_id: str) -> dict | None:
+    return next((s for ss in _get_samples().values() for s in ss if s["sample_id"] == sample_id), None)
+
+
 def _streetview_url(pano: str | None, heading: int | None, at: LatLng) -> str:
     if pano:
         return f"https://www.google.com/maps/@?api=1&map_action=pano&pano={pano}&heading={heading or 0}"
@@ -185,9 +191,10 @@ def street_detail(lat: float, lng: float, mode: Mode) -> StreetDetail | None:
 
     vec01, _ = engine.edge_feature_vector(d, mode)
     score = vec01["safety" if mode == "safe" else "vegetation"]
+    manual = mode == "safe" and d.get("safety_src") == "manual"
     if mode == "safe":
         from_photo = d.get("safety_src") == "photo"
-        note = d.get("safety_note") if from_photo else None
+        note = d.get("safety_note") if from_photo or manual else None
         chips = _safe_chips(d)
     else:
         from_photo = engine._num(d, "vegetation_vlm") is not None
@@ -196,8 +203,10 @@ def street_detail(lat: float, lng: float, mode: Mode) -> StreetDetail | None:
 
     photo = None
     pano = heading = None
-    if from_photo:
-        s = _pick_sample(u, v, note, mode, lat, lng)
+    if from_photo or manual:  # a hand-set street still shows the Street View photo it was judged from
+        s = _pick_sample(u, v, None if manual else note, mode, lat, lng)
+        if manual and d.get("manual_sample"):  # overrides.json named the view to show
+            s = _sample_by_id(str(d["manual_sample"])) or s
         if s:
             pano, heading = s["pano_id"], int(s["heading"])
             name = s["photos"][0]
@@ -212,7 +221,7 @@ def street_detail(lat: float, lng: float, mode: Mode) -> StreetDetail | None:
         road=ROAD_TEXT.get(hw, hw.replace("_", " ") or "road"),
         score10=round(max(1.0, min(10.0, score * 10)), 1),
         level=engine._level(score),
-        source="photo" if from_photo else "map",
+        source="manual" if manual else "photo" if from_photo else "map",
         note=str(note) if note else None,
         chips=chips,
         photo=photo,

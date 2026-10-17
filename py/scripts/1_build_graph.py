@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import sys
 import time
 import urllib.request
@@ -39,9 +40,11 @@ import osmnx as ox
 import pandas as pd
 from shapely.strtree import STRtree
 
-DATA = Path(__file__).resolve().parents[1] / "data"
+# BIKEMAP_DATA picks the data folder, relative to py/: unset = data/ (original), data/ext = extended area.
+DATA = (Path(__file__).resolve().parents[1] / os.environ.get("BIKEMAP_DATA", "data")).resolve()
 CACHE = DATA / "cache"
 REPORTS = CACHE / "reports"
+EXTRA_AREA = DATA / "extra_area.geojson"
 UTM = "EPSG:32610"  # metres, UTM zone 10N
 BUFFER_M = 500
 CITY_URL = (
@@ -91,9 +94,22 @@ def configure() -> None:
     ox.settings.log_console = False
 
 
-def area_polygon():
+def city_polygon():
     city = ox.geocode_to_gdf("Cupertino, California, USA").to_crs(UTM)
     return city.buffer(BUFFER_M).to_crs("EPSG:4326").iloc[0]
+
+
+def extra_polygon():
+    """The area 0_extend_area.py merged in, or None."""
+    if not EXTRA_AREA.exists():
+        return None
+    return gpd.read_file(EXTRA_AREA).geometry.union_all()
+
+
+def area_polygon():
+    """Cupertino + 500 m, plus data/extra_area.geojson when it exists (see 0_extend_area.py)."""
+    extra = extra_polygon()
+    return city_polygon() if extra is None else city_polygon().union(extra)
 
 
 def overpass(fetch):
@@ -312,7 +328,7 @@ def main() -> None:
     ap.add_argument("--redownload", action="store_true", help="fetch the road network from OSM again")
     args = ap.parse_args()
     out = DATA / "graph_raw.graphml"
-    print("1/5 area: Cupertino boundary + 500 m (Nominatim)")
+    print("1/5 area: Cupertino boundary + 500 m (Nominatim), plus extra_area.geojson if present")
     poly = area_polygon()
     if out.exists() and not args.redownload:
         print(f"2/5 reusing {out.relative_to(DATA.parent)} (edge ids stay stable for samples.jsonl)")
