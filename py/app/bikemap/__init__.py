@@ -88,7 +88,9 @@ def _layers_path() -> Path:
     if env:
         return Path(env)
     # py/app/bikemap/__init__.py -> parents[2] = py/
-    return Path(__file__).resolve().parents[2] / "data" / "green_layers.json"
+    return (
+        Path(__file__).resolve().parents[2] / os.environ.get("BIKEMAP_DATA", "data")
+    ).resolve() / "green_layers.json"
 
 
 @router.get("/green-layers")

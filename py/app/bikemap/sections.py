@@ -213,12 +213,19 @@ def _components(edges, at_node, keyfn) -> dict:
     return {k: uf.find(k) for k in edges}
 
 
+def _manual(r) -> float | None:
+    """The hand-set score, or None: stretches set to different scores stay separate sections too."""
+    return r["s"] if r["d"].get("safety_src") == "manual" else None
+
+
 def build_sections(G, edges, layer) -> tuple[dict, dict]:
     at_node = collections.defaultdict(list)
     for key, r in edges.items():
         at_node[r["u"]].append(key)
         at_node[r["v"]].append(key)
-    street = _components(edges, at_node, lambda r: (r["label"], r["hw"]))
+    # A hand-set stretch (overrides.json) never shares a section with a scored one, so an unset
+    # piece next to it keeps its own colour.
+    street = _components(edges, at_node, lambda r: (r["label"], r["hw"], _manual(r)))
     spd_len = collections.defaultdict(collections.Counter)  # fill untagged speed with the street's mode
     for key, r in edges.items():
         if r["spd"] is not None:
@@ -227,7 +234,7 @@ def build_sections(G, edges, layer) -> tuple[dict, dict]:
         if r["spd"] is None and spd_len[street[key]]:
             r["spd"] = spd_len[street[key]].most_common(1)[0][0]
     if layer == "safe":
-        sec_of = _components(edges, at_node, lambda r: (r["label"], r["hw"], r["fac"], r["spd"]))
+        sec_of = _components(edges, at_node, lambda r: (r["label"], r["hw"], r["fac"], r["spd"], _manual(r)))
     else:
         sec_of = dict(street)
     _absorb_short(edges, at_node, street, sec_of)
@@ -290,7 +297,9 @@ def _pool_twins(G, edges, sec_of, layer) -> None:
     grid = collections.defaultdict(list)
     for k, (x, y, _) in geo.items():
         grid[(int(x // TWIN_M), int(y // TWIN_M))].append(k)
-    facts = (lambda r: (r["hw"], r["fac"], r["spd"])) if layer == "safe" else (lambda r: (r["hw"],))
+    facts = (
+        (lambda r: (r["hw"], r["fac"], r["spd"], _manual(r))) if layer == "safe" else (lambda r: (r["hw"],))
+    )
     paired = collections.Counter()
     for k, (x, y, b) in geo.items():
         best = None
@@ -347,9 +356,12 @@ def trusted_photos(rows, layer) -> list:
 def score_section(rows, layer, calib) -> tuple[float, str, list, int]:
     """(score, source, photo rows used, calibration support).
 
-    source: photo | photo-red-zone | calibrated | rule-kept | rule.
+    source: manual | photo | photo-red-zone | calibrated | rule-kept | rule.
     rule-kept: no photo, and the map rule of a ramp (*_link) or of a rule-red road is worse than the
     city-wide calibrated value -> the rule wins (a calibrated guess never makes a ramp look safer)."""
+    manual = [r for r in rows if r["d"].get("safety_src") == "manual"] if layer == "safe" else []
+    if manual:  # 4_bake.py overrides.json: shown as set, never replaced by a calibrated guess
+        return wquantile([(r["s"], r["L"]) for r in manual], 0.5), "manual", [], 0
     used = trusted_photos(rows, layer)
     if used:
         pairs = [(r["s"], r["L"]) for r in used]
@@ -431,6 +443,8 @@ def section_reasons(rows, layer, med, src, used, support) -> list[str]:
                 f"No street photo here: colour = typical score of {support:,} photographed pieces"
                 " with the same road type, bike facility and speed"
             )
+        elif src == "manual":
+            out.append(str(r0["d"].get("safety_note") or "Score set by hand"))
         elif src == "rule-kept":
             hw = HW_TEXT.get(r0["hw"], r0["hw"])
             stress = " (high stress)" if med < RED else ""

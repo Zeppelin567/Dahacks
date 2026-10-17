@@ -1,8 +1,8 @@
-# Select the ui/redesign branch when creating this Blueprint.
+# Select the demo branch when creating this Blueprint.
 services:
   - type: web
     name: dahacks-bikemap
-    branch: ui/redesign
+    branch: demo
     runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile

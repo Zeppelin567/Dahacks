@@ -97,7 +97,7 @@ def _graph_path() -> Path:
     if env:
         return Path(env)
     # py/app/bikemap/engine.py -> parents[2] = py/
-    data = Path(__file__).resolve().parents[2] / "data"
+    data = (Path(__file__).resolve().parents[2] / os.environ.get("BIKEMAP_DATA", "data")).resolve()
     baked = data / "cupertino_bike.graphml"  # 4_bake.py 写分数后的图
     return baked if baked.exists() else data / "graph_raw.graphml"  # 还没 bake：分数用默认值
 
@@ -135,6 +135,21 @@ def _load_graph():
             )
         _G = ox.load_graphml(str(p))
     return _G
+
+
+_BOUNDS: tuple[float, float, float, float] | None = None
+
+
+def graph_bounds() -> tuple[float, float, float, float]:
+    """(south, west, north, east) of the loaded graph: where a searched place can be routed to.
+    Follows BIKEMAP_DATA, so the extended map (data/ext) searches its larger area."""
+    global _BOUNDS
+    if _BOUNDS is None:
+        G = _load_graph()
+        ys = [float(d["y"]) for _, d in G.nodes(data=True)]
+        xs = [float(d["x"]) for _, d in G.nodes(data=True)]
+        _BOUNDS = (min(ys), min(xs), max(ys), max(xs))
+    return _BOUNDS
 
 
 def _vals(x) -> list[str]:

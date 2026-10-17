@@ -1,0 +1,116 @@
+[
+  {
+    "id": "r12699608000_12700460642_0_0",
+    "step": 1,
+    "image": "/presentation-media/street-stream/mcclellan-step-1.jpg",
+    "lat_lng": [
+      37.314186,
+      -122.065532
+    ],
+    "safety_pct": 80,
+    "tree_pct": 30,
+    "flora_pct": 66,
+    "water_quiet_pct": 72,
+    "lts": 1,
+    "safeNote": "Quiet 25 mph residential street with few driveways and good pavement; shared-lane markings only, but very low stress.",
+    "greenNote": "Residential street with mature oaks and planted front yards, though canopy over the road is only partial.",
+    "hazards": [
+      "sharrows_only"
+    ]
+  },
+  {
+    "id": "r12699608000_12706525452_0_0",
+    "step": 2,
+    "image": "/presentation-media/street-stream/mcclellan-step-2.jpg",
+    "lat_lng": [
+      37.314311,
+      -122.065483
+    ],
+    "safety_pct": 70,
+    "tree_pct": 30,
+    "flora_pct": 57,
+    "water_quiet_pct": 72,
+    "lts": 2,
+    "safeNote": "Quiet 25 mph street with a centre line, only sharrows and no bike lane, but good pavement and clear views.",
+    "greenNote": "Mature trees line one side with partial canopy; the other side is sparser and the street is largely pavement.",
+    "hazards": [
+      "sharrows_only"
+    ]
+  },
+  {
+    "id": "r65442808_12706525452_0_0",
+    "step": 3,
+    "image": "/presentation-media/street-stream/mcclellan-step-3.jpg",
+    "lat_lng": [
+      37.314597,
+      -122.065365
+    ],
+    "safety_pct": 80,
+    "tree_pct": 30,
+    "flora_pct": 66,
+    "water_quiet_pct": 85,
+    "lts": 1,
+    "safeNote": "Quiet 25 mph residential street with few driveways and good pavement, but only shared-lane markings.",
+    "greenNote": "Tree-lined residential street with willows and conifers along the edge, though canopy over the road has gaps.",
+    "hazards": [
+      "sharrows_only"
+    ]
+  },
+  {
+    "id": "r65398688_12699608006_0_1",
+    "step": 4,
+    "image": "/presentation-media/street-stream/mcclellan-step-4.jpg",
+    "lat_lng": [
+      37.314218,
+      -122.065205
+    ],
+    "safety_pct": 60,
+    "tree_pct": 30,
+    "flora_pct": 76,
+    "water_quiet_pct": 72,
+    "lts": 2,
+    "safeNote": "Quiet 25 mph road with a centre line and no bike lane; sharrows only, with a narrow shoulder and some blind bends.",
+    "greenNote": "Mature conifers and oaks line the road with dense roadside planting and hillside views, though canopy over the road is only partial.",
+    "hazards": [
+      "sharrows_only"
+    ]
+  },
+  {
+    "id": "r65398688_12699608006_0_0",
+    "step": 5,
+    "image": "/presentation-media/street-stream/mcclellan-step-5.jpg",
+    "lat_lng": [
+      37.313554,
+      -122.065183
+    ],
+    "safety_pct": 70,
+    "tree_pct": 40,
+    "flora_pct": 76,
+    "water_quiet_pct": 85,
+    "lts": 2,
+    "safeNote": "Narrow hilly road at 25 mph with shared-lane markings only; manageable but edges are tight.",
+    "greenNote": "Dense mature trees and lush hillside planting line this climbing road, with the canopy partly closing overhead.",
+    "hazards": [
+      "sharrows_only"
+    ]
+  },
+  {
+    "id": "r65442808_12699608006_0_0",
+    "step": 6,
+    "image": "/presentation-media/street-stream/mcclellan-step-6.jpg",
+    "lat_lng": [
+      37.314595,
+      -122.06513
+    ],
+    "safety_pct": 70,
+    "tree_pct": 30,
+    "flora_pct": 76,
+    "water_quiet_pct": 72,
+    "lts": 2,
+    "safeNote": "Quiet 25 mph road with a centre line and few driveways; shared-lane markings only, no dedicated bike lane.",
+    "greenNote": "Dense riparian-style vegetation and tall conifers line both sides, with a creek-side feel and partial canopy over the road.",
+    "hazards": [
+      "sharrows_only"
+    ]
+  }
+]

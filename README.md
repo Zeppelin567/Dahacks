@@ -4,7 +4,7 @@ Two bike maps for Cupertino: a Safe route map and a Green route map with a City 
 
 ## Integrated redesign
 
-The `ui/redesign` branch combines the MapLibre Harbor/Nature interface and Race with the expanded map from `demo` (`4d5eec5`), the personal ride features from `mobile-web` (`cb489d7`), and the routing guarantees already merged from `fix/routing` (`d9a7500`). The standalone presentation app on `demo` is separate from the rider-facing map.
+The `demo` branch is the integrated team mainline. It combines the MapLibre Harbor/Nature interface and Race with the expanded map from `demo` (`4d5eec5`), the personal ride features from `mobile-web` (`cb489d7`), and the routing guarantees already merged from `fix/routing` (`d9a7500`). The standalone presentation app is retained in `presentation/`, separate from the rider-facing map; see [PRESENTATION.md](PRESENTATION.md).
 
 Open **More** for presets, the scenic slider, spoken route overview and hazard reporting. Tap a Nature route stretch to vote for more/less like it. Preferences and hazards are stored per browser. See [DEPLOY-MOBILE.md](DEPLOY-MOBILE.md) for mobile use, deployment and testing.
 

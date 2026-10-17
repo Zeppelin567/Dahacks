@@ -107,7 +107,9 @@ class StreetDetail(BaseModel):
     road: str = Field(description="Human road type, e.g. 'residential street'")
     score10: float = Field(ge=0, le=10, description="Same score as the map colour, on a 1-10 scale")
     level: Level
-    source: Literal["photo", "map"] = Field(description="photo = scored by Claude from Street View")
+    source: Literal["photo", "map", "manual"] = Field(
+        description="photo = scored by Claude from Street View; manual = set by the team (overrides.json)"
+    )
     note: str | None = Field(description="Claude's one-line read of the photo")
     chips: list[str] = Field(description="Hazards (safe) or greenery facts (green)")
     photo: Photo | None

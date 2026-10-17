@@ -1,6 +1,6 @@
 # BikeMap redesigned web deployment
 
-`ui/redesign` keeps the MapLibre Harbor/Nature interface and Race animation while adding the expanded default map, personal preferences and mobile/deployment fixes.
+`demo` keeps the MapLibre Harbor/Nature interface and Race animation while adding the expanded default map, personal preferences and mobile/deployment fixes.
 
 ## Use the integrated features
 
@@ -22,8 +22,8 @@ This starts Node, Vite and Python (requires uv). `npm run dev:js` starts only No
 
 ## Render
 
-1. Use a GitHub repository that Render can access, with the integrated **ui/redesign** branch pushed to it.
-2. For a new service choose **New → Blueprint**, that branch, and `render.yaml`. For an existing Blueprint, change its source branch to ui/redesign and review the sync; the service's branch is also specified in this file. Pushing ui/redesign alone does not switch a service still configured for mobile-web.
+1. Use a GitHub repository that Render can access, with the integrated **demo** branch pushed to it.
+2. For a new service choose **New → Blueprint**, that branch, and `render.yaml`. For an existing Blueprint, change its source branch to demo and review the sync; the service's branch is also specified in this file. Pushing demo alone does not switch a service still configured for mobile-web.
 3. Review the plan before applying. The Docker image serves the web UI and a lightweight public Node proxy plus the Python routing service at one HTTPS URL. No LLM key is required for baked route scores.
 4. Validate both route modes, Race, the added tools and actual route requests after deployment. Health checks alone do not load the graph.
 
