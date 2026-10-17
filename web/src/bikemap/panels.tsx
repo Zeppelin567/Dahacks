@@ -250,7 +250,7 @@ export function TripCard({
   onShowPins: (v: boolean) => void;
 }) {
   // Phones get the map first; the card opens with one tap.
-  const [collapsed, setCollapsed] = useState(() => window.innerWidth < 860);
+  const [collapsed, setCollapsed] = useState(false);
   return (
     <section className="bm-glass grid gap-3 p-4">
       <header className="flex items-center gap-2">

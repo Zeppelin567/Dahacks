@@ -452,4 +452,89 @@
 }
 
 /* Keep added trip tools reachable on short screens. */
-.bm-left { max-height: calc(100dvh - 180px); overflow-y: auto; }
+.bm-left {
+  max-height: calc(100dvh - 180px);
+  overflow-y: auto;
+}
+
+/* Phone controls share the desktop trip state and never cover the entire map. */
+.bm-mobile-toggle {
+  display: none;
+}
+@media (max-width: 860px) {
+  .bm-app {
+    height: 100dvh;
+  }
+  .bm-top {
+    top: max(8px, env(safe-area-inset-top));
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+  }
+  .bm-top > :first-child {
+    min-width: 0;
+  }
+  .bm-top > .bm-switch {
+    flex-basis: 100%;
+    width: fit-content;
+    flex-grow: 0;
+  }
+  .bm-app button,
+  .bm-app select {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  .bm-app input,
+  .bm-app select {
+    font-size: 16px;
+  }
+  .bm-mobile-toggle {
+    display: block;
+    position: absolute;
+    pointer-events: auto;
+    left: max(12px, env(safe-area-inset-left));
+    top: calc(112px + env(safe-area-inset-top));
+  }
+  .bm-left,
+  .bm-right {
+    top: auto;
+    bottom: calc(92px + env(safe-area-inset-bottom));
+    left: max(12px, env(safe-area-inset-left));
+    right: max(12px, env(safe-area-inset-right));
+    width: auto;
+    max-height: min(55dvh, calc(100dvh - 260px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 16px;
+  }
+  .bm-app[data-panel-open="false"] .bm-left,
+  .bm-app[data-detail-open="true"] .bm-left {
+    display: none;
+  }
+  .bm-bottom {
+    bottom: calc(24px + env(safe-area-inset-bottom));
+  }
+  .bm-app .leaflet-bottom {
+    bottom: env(safe-area-inset-bottom);
+  }
+}
+@media (max-width: 860px) and (max-height: 500px) {
+  .bm-left,
+  .bm-right {
+    left: auto;
+    width: min(360px, 55vw);
+    bottom: 32px;
+    max-height: calc(100dvh - 145px);
+  }
+  .bm-bottom {
+    right: auto;
+    max-width: 40vw;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bm-app *,
+  .bm-app *::before,
+  .bm-app *::after {
+    animation-duration: 0.01ms;
+    transition-duration: 0.01ms;
+  }
+}

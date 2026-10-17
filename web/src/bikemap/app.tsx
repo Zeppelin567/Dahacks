@@ -43,6 +43,7 @@ export function BikeApp() {
 
   const [rural, setRural] = useState(0.6);
   const [prefs, setPrefs] = useState<GreenPrefs>({ green: true, quiet: true, shade: false });
+  const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
   const [hazardArmed, setHazardArmed] = useState(false);
   const [voteAdjust, setVoteAdjust] = useState<Record<string, number>>(() => {
     try {
@@ -72,7 +73,8 @@ export function BikeApp() {
     [rural, prefs, voteAdjust],
   );
   const handleVote = (seg: Segment, like: boolean) => {
-    if (seg.features) setVoteAdjust((prev) => applyVoteDeltas(prev, seg.features!, like));
+    const features = seg.features;
+    if (features) setVoteAdjust((prev) => applyVoteDeltas(prev, features, like));
   };
   const [showRisk, setShowRisk] = useState(true);
   const [showPins, setShowPins] = useState(true);
@@ -140,13 +142,13 @@ export function BikeApp() {
 
   const apiDown = places.isError;
   const routeError = apiDown
-    ? "Can't reach the bike map service. Is the Python side-car running? (npm run dev:py)"
+    ? "The map service is temporarily unavailable. Please try again shortly."
     : route.isError
       ? "Couldn't plan a route between these points. Try a spot closer to a street."
       : undefined;
 
   return (
-    <div className="bm-app" data-ui={ui}>
+    <div className="bm-app" data-ui={ui} data-panel-open={mobilePanelOpen} data-detail-open={!!selection}>
       <div className="absolute inset-0">
         <MapView
           ui={ui}
@@ -200,6 +202,8 @@ export function BikeApp() {
             armed={hazardArmed}
             onToggle={() => {
               setHazardArmed((v) => !v);
+              setMobilePanelOpen(false);
+              setSelection(null);
               setClickAt(null);
             }}
           />
@@ -211,7 +215,19 @@ export function BikeApp() {
           />
         </div>
 
-        <div className="bm-left">
+        <button
+          type="button"
+          className="bm-mobile-toggle bm-glass bm-btn"
+          aria-expanded={mobilePanelOpen && !selection}
+          aria-controls="trip-panel"
+          onClick={() => {
+            setSelection(null);
+            setMobilePanelOpen((open) => !open);
+          }}
+        >
+          {mobilePanelOpen && !selection ? "Back to map" : "Plan & compare routes"}
+        </button>
+        <section className="bm-left" id="trip-panel" aria-label="Trip planning">
           <TripCard
             ui={ui}
             places={places.data ?? []}
@@ -256,7 +272,7 @@ export function BikeApp() {
               route={!route.isPlaceholderData && !route.isError ? route.data?.recommended : undefined}
             />
           </section>
-        </div>
+        </section>
 
         {selection && (
           <div className="bm-right">
