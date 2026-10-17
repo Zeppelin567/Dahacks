@@ -1,6 +1,6 @@
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   MapContainer,
   Marker,
@@ -14,6 +14,8 @@ import {
   ZoomControl,
 } from "react-leaflet";
 import type { LatLng, Level, Route, Segment } from "./api";
+import { HazardLayer } from "./hazard-report";
+import { SegmentVote } from "./segment-vote";
 import { ACCENT, LEVEL_COLORS, TILES, type UiMode } from "./theme";
 import type { Pin, TripPoint } from "./trip";
 
@@ -21,6 +23,9 @@ const CUPERTINO: LatLng = [37.318, -122.04];
 
 type Props = {
   ui: UiMode;
+  hazardArmed: boolean;
+  onDisarmHazard: () => void;
+  onVoteSegment?: (seg: Segment, like: boolean) => void;
   network?: Segment[];
   showNetwork: boolean;
   route?: Route;
@@ -43,6 +48,18 @@ type Props = {
 
 export function MapView(props: Props) {
   const { ui, route, start, end } = props;
+  const [previous, setPrevious] = useState<Route>();
+  const last = useRef<{ route?: Route; tripKey: string; ui: UiMode }>({ tripKey: props.tripKey, ui });
+  useEffect(() => {
+    if (last.current.tripKey !== props.tripKey || last.current.ui !== ui) {
+      setPrevious(undefined);
+      last.current = { tripKey: props.tripKey, ui };
+    }
+    if (props.routeIsFresh && route && last.current.route !== route) {
+      setPrevious(last.current.route);
+      last.current = { route, tripKey: props.tripKey, ui };
+    }
+  }, [route, props.routeIsFresh, props.tripKey, ui]);
   const colors = LEVEL_COLORS[ui];
   const accent = ACCENT[ui];
 
@@ -62,6 +79,8 @@ export function MapView(props: Props) {
       ))}
       <ZoomControl position="bottomright" />
       <ClickHandler onMapClick={props.onMapClick} />
+      <HazardLayer armed={props.hazardArmed} onDisarm={props.onDisarmHazard} />
+      <ResizeMap />
       <FlyTo target={props.flyTo} />
       <FitOnTrip tripKey={props.tripKey} coords={props.routeIsFresh ? route?.coords : undefined} />
 
@@ -71,8 +90,24 @@ export function MapView(props: Props) {
         )}
       </Pane>
 
+      <Pane name="bm-previous-route" style={{ zIndex: 410 }}>
+        {previous && (
+          <Polyline
+            positions={previous.coords}
+            interactive={false}
+            pathOptions={{ color: "#94a3b8", opacity: 0.5, weight: 6, dashArray: "8 8" }}
+          />
+        )}
+      </Pane>
       <Pane name="bm-route" style={{ zIndex: 420 }}>
-        <RouteLayer ui={ui} route={route} colors={colors} accent={accent} onClick={props.onStreetClick} />
+        <RouteLayer
+          ui={ui}
+          route={route}
+          colors={colors}
+          accent={accent}
+          onClick={props.onStreetClick}
+          onVote={props.routeIsFresh ? props.onVoteSegment : undefined}
+        />
       </Pane>
 
       <Pane name="bm-select" style={{ zIndex: 430 }}>
@@ -127,6 +162,16 @@ export function MapView(props: Props) {
       )}
     </MapContainer>
   );
+}
+
+function ResizeMap() {
+  const map = useMap();
+  useEffect(() => {
+    const observer = new ResizeObserver(() => map.invalidateSize());
+    observer.observe(map.getContainer());
+    return () => observer.disconnect();
+  }, [map]);
+  return null;
 }
 
 function ClickHandler({ onMapClick }: { onMapClick: (at: LatLng | null) => void }) {
@@ -204,11 +249,13 @@ function RouteLayer({
   colors,
   accent,
   onClick,
+  onVote,
 }: {
   ui: UiMode;
   route?: Route;
   colors: Record<Level, string>;
   accent: string;
+  onVote?: (seg: Segment, like: boolean) => void;
   onClick: (at: LatLng) => void;
 }) {
   const renderer = useMemo(() => L.canvas({ pane: "bm-route", tolerance: 8 }), []);
@@ -251,7 +298,17 @@ function RouteLayer({
             lineCap: "round",
             lineJoin: "round",
           }}
-        />
+        >
+          <Popup>
+            <div className="grid gap-2">
+              <strong>Segment score: {Math.round(seg.score * 100)}%</strong>
+              {seg.reasons.map((reason) => (
+                <div key={reason}>{reason}</div>
+              ))}
+              {onVote && <SegmentVote seg={seg} onVote={(like) => onVote(seg, like)} />}
+            </div>
+          </Popup>
+        </Polyline>
       ))}
     </>
   );

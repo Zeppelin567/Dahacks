@@ -1,12 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
-import { bikemap, type GreenPrefs, type LatLng } from "./api";
+import { bikemap, type GreenPrefs, type LatLng, type Segment } from "./api";
 import { PinCard, StreetCard } from "./detail-card";
+import { HazardButton } from "./hazard-report";
 import { MapView } from "./map-view";
 import { LocateButton, ModeSwitch, SearchBox, StatsBar, TripCard } from "./panels";
+import { PresetProfiles } from "./preset-profiles";
+import { applyVoteDeltas, clampPref, toPrefVector } from "./route-utils";
 import { ENGINE_MODE, type UiMode } from "./theme";
+import { TradeoffCard } from "./tradeoff-card";
 import { ll, type Pin, pinPoint, placePoint, presetPin, type TripPoint } from "./trip";
+import { VoiceNavButton } from "./voice-nav";
 import "./bikemap.css";
 
 type Selection = { kind: "street"; at: LatLng } | { kind: "pin"; pin: Pin } | null;
@@ -38,6 +43,37 @@ export function BikeApp() {
 
   const [rural, setRural] = useState(0.6);
   const [prefs, setPrefs] = useState<GreenPrefs>({ green: true, quiet: true, shade: false });
+  const [hazardArmed, setHazardArmed] = useState(false);
+  const [voteAdjust, setVoteAdjust] = useState<Record<string, number>>(() => {
+    try {
+      const value = JSON.parse(localStorage.getItem("bikemap-votes-v1") ?? "{}");
+      return Object.fromEntries(
+        Object.entries(value ?? {}).filter(
+          ([key, v]) =>
+            ["vegetation", "quiet", "shade"].includes(key) && typeof v === "number" && Number.isFinite(v),
+        ),
+      ) as Record<string, number>;
+    } catch {
+      return {};
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("bikemap-votes-v1", JSON.stringify(voteAdjust));
+    } catch {
+      /* Storage unavailable. */
+    }
+  }, [voteAdjust]);
+  const prefOverride = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(toPrefVector(rural, prefs)).map(([f, v]) => [f, clampPref(v + (voteAdjust[f] ?? 0))]),
+      ),
+    [rural, prefs, voteAdjust],
+  );
+  const handleVote = (seg: Segment, like: boolean) => {
+    if (seg.features) setVoteAdjust((prev) => applyVoteDeltas(prev, seg.features!, like));
+  };
   const [showRisk, setShowRisk] = useState(true);
   const [showPins, setShowPins] = useState(true);
   const [selection, setSelection] = useState<Selection>(null);
@@ -62,13 +98,21 @@ export function BikeApp() {
   const tripKey = `${start?.key}:${start?.lat},${start?.lng}>${end?.key}:${end?.lat},${end?.lng}`;
   const green = mode === "green";
   const route = useQuery({
-    queryKey: ["bikemap", "route", mode, tripKey, green ? rural : null, green ? prefs : null],
+    queryKey: [
+      "bikemap",
+      "route",
+      mode,
+      tripKey,
+      green ? rural : null,
+      green ? prefs : null,
+      green ? prefOverride : null,
+    ],
     queryFn: () =>
       bikemap.route({
         start: ll(start as TripPoint),
         end: ll(end as TripPoint),
         mode,
-        ...(green ? { rural, prefs } : {}),
+        ...(green ? { rural, prefs, pref_override: prefOverride } : {}),
       }),
     enabled: !!start && !!end,
     placeholderData: (prev) => prev, // keep the old line on screen while the slider moves
@@ -106,6 +150,9 @@ export function BikeApp() {
       <div className="absolute inset-0">
         <MapView
           ui={ui}
+          hazardArmed={hazardArmed}
+          onDisarmHazard={() => setHazardArmed(false)}
+          onVoteSegment={green ? handleVote : undefined}
           network={network.data?.segments}
           showNetwork={ui === "modern" && showRisk}
           route={route.data?.recommended}
@@ -119,7 +166,9 @@ export function BikeApp() {
           selectedCoords={selection?.kind === "street" ? street.data?.coords : undefined}
           clickAt={clickAt}
           flyTo={flyTo}
-          onMapClick={setClickAt}
+          onMapClick={(at) => {
+            if (!hazardArmed) setClickAt(at);
+          }}
           onStreetClick={(at) => {
             setClickAt(null);
             setSelection({ kind: "street", at });
@@ -147,6 +196,13 @@ export function BikeApp() {
             }}
           />
           <ModeSwitch ui={ui} onChange={switchMode} />
+          <HazardButton
+            armed={hazardArmed}
+            onToggle={() => {
+              setHazardArmed((v) => !v);
+              setClickAt(null);
+            }}
+          />
           <LocateButton
             onLocate={(p) => {
               setStart(p);
@@ -176,6 +232,30 @@ export function BikeApp() {
             showPins={showPins}
             onShowPins={setShowPins}
           />
+          <section className="bm-glass mt-3 grid gap-3 p-4">
+            {green && (
+              <>
+                <PresetProfiles
+                  onApply={(p) => {
+                    setRural(p.rural);
+                    setPrefs(p.prefs);
+                    setVoteAdjust({});
+                  }}
+                />
+                {Object.keys(voteAdjust).length > 0 && (
+                  <button type="button" className="bm-btn" onClick={() => setVoteAdjust({})}>
+                    Reset segment votes
+                  </button>
+                )}
+              </>
+            )}
+            {route.data && !route.isPlaceholderData && !route.isError && (
+              <TradeoffCard data={route.data} mode={mode} />
+            )}
+            <VoiceNavButton
+              route={!route.isPlaceholderData && !route.isError ? route.data?.recommended : undefined}
+            />
+          </section>
         </div>
 
         {selection && (

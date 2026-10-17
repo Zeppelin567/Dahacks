@@ -43,6 +43,10 @@ class RouteRequest(BaseModel):
         description="Green map only: the City (0) ↔ Rural (1) slider. How much detour the rider accepts.",
     )
     prefs: GreenPrefs = GreenPrefs()
+    pref_override: dict[str, float] | None = Field(
+        default=None,
+        description="Segment-voting override: absolute preference vector in [-5,5], clamped server-side.",
+    )
 
 
 class Segment(BaseModel):
@@ -52,6 +56,10 @@ class Segment(BaseModel):
     score: float = Field(ge=0, le=1, description="1 = best (safest / greenest), 0 = worst")
     level: Level
     reasons: list[str] = Field(description="Human-readable why, e.g. 'Speed limit 40 mph, no bike lane'")
+    features: dict[str, float] | None = Field(
+        default=None,
+        description="Length-weighted [0,1] feature averages, for segment voting. None until backend ships it.",
+    )
 
 
 class Route(BaseModel):

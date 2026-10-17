@@ -450,3 +450,6 @@
 .bm-app .leaflet-bottom.leaflet-right {
   margin-bottom: 4px;
 }
+
+/* Keep added trip tools reachable on short screens. */
+.bm-left { max-height: calc(100dvh - 180px); overflow-y: auto; }
