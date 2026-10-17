@@ -24,6 +24,7 @@ import { type DemoData, FULL_DATASET_PHOTOS, type Manifest, MEDIA, type PhotoSam
 import { ProductDemo } from "./demo";
 import { PathfindingDecisionDiagram } from "./pathfinding-diagram";
 import StreetScanner from "./street-scanner";
+import { TechStack } from "./tech-stack";
 import { CityWireframe, NatureWireframe } from "./wireframes";
 import "./presentation.css";
 import "./scroll-showcase.css";
@@ -935,6 +936,9 @@ export default function Presentation() {
 
             <PathfindingDecisionDiagram />
           </div>
+
+          {/* Tech Stack */}
+          <TechStack />
         </div>
       </section>
 

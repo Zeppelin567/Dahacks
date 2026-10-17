@@ -133,3 +133,59 @@ body {
 .ls-sandbox[data-ui="nature"] .ls-foot a {
   color: #2e4a22;
 }
+
+/* Tech stack, after the pathfinding diagram: his flow cards in a 3 × 2 grid. */
+.bs-stack-wrapper {
+  margin-top: 72px;
+}
+.bs-stack-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 28px;
+}
+@media (max-width: 1024px) {
+  .bs-stack-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.bs-stack-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.bs-stack-head .bs-step-badge {
+  margin-bottom: 0;
+}
+.bs-stack-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: #ffffff;
+  background: #22476b;
+}
+.bs-stack-node.is-coral .bs-stack-icon {
+  background: #d9653b;
+}
+.bs-stack-node.is-forest .bs-stack-icon {
+  background: #2e4a22;
+}
+.bs-stack-node.is-coral .bs-step-badge {
+  color: #b4532c;
+}
+.bs-stack-node.is-forest .bs-step-badge {
+  color: #3f7d2a;
+}
+.bs-stack-node .bs-step-title {
+  font-size: 19px;
+}
+.bs-stack-node .bs-step-desc {
+  font-size: 14px;
+}
+.bs-stack-node .bs-tech-pill {
+  font-size: 11.5px;
+  padding: 4px 9px;
+}
