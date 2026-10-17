@@ -7,17 +7,15 @@ import {
   Cpu,
   Eye,
   Leaf,
-  Route,
   ShieldCheck,
   Sparkles,
   TreeDeciduous,
   TriangleAlert,
 } from "lucide-react";
-import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
-import { FACTS, LIVE_NATURE_URL, LIVE_URL, type Manifest, MEDIA, PRODUCT, type PhotoSample } from "./data";
-import { FeltBars, MiniRoute } from "./deck/felt-distance";
+import { type CSSProperties, type ReactNode, useCallback, useEffect, useState } from "react";
+import { FACTS, LIVE_NATURE_URL, LIVE_URL, MEDIA, PRODUCT } from "./data";
+import { EveryStreetSlide, FeltDistanceSlide, HowWeBuiltSlide, ReadingStreetSlide, SpotsToStreetsSlide } from "./deck/how-it-works";
 import { CountUp, Kicker, Pip, SiteSlot } from "./deck/parts";
-import { PhotoRing } from "./deck/photo-ring";
 import { STACK_A, STACK_B, StackRow } from "./deck/tech-stack";
 import { RealVoices } from "./real-voices";
 import "./deck/deck.css";
@@ -31,10 +29,11 @@ const SLIDES = [
   "The commute",
   "Real riders",
   "A better view",
-  // How we built it
+  // How we built it (deck/how-it-works.tsx)
+  "How we built it",
   "Every street",
   "Reading a street",
-  // HOW-IT-WORKS: add "From spots to streets" here when that slide is mounted.
+  "Spots to streets",
   "Felt distance",
   // The app
   "Your ride",
@@ -47,22 +46,12 @@ const SLIDES = [
 ];
 
 /** The first slide of each part of the story. The nav dots leave a small gap before it. */
-const PART_STARTS = new Set(["Every street", "Your ride"]);
+const PART_STARTS = new Set(["How we built it", "Your ride"]);
 
 const d = (i: number) => ({ "--i": i }) as CSSProperties;
 
 export default function Presentation() {
-  const [manifest, setManifest] = useState<Manifest>();
   const [active, setActive] = useState(0);
-
-  useEffect(() => {
-    const ctl = new AbortController();
-    fetch(`${MEDIA}manifest.json`, { signal: ctl.signal })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("manifest"))))
-      .then(setManifest)
-      .catch(() => {});
-    return () => ctl.abort();
-  }, []);
 
   // Reveal each slide once, and track which one is on screen for the dots.
   useEffect(() => {
@@ -106,11 +95,6 @@ export default function Presentation() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [active, go]);
-
-  const photo = useMemo(() => {
-    const by = (src: string) => manifest?.photos.find((p) => p.src === src);
-    return { road: by("street-04.jpg"), expressway: by("street-21.jpg") };
-  }, [manifest]);
 
   return (
     <main className="deck">
@@ -262,128 +246,22 @@ export default function Presentation() {
       </section>
 
       {/* ━━━━━━━━━━ Part 2 · How we built it ━━━━━━━━━━
-          Story: collect the photos -> Claude reads each spot -> spots become streets -> route on felt distance.
-          The algorithm components live in deck/how-it-works.tsx (built separately); mount points are marked
-          "HOW-IT-WORKS" below. Every slide added here also needs its label in SLIDES, in the same place. */}
-      {/* 5 · Every street: data collection (map, a stop every 80 m, Street View photos) */}
-      {/* HOW-IT-WORKS: the data collection piece (OSM street graph, a sample point every 80 m and at
-          junctions, Street View photos: 2 per road point, 4 per junction) mounts on this slide. Keep the photo ring. */}
-      <section className="slide nature" data-idx={5}>
-        <div className="wrap scale">
-          <div className="scale-head">
-            <Chapter center>How we built it</Chapter>
-            <Kicker icon={<Camera size={15} />}>Collecting the data</Kicker>
-            <h2 className="h rv" style={d(1)}>
-              Every street, one photo at a time.
-            </h2>
-          </div>
-          {manifest && <PhotoRing photos={manifest.photos} />}
-          <div className="chips center rv" style={d(3)}>
-            <span className="chip">{FACTS.photosCupertino.toLocaleString("en-US")} in Cupertino</span>
-            <span className="chip">+ {FACTS.photosExtended.toLocaleString("en-US")} extended area</span>
-            <span className="chip strong">{FACTS.scoringCost} to score Cupertino</span>
-            <span className="chip">0 AI calls while you ride</span>
-          </div>
-        </div>
-      </section>
-
-      {/* 6 · Reading a street: Claude scores one spot */}
-      {/* HOW-IT-WORKS: the step-by-step "Claude reads one spot" piece (photos + map facts in, safety 1-10 /
-          LTS, hazards, note, confidence out; a second call for greenery + shade) mounts on this slide. */}
-      <section className="slide city" data-idx={6}>
-        <div className="wrap read">
-          <div className="read-text">
-            <Pip size={92} className="guide" />
-            <Kicker icon={<Eye size={15} />}>Scoring a spot</Kicker>
-            <h2 className="h rv" style={d(1)}>
-              A street.
-              <br />
-              Every angle.
-            </h2>
-            <ul className="steps rv" style={d(2)}>
-              <li>
-                <span className="ico navy">
-                  <Camera size={18} />
-                </span>
-                A photo stop every {FACTS.sampleEveryM} m
-              </li>
-              <li>
-                <span className="ico navy">
-                  <Route size={18} />
-                </span>
-                2 views on a road, 4 at a junction
-              </li>
-              <li>
-                <span className="ico coral">
-                  <Sparkles size={18} />
-                </span>
-                {FACTS.model} reads each stop twice
-              </li>
-            </ul>
-          </div>
-          <div className="read-cards">
-            <SpotCard p={photo.road} />
-            <div className="read-row">
-              <div className="card junction rv" style={d(4)}>
-                <div className="jgrid">
-                  {(manifest?.junctionPhotos ?? []).slice(0, 4).map((j) => (
-                    <img key={j} src={`${MEDIA}${j}`} alt="" />
-                  ))}
-                </div>
-                <span className="mini-cap">Junction · 4 views</span>
-              </div>
-              {photo.expressway && (
-                <div className="card risky-spot rv" style={d(5)}>
-                  <img src={`${MEDIA}${photo.expressway.src}`} alt="" />
-                  <div>
-                    <span className="mini-cap">{photo.expressway.name}</span>
-                    <span className="score risky">
-                      {photo.expressway.safety}
-                      <small>/10</small>
-                    </span>
-                    <span className="mini-sub">Risky · LTS {photo.expressway.lts}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* HOW-IT-WORKS: "From spots to streets" (the bake: median per street, junction scores, road-type
-          rules where there is no photo, team-set scores) mounts here, between "Reading a street" and
-          "Felt distance". When it lands, add "From spots to streets" to SLIDES at the same position. */}
-
-      {/* 7 · Felt distance: routing */}
-      {/* HOW-IT-WORKS: the routing piece (Dijkstra on felt distance, crossing cost, 1.5x detour cap)
-          mounts on this slide. */}
-      <section className="slide city" data-idx={7}>
-        <div className="wrap felt-wrap">
-          <div className="felt-text">
-            <Kicker icon={<Route size={15} />}>Pathfinding</Kicker>
-            <h2 className="h rv" style={d(1)}>
-              Felt distance.
-            </h2>
-            <p className="lead rv" style={d(2)}>
-              Dijkstra finds the way that <b>feels</b> shortest.
-            </p>
-            <FeltBars />
-            <div className="chips rv" style={d(4)}>
-              <span className="chip green">
-                <Leaf size={15} /> Nature: bare streets feel longer
-              </span>
-              <span className="chip">
-                <Cpu size={15} /> {FACTS.routeMs} per route
-              </span>
-            </div>
-          </div>
-          <MiniRoute />
-        </div>
-      </section>
+          Story: overview -> 1 collect the photos -> 2 Claude reads each spot -> 3 spots become streets
+          -> 4 route on felt distance. The slides live in deck/how-it-works.tsx. */}
+      {/* 5 · How we built it: the four steps at a glance */}
+      <HowWeBuiltSlide />
+      {/* 6 · Step 1 · Every street: OSM map, a stop every 80 m, Street View photos, the photo ring */}
+      <EveryStreetSlide />
+      {/* 7 · Step 2 · Reading a street: Claude scores one spot */}
+      <ReadingStreetSlide />
+      {/* 8 · Step 3 · From spots to streets: medians, junctions, rules, team-set */}
+      <SpotsToStreetsSlide />
+      {/* 9 · Step 4 · Felt distance: Dijkstra, crossing cost, 1.5x cap */}
+      <FeltDistanceSlide />
 
       {/* ━━━━━━━━━━ Part 3 · The app ━━━━━━━━━━ */}
-      {/* 8 · Your ride */}
-      <section className="slide city" data-idx={8}>
+      {/* 10 · Your ride */}
+      <section className="slide city" data-idx={10}>
         <div className="wrap side">
           <div className="side-text">
             <Chapter>The app</Chapter>
@@ -423,8 +301,8 @@ export default function Presentation() {
         </div>
       </section>
 
-      {/* 9 · The calm way (Modern demo) */}
-      <section className="slide city" data-idx={9}>
+      {/* 11 · The calm way (Modern demo) */}
+      <section className="slide city" data-idx={11}>
         <div className="wrap side">
           <div className="side-text">
             <Kicker icon={<Building2 size={15} />}>Modern</Kicker>
@@ -464,8 +342,8 @@ export default function Presentation() {
         </div>
       </section>
 
-      {/* 10 · The green way (Nature demo) */}
-      <section className="slide nature" data-idx={10}>
+      {/* 12 · The green way (Nature demo) */}
+      <section className="slide nature" data-idx={12}>
         <div className="wrap side">
           <div className="side-text">
             <Kicker icon={<Leaf size={15} />}>Nature</Kicker>
@@ -514,8 +392,8 @@ export default function Presentation() {
         </div>
       </section>
 
-      {/* 11 · Little things */}
-      <section className="slide city" data-idx={11}>
+      {/* 13 · Little things */}
+      <section className="slide city" data-idx={13}>
         <div className="wrap extras">
           <div className="extras-head">
             <Kicker icon={<Sparkles size={15} />}>Little things</Kicker>
@@ -540,8 +418,8 @@ export default function Presentation() {
         </div>
       </section>
 
-      {/* 12 · Tech stack, part 1 */}
-      <section className="slide city" data-idx={12}>
+      {/* 14 · Tech stack, part 1 */}
+      <section className="slide city" data-idx={14}>
         <div className="wrap stack-wrap">
           <Pip size={96} className="guide right" />
           <Kicker icon={<Cpu size={15} />}>Tech stack · 1 of 2</Kicker>
@@ -552,8 +430,8 @@ export default function Presentation() {
         </div>
       </section>
 
-      {/* 13 · Tech stack, part 2 */}
-      <section className="slide nature" data-idx={13}>
+      {/* 15 · Tech stack, part 2 */}
+      <section className="slide nature" data-idx={15}>
         <div className="wrap stack-wrap">
           <Kicker icon={<Cpu size={15} />}>Tech stack · 2 of 2</Kicker>
           <h2 className="h rv" style={d(1)}>
@@ -563,8 +441,8 @@ export default function Presentation() {
         </div>
       </section>
 
-      {/* 14 · Choose your way */}
-      <section className="slide split end" data-idx={14}>
+      {/* 16 · Choose your way */}
+      <section className="slide split end" data-idx={16}>
         <div className="split-bg" aria-hidden>
           <span className="half city" />
           <span className="half nature" />
@@ -620,51 +498,5 @@ function Chapter({ children, center = false }: { children: ReactNode; center?: b
       <i aria-hidden style={{ width: 22, height: 4, borderRadius: 999, background: "var(--accent)" }} />
       {children}
     </span>
-  );
-}
-
-/** One real photo stop with Claude's two scores (from manifest.json). */
-function SpotCard({ p }: { p?: PhotoSample }) {
-  if (!p) return <div className="card spot rv" />;
-  return (
-    <div className="card spot rv" style={d(3)}>
-      <div className="spot-photos">
-        <figure>
-          <img src={`${MEDIA}${p.src}`} alt="" />
-          <figcaption>Forward</figcaption>
-        </figure>
-        {p.right && (
-          <figure>
-            <img src={`${MEDIA}${p.right}`} alt="" />
-            <figcaption>Curb side</figcaption>
-          </figure>
-        )}
-      </div>
-      <div className="spot-body">
-        <span className="spot-name">{p.name}</span>
-        <div className="meters">
-          <Meter label="Safety" value={p.safety} sub={`Calm · LTS ${p.lts}`} tone="navy" />
-          <Meter label="Greenery" value={p.greenery} sub={`${p.shade}% shade`} tone="green" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Meter({ label, value, sub, tone }: { label: string; value: number; sub: string; tone: "navy" | "green" }) {
-  return (
-    <div className={`meter ${tone}`}>
-      <div className="meter-top">
-        <span>{label}</span>
-        <b>
-          {value}
-          <small>/10</small>
-        </b>
-      </div>
-      <div className="meter-track">
-        <span style={{ ["--w" as string]: `${value * 10}%` }} />
-      </div>
-      <span className="meter-sub">{sub}</span>
-    </div>
   );
 }
