@@ -31,8 +31,8 @@ export function heroVals(ui: UiMode, r?: RouteResponse): Hero | null {
     return w ? (100 * s) / w : 0;
   };
   return {
-    them: Math.round(c.greenery_pct_fastest ?? pct(r.fastest)),
-    us: Math.round(c.greenery_pct_recommended ?? pct(r.recommended)),
+    them: c.greenery_pct_fastest ?? pct(r.fastest),
+    us: c.greenery_pct_recommended ?? pct(r.recommended),
     unit: "%",
     label: "Under trees",
     icon: "leaf",

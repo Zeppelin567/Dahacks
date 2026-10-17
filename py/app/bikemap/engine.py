@@ -764,7 +764,7 @@ def _greenery_pct(r: Route) -> float:
     if not r.segments:
         return 0.0
     ws = [max(1.0, _coords_m(s.coords)) for s in r.segments]
-    return round(100 * sum(s.score * w for s, w in zip(r.segments, ws, strict=True)) / sum(ws), 1)
+    return round(100 * sum(s.score * w for s, w in zip(r.segments, ws, strict=True)) / sum(ws), 2)
 
 
 def _not_worse(rec: Route, fast: Route, mode: Mode) -> bool:
