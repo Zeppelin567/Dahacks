@@ -35,23 +35,6 @@ export function placePoint(p: Place): TripPoint {
   return { key: `preset/${p.id}`, name: p.name, lat: p.lat, lng: p.lng };
 }
 
-export function pinPoint(p: Pin): TripPoint {
-  return { key: p.id, name: p.name, lat: p.lat, lng: p.lng };
-}
-
 export function ll(p: TripPoint): LatLng {
   return [p.lat, p.lng];
-}
-
-export function distanceM(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
-  const r = 6371000;
-  const rad = Math.PI / 180;
-  const dLat = (b.lat - a.lat) * rad;
-  const dLng = (b.lng - a.lng) * rad;
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
-  return 2 * r * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
-}
-
-export function formatKm(m: number): string {
-  return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
 }
