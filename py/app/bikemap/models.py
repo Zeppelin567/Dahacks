@@ -69,8 +69,12 @@ class Comparison(BaseModel):
     risky_segments_fastest: int | None = None
     risky_segments_recommended: int | None = None
     # Green map
-    greenery_pct_fastest: float | None = None
-    greenery_pct_recommended: float | None = None
+    greenery_pct_fastest: float | None = Field(
+        default=None, description="Length-weighted vegetation score as a percentage, not canopy coverage."
+    )
+    greenery_pct_recommended: float | None = Field(
+        default=None, description="Length-weighted vegetation score as a percentage, not canopy coverage."
+    )
     noise_reduction_db: float | None = None
 
 

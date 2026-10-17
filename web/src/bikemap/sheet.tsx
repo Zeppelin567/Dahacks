@@ -70,7 +70,8 @@ export type SheetProps = {
   tools?: ReactNode;
 };
 
-const fmt = (v: number | null) => (v == null ? "–" : String(Math.round(v)));
+const fmt = (v: number | null, unit: "" | "%") =>
+  v == null ? "–" : unit === "%" ? v.toFixed(1) : String(Math.round(v));
 
 /** Animates to `target` (ease-out, 700 ms). When `seed.key` changes it restarts from `seed.from`. */
 function useCount(target: number | null, seed: { key: string; from: number | null }, rm: boolean) {
@@ -283,7 +284,7 @@ export function Sheet(p: SheetProps) {
             <span className={same ? "nums same" : "nums"}>
               <span className="col">
                 <span className="num them">
-                  {fmt(them)}
+                  {fmt(them, hero.unit)}
                   {them != null && <small>{hero.unit}</small>}
                 </span>
                 <span className="cap">
@@ -296,7 +297,7 @@ export function Sheet(p: SheetProps) {
               </span>
               <span className="col">
                 <span className={us == null ? "num us wait" : "num us"}>
-                  {fmt(us)}
+                  {fmt(us, hero.unit)}
                   {us != null && <small>{hero.unit}</small>}
                 </span>
                 <span className="cap">
@@ -305,6 +306,16 @@ export function Sheet(p: SheetProps) {
                 </span>
               </span>
             </span>
+            {ui === "nature" && !p.loading && !p.drawing && (
+              <span
+                className="greenery-change"
+                title="Length-weighted vegetation score; change is in percentage points."
+              >
+                {same
+                  ? "Same greenery"
+                  : `${hero.us > hero.them ? "+" : ""}${(hero.us - hero.them).toFixed(1)} pts greenery`}
+              </span>
+            )}
           </>
         )}
       </button>

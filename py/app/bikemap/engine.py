@@ -755,12 +755,16 @@ def _risky_count(r: Route) -> int:
 
 
 def _greenery_pct(r: Route) -> float:
-    """Green panel 'Greenery': length-weighted mean segment score (a plain mean let a short grey stub
-    outweigh a long green stretch)."""
+    """Length-weighted vegetation score, independent of quiet/shade preference toggles.
+
+    Segment.score blends the enabled preferences and is clamped for map colours;
+    it must not stand in for greenery. Fall back only for legacy segments.
+    """
     if not r.segments:
         return 0.0
     ws = [max(1.0, _coords_m(s.coords)) for s in r.segments]
-    return round(100 * sum(s.score * w for s, w in zip(r.segments, ws, strict=True)) / sum(ws), 1)
+    values = [(s.features or {}).get("vegetation", s.score) for s in r.segments]
+    return round(100 * sum(v * w for v, w in zip(values, ws, strict=True)) / sum(ws), 1)
 
 
 def _not_worse(rec: Route, fast: Route, mode: Mode) -> bool:

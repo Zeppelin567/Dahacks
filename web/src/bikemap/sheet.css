@@ -325,6 +325,13 @@
 .bm-sheet .nums.same .num {
   color: var(--bm-ink3);
 }
+.bm-sheet .greenery-change {
+  display: block;
+  margin-top: 10px;
+  color: var(--bm-ours);
+  font-size: 13px;
+  font-weight: 700;
+}
 .bm-sheet .cap {
   display: flex;
   align-items: center;
