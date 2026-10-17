@@ -27,7 +27,7 @@ export const FACTS = {
   safe: {
     from: "Infinite Loop",
     to: "Cupertino Library",
-    fast: 4,
+    fast: 3,
     ours: 0,
     fastMin: "7.6",
     oursMin: "7.7",

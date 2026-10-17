@@ -13,7 +13,7 @@ import {
   TreeDeciduous,
   TriangleAlert,
 } from "lucide-react";
-import { type CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { FACTS, LIVE_NATURE_URL, LIVE_URL, type Manifest, MEDIA, PRODUCT, type PhotoSample } from "./data";
 import { FeltBars, MiniRoute } from "./deck/felt-distance";
 import { CountUp, Kicker, Pip, SiteSlot } from "./deck/parts";
@@ -22,23 +22,32 @@ import { STACK_A, STACK_B, StackRow } from "./deck/tech-stack";
 import { RealVoices } from "./real-voices";
 import "./deck/deck.css";
 
+// One label per slide, in page order (the nav dots and arrow keys follow this list).
+// The story: the problem -> how we built it -> the app -> the stack -> choose your way.
 const SLIDES = [
+  // The problem
   "Hello",
   "Two ways to ride",
   "The commute",
   "Real riders",
   "A better view",
+  // How we built it
+  "Every street",
+  "Reading a street",
+  // HOW-IT-WORKS: add "From spots to streets" here when that slide is mounted.
+  "Felt distance",
+  // The app
   "Your ride",
   "The calm way",
   "The green way",
   "Little things",
-  "Reading a street",
-  "Every street",
-  "Felt distance",
   "Tech stack",
   "Tech stack",
   "Choose your way",
 ];
+
+/** The first slide of each part of the story. The nav dots leave a small gap before it. */
+const PART_STARTS = new Set(["Every street", "Your ride"]);
 
 const d = (i: number) => ({ "--i": i }) as CSSProperties;
 
@@ -71,6 +80,9 @@ export default function Presentation() {
       { threshold: 0.45 },
     );
     for (const s of slides) io.observe(s);
+    if (slides.length !== SLIDES.length) {
+      console.warn(`Deck: ${slides.length} slides on the page but ${SLIDES.length} labels in SLIDES. Keep them in the same order.`);
+    }
     return () => io.disconnect();
   }, []);
 
@@ -108,6 +120,7 @@ export default function Presentation() {
             key={`${label}-${i}`}
             type="button"
             className={i === active ? "on" : ""}
+            style={PART_STARTS.has(label) ? { marginTop: 10 } : undefined}
             onClick={() => go(i)}
             aria-label={label}
             title={label}
@@ -215,11 +228,11 @@ export default function Presentation() {
         </div>
       </section>
 
-      {/* 2b · Real riders: real, linked posts (sources in Dahacks-design/build/REAL_VOICES.md) */}
+      {/* 3 · Real riders: real, linked posts (sources in Dahacks-design/build/REAL_VOICES.md) */}
       <RealVoices />
 
-      {/* 3 · A better view */}
-      <section className="slide nature" data-idx={3}>
+      {/* 4 · A better view */}
+      <section className="slide nature" data-idx={4}>
         <div className="wrap view">
           <div className="view-text">
             <Kicker icon={<TreeDeciduous size={15} />}>The escape</Kicker>
@@ -248,169 +261,40 @@ export default function Presentation() {
         </div>
       </section>
 
-      {/* 4 · Our solution */}
-      <section className="slide city" data-idx={4}>
-        <div className="wrap side">
-          <div className="side-text">
-            <Kicker icon={<Sparkles size={15} />}>Our solution</Kicker>
+      {/* ━━━━━━━━━━ Part 2 · How we built it ━━━━━━━━━━
+          Story: collect the photos -> Claude reads each spot -> spots become streets -> route on felt distance.
+          The algorithm components live in deck/how-it-works.tsx (built separately); mount points are marked
+          "HOW-IT-WORKS" below. Every slide added here also needs its label in SLIDES, in the same place. */}
+      {/* 5 · Every street: data collection (map, a stop every 80 m, Street View photos) */}
+      {/* HOW-IT-WORKS: the data collection piece (OSM street graph, a sample point every 80 m and at
+          junctions, Street View photos: 2 per road point, 4 per junction) mounts on this slide. Keep the photo ring. */}
+      <section className="slide nature" data-idx={5}>
+        <div className="wrap scale">
+          <div className="scale-head">
+            <Chapter center>How we built it</Chapter>
+            <Kicker icon={<Camera size={15} />}>Collecting the data</Kicker>
             <h2 className="h rv" style={d(1)}>
-              Your ride.
-              <br />
-              Your rules.
+              Every street, one photo at a time.
             </h2>
-            <p className="lead rv" style={d(2)}>
-              One switch. Same map, two moods.
-            </p>
-            <ul className="steps rv" style={d(3)}>
-              <li>
-                <span className="ico coral">
-                  <Eye size={18} />
-                </span>
-                Spots risky streets
-              </li>
-              <li>
-                <span className="ico navy">
-                  <ShieldCheck size={18} />
-                </span>
-                Finds a calm way around
-              </li>
-              <li>
-                <span className="ico green">
-                  <Leaf size={18} />
-                </span>
-                Detours for trees
-              </li>
-            </ul>
           </div>
-          <div className="side-media rv" style={d(2)}>
-            <SiteSlot name="switch" label="Switching Modern → Nature" ratio="16 / 10" />
+          {manifest && <PhotoRing photos={manifest.photos} />}
+          <div className="chips center rv" style={d(3)}>
+            <span className="chip">{FACTS.photosCupertino.toLocaleString("en-US")} in Cupertino</span>
+            <span className="chip">+ {FACTS.photosExtended.toLocaleString("en-US")} extended area</span>
+            <span className="chip strong">{FACTS.scoringCost} to score Cupertino</span>
+            <span className="chip">0 AI calls while you ride</span>
           </div>
         </div>
       </section>
 
-      {/* 5 · Modern demo */}
-      <section className="slide city" data-idx={5}>
-        <div className="wrap side">
-          <div className="side-text">
-            <Kicker icon={<Building2 size={15} />}>Modern</Kicker>
-            <h2 className="h rv" style={d(1)}>
-              The calm way.
-            </h2>
-            <p className="trip rv" style={d(2)}>
-              <i className="o" /> {FACTS.safe.from} <ArrowRight size={16} /> <i className="f" /> {FACTS.safe.to}
-            </p>
-            <div className="compare card rv" style={d(3)}>
-              <span className="compare-head">
-                <TriangleAlert size={16} className="t-risky" /> Risky crossings
-              </span>
-              <div className="compare-row">
-                <div>
-                  <span className="big t-risky">{FACTS.safe.fast}</span>
-                  <small>
-                    <i className="dot ghost" /> Fast way
-                  </small>
-                </div>
-                <span className="arrow">
-                  <ArrowRight size={18} />
-                </span>
-                <div>
-                  <CountUp to={FACTS.safe.ours} from={FACTS.safe.fast} ms={1200} className="big t-ours" />
-                  <small>
-                    <i className="dot ours" /> Our way
-                  </small>
-                </div>
-              </div>
-              <span className="cost">{FACTS.safe.extra} · about 9 seconds</span>
-            </div>
-          </div>
-          <div className="side-media rv" style={d(2)}>
-            <SiteSlot name="modern" label="Modern mode · Infinite Loop → Library" ratio="16 / 10" />
-          </div>
-        </div>
-      </section>
-
-      {/* 6 · Nature demo */}
-      <section className="slide nature" data-idx={6}>
-        <div className="wrap side">
-          <div className="side-text">
-            <Kicker icon={<Leaf size={15} />}>Nature</Kicker>
-            <h2 className="h rv" style={d(1)}>
-              The green way.
-            </h2>
-            <p className="trip rv" style={d(2)}>
-              <i className="o" /> {FACTS.green.from} <ArrowRight size={16} /> <i className="f" /> {FACTS.green.to}
-            </p>
-            <div className="compare card rv" style={d(3)}>
-              <span className="compare-head">
-                <Leaf size={16} className="t-ours" /> Under trees
-              </span>
-              <div className="compare-row">
-                <div>
-                  <span className="big t-ghost">
-                    {FACTS.green.fast}
-                    <em>%</em>
-                  </span>
-                  <small>
-                    <i className="dot ghost" /> Fast way
-                  </small>
-                </div>
-                <span className="arrow">
-                  <ArrowRight size={18} />
-                </span>
-                <div>
-                  <span className="big t-ours">
-                    <CountUp to={FACTS.green.ours} from={FACTS.green.fast} ms={1400} />
-                    <em>%</em>
-                  </span>
-                  <small>
-                    <i className="dot ours" /> Our way
-                  </small>
-                </div>
-              </div>
-              <span className="cost">
-                {FACTS.green.extra} · via {FACTS.green.via}
-              </span>
-            </div>
-          </div>
-          <div className="side-media layered rv" style={d(2)}>
-            <SiteSlot name="nature" label="Nature mode · Library → Main Street" ratio="16 / 10" />
-            <SiteSlot name="card" label="Street photo card" ratio="29 / 37" fit="contain" className="float-card" />
-          </div>
-        </div>
-      </section>
-
-      {/* 7 · Little things */}
-      <section className="slide city" data-idx={7}>
-        <div className="wrap extras">
-          <div className="extras-head">
-            <Kicker icon={<Sparkles size={15} />}>Little things</Kicker>
-            <h2 className="h rv" style={d(1)}>
-              Made to enjoy.
-            </h2>
-          </div>
-          <div className="extras-grid">
-            <figure className="tile big-tile rv" style={d(2)}>
-              <SiteSlot name="3d" label="3D city view" ratio="16 / 10" />
-              <figcaption className="tag soft">3D city</figcaption>
-            </figure>
-            <figure className="tile rv" style={d(3)}>
-              <SiteSlot name="race" label="Race: our way vs the fast way" ratio="16 / 10" />
-              <figcaption className="tag soft">Race the fast way</figcaption>
-            </figure>
-            <figure className="tile rv" style={d(4)}>
-              <SiteSlot name="trip" label="Trip card" ratio="16 / 10" fit="contain" />
-              <figcaption className="tag soft">Your trip at a glance</figcaption>
-            </figure>
-          </div>
-        </div>
-      </section>
-
-      {/* 8 · Reading a street */}
-      <section className="slide city" data-idx={8}>
+      {/* 6 · Reading a street: Claude scores one spot */}
+      {/* HOW-IT-WORKS: the step-by-step "Claude reads one spot" piece (photos + map facts in, safety 1-10 /
+          LTS, hazards, note, confidence out; a second call for greenery + shade) mounts on this slide. */}
+      <section className="slide city" data-idx={6}>
         <div className="wrap read">
           <div className="read-text">
             <Pip size={92} className="guide" />
-            <Kicker icon={<Eye size={15} />}>How it works</Kicker>
+            <Kicker icon={<Eye size={15} />}>Scoring a spot</Kicker>
             <h2 className="h rv" style={d(1)}>
               A street.
               <br />
@@ -466,27 +350,14 @@ export default function Presentation() {
         </div>
       </section>
 
-      {/* 9 · Every street */}
-      <section className="slide nature" data-idx={9}>
-        <div className="wrap scale">
-          <div className="scale-head">
-            <Kicker icon={<Camera size={15} />}>The scale</Kicker>
-            <h2 className="h rv" style={d(1)}>
-              Every street, one photo at a time.
-            </h2>
-          </div>
-          {manifest && <PhotoRing photos={manifest.photos} />}
-          <div className="chips center rv" style={d(3)}>
-            <span className="chip">{FACTS.photosCupertino.toLocaleString("en-US")} in Cupertino</span>
-            <span className="chip">+ {FACTS.photosExtended.toLocaleString("en-US")} extended area</span>
-            <span className="chip strong">{FACTS.scoringCost} to score Cupertino</span>
-            <span className="chip">0 AI calls while you ride</span>
-          </div>
-        </div>
-      </section>
+      {/* HOW-IT-WORKS: "From spots to streets" (the bake: median per street, junction scores, road-type
+          rules where there is no photo, team-set scores) mounts here, between "Reading a street" and
+          "Felt distance". When it lands, add "From spots to streets" to SLIDES at the same position. */}
 
-      {/* 10 · Felt distance */}
-      <section className="slide city" data-idx={10}>
+      {/* 7 · Felt distance: routing */}
+      {/* HOW-IT-WORKS: the routing piece (Dijkstra on felt distance, crossing cost, 1.5x detour cap)
+          mounts on this slide. */}
+      <section className="slide city" data-idx={7}>
         <div className="wrap felt-wrap">
           <div className="felt-text">
             <Kicker icon={<Route size={15} />}>Pathfinding</Kicker>
@@ -510,8 +381,167 @@ export default function Presentation() {
         </div>
       </section>
 
-      {/* 11 · Tech stack, part 1 */}
+      {/* ━━━━━━━━━━ Part 3 · The app ━━━━━━━━━━ */}
+      {/* 8 · Your ride */}
+      <section className="slide city" data-idx={8}>
+        <div className="wrap side">
+          <div className="side-text">
+            <Chapter>The app</Chapter>
+            <Kicker icon={<Sparkles size={15} />}>Our solution</Kicker>
+            <h2 className="h rv" style={d(1)}>
+              Your ride.
+              <br />
+              Your rules.
+            </h2>
+            <p className="lead rv" style={d(2)}>
+              One switch. Same map, two moods.
+            </p>
+            <ul className="steps rv" style={d(3)}>
+              <li>
+                <span className="ico coral">
+                  <Eye size={18} />
+                </span>
+                Spots risky streets
+              </li>
+              <li>
+                <span className="ico navy">
+                  <ShieldCheck size={18} />
+                </span>
+                Finds a calm way around
+              </li>
+              <li>
+                <span className="ico green">
+                  <Leaf size={18} />
+                </span>
+                Detours for trees
+              </li>
+            </ul>
+          </div>
+          <div className="side-media rv" style={d(2)}>
+            <SiteSlot name="switch" label="Switching Modern → Nature" ratio="16 / 10" />
+          </div>
+        </div>
+      </section>
+
+      {/* 9 · The calm way (Modern demo) */}
+      <section className="slide city" data-idx={9}>
+        <div className="wrap side">
+          <div className="side-text">
+            <Kicker icon={<Building2 size={15} />}>Modern</Kicker>
+            <h2 className="h rv" style={d(1)}>
+              The calm way.
+            </h2>
+            <p className="trip rv" style={d(2)}>
+              <i className="o" /> {FACTS.safe.from} <ArrowRight size={16} /> <i className="f" /> {FACTS.safe.to}
+            </p>
+            <div className="compare card rv" style={d(3)}>
+              <span className="compare-head">
+                <TriangleAlert size={16} className="t-risky" /> Risky crossings
+              </span>
+              <div className="compare-row">
+                <div>
+                  <span className="big t-risky">{FACTS.safe.fast}</span>
+                  <small>
+                    <i className="dot ghost" /> Fast way
+                  </small>
+                </div>
+                <span className="arrow">
+                  <ArrowRight size={18} />
+                </span>
+                <div>
+                  <CountUp to={FACTS.safe.ours} from={FACTS.safe.fast} ms={1200} className="big t-ours" />
+                  <small>
+                    <i className="dot ours" /> Our way
+                  </small>
+                </div>
+              </div>
+              <span className="cost">{FACTS.safe.extra} · about 9 seconds</span>
+            </div>
+          </div>
+          <div className="side-media rv" style={d(2)}>
+            <SiteSlot name="modern" label="Modern mode · Infinite Loop → Library" ratio="16 / 10" />
+          </div>
+        </div>
+      </section>
+
+      {/* 10 · The green way (Nature demo) */}
+      <section className="slide nature" data-idx={10}>
+        <div className="wrap side">
+          <div className="side-text">
+            <Kicker icon={<Leaf size={15} />}>Nature</Kicker>
+            <h2 className="h rv" style={d(1)}>
+              The green way.
+            </h2>
+            <p className="trip rv" style={d(2)}>
+              <i className="o" /> {FACTS.green.from} <ArrowRight size={16} /> <i className="f" /> {FACTS.green.to}
+            </p>
+            <div className="compare card rv" style={d(3)}>
+              <span className="compare-head">
+                <Leaf size={16} className="t-ours" /> Under trees
+              </span>
+              <div className="compare-row">
+                <div>
+                  <span className="big t-ghost">
+                    {FACTS.green.fast}
+                    <em>%</em>
+                  </span>
+                  <small>
+                    <i className="dot ghost" /> Fast way
+                  </small>
+                </div>
+                <span className="arrow">
+                  <ArrowRight size={18} />
+                </span>
+                <div>
+                  <span className="big t-ours">
+                    <CountUp to={FACTS.green.ours} from={FACTS.green.fast} ms={1400} />
+                    <em>%</em>
+                  </span>
+                  <small>
+                    <i className="dot ours" /> Our way
+                  </small>
+                </div>
+              </div>
+              <span className="cost">
+                {FACTS.green.extra} · via {FACTS.green.via}
+              </span>
+            </div>
+          </div>
+          <div className="side-media layered rv" style={d(2)}>
+            <SiteSlot name="nature" label="Nature mode · Library → Main Street" ratio="16 / 10" />
+            <SiteSlot name="card" label="Street photo card" ratio="29 / 37" fit="contain" className="float-card" />
+          </div>
+        </div>
+      </section>
+
+      {/* 11 · Little things */}
       <section className="slide city" data-idx={11}>
+        <div className="wrap extras">
+          <div className="extras-head">
+            <Kicker icon={<Sparkles size={15} />}>Little things</Kicker>
+            <h2 className="h rv" style={d(1)}>
+              Made to enjoy.
+            </h2>
+          </div>
+          <div className="extras-grid">
+            <figure className="tile big-tile rv" style={d(2)}>
+              <SiteSlot name="3d" label="3D city view" ratio="16 / 10" />
+              <figcaption className="tag soft">3D city</figcaption>
+            </figure>
+            <figure className="tile rv" style={d(3)}>
+              <SiteSlot name="race" label="Race: our way vs the fast way" ratio="16 / 10" />
+              <figcaption className="tag soft">Race the fast way</figcaption>
+            </figure>
+            <figure className="tile rv" style={d(4)}>
+              <SiteSlot name="trip" label="Trip card" ratio="16 / 10" fit="contain" />
+              <figcaption className="tag soft">Your trip at a glance</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      {/* 12 · Tech stack, part 1 */}
+      <section className="slide city" data-idx={12}>
         <div className="wrap stack-wrap">
           <Pip size={96} className="guide right" />
           <Kicker icon={<Cpu size={15} />}>Tech stack · 1 of 2</Kicker>
@@ -522,8 +552,8 @@ export default function Presentation() {
         </div>
       </section>
 
-      {/* 12 · Tech stack, part 2 */}
-      <section className="slide nature" data-idx={12}>
+      {/* 13 · Tech stack, part 2 */}
+      <section className="slide nature" data-idx={13}>
         <div className="wrap stack-wrap">
           <Kicker icon={<Cpu size={15} />}>Tech stack · 2 of 2</Kicker>
           <h2 className="h rv" style={d(1)}>
@@ -533,8 +563,8 @@ export default function Presentation() {
         </div>
       </section>
 
-      {/* 13 · Choose your way */}
-      <section className="slide split end" data-idx={13}>
+      {/* 14 · Choose your way */}
+      <section className="slide split end" data-idx={14}>
         <div className="split-bg" aria-hidden>
           <span className="half city" />
           <span className="half nature" />
@@ -566,6 +596,30 @@ export default function Presentation() {
         </div>
       </section>
     </main>
+  );
+}
+
+/** A quiet eyebrow on the first slide of each part of the story ("How we built it", "The app"). */
+function Chapter({ children, center = false }: { children: ReactNode; center?: boolean }) {
+  return (
+    <span
+      className="rv"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: center ? "center" : "flex-start",
+        gap: 10,
+        margin: "0 0 14px",
+        color: "var(--ink3)",
+        fontSize: 13,
+        fontWeight: 800,
+        letterSpacing: "0.12em",
+        textTransform: "uppercase",
+      }}
+    >
+      <i aria-hidden style={{ width: 22, height: 4, borderRadius: 999, background: "var(--accent)" }} />
+      {children}
+    </span>
   );
 }
 

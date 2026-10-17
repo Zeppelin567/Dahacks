@@ -41,18 +41,18 @@ export function FeltBars() {
   );
 }
 
-/** The demo trip drawn as a tiny map: the fast way crosses 4 risky spots, ours crosses none. */
+/** The demo trip drawn as a tiny map: the fast way crosses 3 risky spots (FACTS.safe.fast), ours crosses none. */
 export function MiniRoute() {
   const s = FACTS.safe;
+  // One bead per risky crossing on the fast way (FACTS.safe.fast = 3 since the counting fix).
   const beads = [
     [190, 70],
     [190, 150],
-    [190, 230],
     [190, 300],
   ] as const;
   return (
     <div className="mini card rv" style={{ ["--i" as string]: 3 }}>
-      <svg viewBox="0 0 400 380" role="img" aria-label="Fast way with four risky crossings, our way with none">
+      <svg viewBox="0 0 400 380" role="img" aria-label={`Fast way with ${s.fast} risky crossings, our way with ${s.ours}`}>
         {/* quiet street grid */}
         <g stroke="var(--grid)" strokeWidth="6" strokeLinecap="round" fill="none">
           <path d="M60 30 V350 M130 30 V350 M250 30 V350 M320 30 V350" />
