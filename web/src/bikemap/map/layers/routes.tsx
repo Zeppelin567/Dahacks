@@ -192,14 +192,7 @@ function sources(r: RouteResponse | undefined) {
   const segs = (which: "fast" | "rec") =>
     fc(
       (which === "fast" ? r.fastest : r.recommended).segments.map((s, i) =>
-        line(s.coords, {
-          i,
-          level: s.level,
-          score: s.score,
-          reasons: JSON.stringify(s.reasons),
-          features: JSON.stringify(s.features ?? null),
-          which,
-        }),
+        line(s.coords, { i, level: s.level, score: s.score, reasons: JSON.stringify(s.reasons), which }),
       ),
     );
   const rc = r.recommended.coords;

@@ -7,7 +7,7 @@ so the frontend never has to change when the mock is swapped out.
 
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -43,7 +43,6 @@ class RouteRequest(BaseModel):
         description="Green map only: the City (0) ↔ Rural (1) slider. How much detour the rider accepts.",
     )
     prefs: GreenPrefs = GreenPrefs()
-    pref_override: dict[str, Annotated[float, Field(allow_inf_nan=False)]] | None = None
 
 
 class Segment(BaseModel):
@@ -53,7 +52,6 @@ class Segment(BaseModel):
     score: float = Field(ge=0, le=1, description="1 = best (safest / greenest), 0 = worst")
     level: Level
     reasons: list[str] = Field(description="Human-readable why, e.g. 'Speed limit 40 mph, no bike lane'")
-    features: dict[str, float] | None = None
 
 
 class Route(BaseModel):
@@ -69,12 +67,8 @@ class Comparison(BaseModel):
     risky_segments_fastest: int | None = None
     risky_segments_recommended: int | None = None
     # Green map
-    greenery_pct_fastest: float | None = Field(
-        default=None, description="Length-weighted vegetation score as a percentage, not canopy coverage."
-    )
-    greenery_pct_recommended: float | None = Field(
-        default=None, description="Length-weighted vegetation score as a percentage, not canopy coverage."
-    )
+    greenery_pct_fastest: float | None = None
+    greenery_pct_recommended: float | None = None
     noise_reduction_db: float | None = None
 
 

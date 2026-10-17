@@ -29,9 +29,7 @@ from __future__ import annotations
 
 import math
 import os
-from functools import wraps
 from pathlib import Path
-from threading import RLock
 
 import networkx as nx
 import numpy as np
@@ -103,17 +101,6 @@ def _graph_path() -> Path:
 
 
 _G = None
-_INIT_LOCK = RLock()
-
-
-def _serialized_init(fn):
-    @wraps(fn)
-    def locked(*args, **kwargs):
-        with _INIT_LOCK:
-            return fn(*args, **kwargs)
-
-    return locked
-
 
 # ---- Snapping: where a start / end point may attach to the graph (demo/lmgraph.py rule)
 SNAP_HIGHWAYS = {
@@ -123,7 +110,6 @@ SNAP_HIGHWAYS = {
 SNAP_NO_ACCESS = {"private", "no"}
 
 
-@_serialized_init
 def _load_graph():
     """启动时加载一次，常驻内存。文件不存在时给明确报错。"""
     global _G
@@ -242,10 +228,6 @@ def build_preferences(req: RouteRequest) -> tuple[dict[str, float], float]:
     else:
         prefs = {"safety": -5.0}
         d_tol = SAFE_D_TOL
-    if req.pref_override:
-        for feature, value in req.pref_override.items():
-            if feature in prefs:
-                prefs[feature] = max(-5.0, min(5.0, value))
     return prefs, d_tol
 
 
@@ -341,7 +323,6 @@ def _crossing(u, v, e: dict, idx: dict) -> float | None:
 _IDX: dict | None = None
 
 
-@_serialized_init
 def _index(G) -> dict:
     """Built once per graph (first request, ~0.3 s): junction clusters + their crossing cost, and a collapsed
     DiGraph H (one edge per u->v of the motorway-free view) with per-edge float arrays, so a request is
@@ -413,15 +394,7 @@ def _pair_costs(idx: dict, prefs: dict[str, float], d_tol: float, mode: Mode, st
         c = L * safe_factor(s, strength) + strength * idx["X"]
     else:
         on = [f for f in GREEN_FEATURES if prefs.get(f, 0.0) != 0.0]
-        g = (
-            np.average(
-                [idx[f] if prefs[f] < 0 else 1.0 - idx[f] for f in on],
-                axis=0,
-                weights=[abs(prefs[f]) for f in on],
-            )
-            if on
-            else 1.0
-        )
+        g = np.mean([idx[f] for f in on], axis=0) if on else 1.0
         r = max(0.0, min(1.0, 1.0 - d_tol))
         c = L * green_factor(g, r, s, strength) + strength * r * GREEN_CROSS * idx["XR"]
     c = np.where(s < SAFETY_FLOOR, DISQUALIFY_MULT * L, c)
@@ -457,9 +430,7 @@ def _make_weight(prefs: dict[str, float], d_tol: float, mode: Mode, strength: fl
         g = 1.0  # no toggle on: only the red-edge / red-junction penalty is left
         if on:
             vec01, _ = edge_feature_vector(e, mode)
-            g = sum(abs(prefs[f]) * (vec01[f] if prefs[f] < 0 else 1.0 - vec01[f]) for f in on) / sum(
-                abs(prefs[f]) for f in on
-            )
+            g = sum(vec01[f] for f in on) / len(on)
         red_jc = jc if j is not None and j < RED_BELOW else 0.0
         return length * green_factor(g, r, s, strength) + strength * r * GREEN_CROSS * red_jc
 
@@ -788,16 +759,12 @@ def _risky_count(r: Route) -> int:
 
 
 def _greenery_pct(r: Route) -> float:
-    """Length-weighted vegetation score, independent of quiet/shade preference toggles.
-
-    Segment.score blends the enabled preferences and is clamped for map colours;
-    it must not stand in for greenery. Fall back only for legacy segments.
-    """
+    """Green panel 'Greenery': length-weighted mean segment score (a plain mean let a short grey stub
+    outweigh a long green stretch)."""
     if not r.segments:
         return 0.0
     ws = [max(1.0, _coords_m(s.coords)) for s in r.segments]
-    values = [(s.features or {}).get("vegetation", s.score) for s in r.segments]
-    return round(100 * sum(v * w for v, w in zip(values, ws, strict=True)) / sum(ws), 1)
+    return round(100 * sum(s.score * w for s, w in zip(r.segments, ws, strict=True)) / sum(ws), 1)
 
 
 def _not_worse(rec: Route, fast: Route, mode: Mode) -> bool:
@@ -927,19 +894,7 @@ def _build_route(Gv, path, w, prefs, mode: Mode, primary: str) -> Route:
         score = min(hi, max(lo, round(avg, 2)))
         edges = list(dict.fromkeys(k for i in pidx for k in pieces[i][4]))
         reasons = _segment_reasons(infos, edges, avg, mode, [pieces[i][5] for i in pidx if pieces[i][5]])
-        # Attribute each displayed piece by its source-edge length, then combine
-        # using the displayed piece length (including split junction pieces).
-        totals = {f: 0.0 for f in infos[0][4]} if infos else {}
-        for i, wt in zip(pidx, wts, strict=True):
-            source_edges = pieces[i][4]
-            edge_weights = [lengths[k] or 1.0 for k in source_edges]
-            for f in totals:
-                value = sum(infos[k][4][f] * ew for k, ew in zip(source_edges, edge_weights, strict=True))
-                totals[f] += value / sum(edge_weights) * wt
-        features = {f: round(v / sum(wts), 4) for f, v in totals.items()} or None
-        segments.append(
-            Segment(coords=_dedup(coords), score=score, level=lv, reasons=reasons, features=features)
-        )
+        segments.append(Segment(coords=_dedup(coords), score=score, level=lv, reasons=reasons))
 
     return Route(
         coords=full,
@@ -1007,7 +962,6 @@ def plan_route(req: RouteRequest) -> RouteResponse:
 _NETWORK: dict[str, NetworkResponse] = {}
 
 
-@_serialized_init
 def network(layer: Mode) -> NetworkResponse:
     """City-wide base layer, display only: one Segment per homogeneous road section (sections.py).
 

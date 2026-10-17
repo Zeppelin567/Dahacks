@@ -15,6 +15,7 @@
   ],
   "scripts": {
     "dev": "concurrently -k -n api,web,py -c blue,green,magenta \"npm run dev -w api\" \"npm run dev -w web\" \"npm run dev:py\"",
+    "dev:js": "concurrently -k -n api,web -c blue,green \"npm run dev -w api\" \"npm run dev -w web\"",
     "dev:py": "uv run --directory py uvicorn app.main:app --reload --port 8000",
     "build": "npm run build -w web",
     "start": "npm run start -w api",
@@ -31,9 +32,7 @@
     "smoke:dev": "node scripts/smoke-dev.mjs",
     "lint:py": "uv run --directory py ruff check . && uv run --directory py ruff format --check .",
     "format:py": "uv run --directory py ruff format .",
-    "check:py": "npm run lint:py && npm run test:py",
-    "test:web": "npm run test -w web",
-    "dev:js": "concurrently -k -n api,web -c blue,green \"npm run dev -w api\" \"npm run dev -w web\""
+    "check:py": "npm run lint:py && npm run test:py"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.13",

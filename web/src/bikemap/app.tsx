@@ -3,8 +3,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { bikemap, type GreenPrefs, type LatLng, type RouteResponse } from "./api";
 import { CARD_POPUP_CLASS, StreetCard } from "./detail-card";
-import { FeatureTools } from "./feature-tools";
-import { HazardDialog, HazardMarkers, useHazards } from "./hazards";
 import {
   type BikeMapHandle,
   type DrawEvent,
@@ -23,16 +21,13 @@ import {
   useCrossings,
 } from "./map";
 import { RideBar } from "./ride";
-import { applyVoteDeltas, clampPref, toPrefVector } from "./route-utils";
 import { type RouteSel, Sheet } from "./sheet";
 import { ModeSwitch } from "./switch";
 import { ENGINE_MODE, type UiMode } from "./theme";
 import { BikeRoot } from "./theme-context";
 import { type RaceState, TryTray } from "./tray";
 import { ll, placePoint, presetPin, type TripPoint, urlPoint, urlValue } from "./trip";
-import { useRouteVoice } from "./use-voice";
 import "./bikemap.css";
-import "./features.css";
 
 /** Nature's "Scenic" sends this rural weight to /route; "Direct" sends 0. */
 const SCENIC_RURAL = 0.6;
@@ -77,41 +72,6 @@ export function BikeApp() {
     quiet: true,
     shade: params.get("shade") === "1",
   });
-  const [hazardArmed, setHazardArmed] = useState(false);
-  const [hazardAt, setHazardAt] = useState<LatLng | null>(null);
-  const { hazards, setHazards } = useHazards();
-  const [voteAdjust, setVoteAdjust] = useState<Record<string, number>>(() => {
-    try {
-      const raw = JSON.parse(localStorage.getItem("bikemap-votes-v1") ?? "{}");
-      return Object.fromEntries(
-        Object.entries(raw ?? {})
-          .filter(
-            ([k, v]) =>
-              ["vegetation", "quiet", "shade"].includes(k) && typeof v === "number" && Number.isFinite(v),
-          )
-          .map(([k, v]) => [k, clampPref(v as number)]),
-      );
-    } catch {
-      return {};
-    }
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem("bikemap-votes-v1", JSON.stringify(voteAdjust));
-    } catch {
-      /* Storage unavailable. */
-    }
-  }, [voteAdjust]);
-  const prefOverride = useMemo(
-    () =>
-      Object.fromEntries(
-        Object.entries(toPrefVector(rural, prefs)).map(([f, v]) => [
-          f,
-          v === 0 ? 0 : clampPref(v + (voteAdjust[f] ?? 0)),
-        ]),
-      ),
-    [rural, prefs, voteAdjust],
-  );
   const [sel, setSel] = useState<RouteSel>("rec");
   const [pick, setPick] = useState<MapPick | null>(null);
   const [streetAt, setStreetAt] = useState<LatLng | null>(null);
@@ -166,21 +126,13 @@ export function BikeApp() {
   const tripKey = `${start?.key}:${start?.lat},${start?.lng}>${end?.key}:${end?.lat},${end?.lng}`;
   // Both engines are fetched so each map already has its own route when the seam sweeps across.
   const routeQuery = (m: "safe" | "green") => ({
-    queryKey: [
-      "bikemap",
-      "route",
-      m,
-      tripKey,
-      m === "green" ? rural : null,
-      m === "green" ? prefs : null,
-      m === "green" ? prefOverride : null,
-    ],
+    queryKey: ["bikemap", "route", m, tripKey, m === "green" ? rural : null, m === "green" ? prefs : null],
     queryFn: () =>
       bikemap.route({
         start: ll(start as TripPoint),
         end: ll(end as TripPoint),
         mode: m,
-        ...(m === "green" ? { rural, prefs, pref_override: prefOverride } : {}),
+        ...(m === "green" ? { rural, prefs } : {}),
       }),
     enabled: !!start && !!end,
     placeholderData: (prev: RouteResponse | undefined) => prev, // keep the old line on screen while a new one loads
@@ -188,8 +140,6 @@ export function BikeApp() {
   const safeRoute = useQuery(routeQuery("safe"));
   const greenRoute = useQuery(routeQuery("green"));
   const route = ui === "nature" ? greenRoute : safeRoute;
-  const freshRoute = !route.isPlaceholderData && !route.isError ? route.data : undefined;
-  const voice = useRouteVoice(freshRoute?.[sel === "rec" ? "recommended" : "fastest"]);
   const crossings = useCrossings(safeRoute.data);
 
   // Nature's Street View stops along our route, refetched only when the green line itself changes.
@@ -200,7 +150,7 @@ export function BikeApp() {
   const photos = useQuery({
     queryKey: ["bikemap", "route-photos", "green", routeKey],
     queryFn: () => bikemap.routePhotos((grec as NonNullable<typeof grec>).coords, "green", 5),
-    enabled: !!grec && !greenRoute.isPlaceholderData && !greenRoute.isError,
+    enabled: !!grec,
     staleTime: Infinity,
     placeholderData: (prev) => prev,
   });
@@ -230,7 +180,7 @@ export function BikeApp() {
   // biome-ignore lint/correctness/useExhaustiveDependencies: fire only when the trip or the route settings change
   useEffect(() => {
     if (raceRef.current !== "idle") stopRace();
-  }, [tripKey, rural, prefs, prefOverride]);
+  }, [tripKey, rural, prefs]);
 
   function closeCards() {
     setPick(null);
@@ -244,9 +194,6 @@ export function BikeApp() {
     setRaceEnd(null);
   }
   function startRace() {
-    if (!freshRoute) return;
-    voice.stop();
-    setHazardArmed(false);
     closeCards();
     setRaceLive(null);
     setRaceEnd(null);
@@ -299,8 +246,6 @@ export function BikeApp() {
       setStreetAt(null);
       setClickAt(null);
       setTrayOpen(false);
-      setHazardArmed(false);
-      setHazardAt(null);
       setRace("idle"); // ends a race too (state setters are stable, unlike stopRace)
       setRaceLive(null);
       setRaceEnd(null);
@@ -308,14 +253,6 @@ export function BikeApp() {
     addEventListener("keydown", k);
     return () => removeEventListener("keydown", k);
   }, []);
-
-  function toggleReport() {
-    stopRace();
-    voice.stop();
-    closeCards();
-    setTrayOpen(false);
-    setHazardArmed((armed) => !armed);
-  }
 
   const apiDown = places.isError;
   const routeError = apiDown
@@ -338,12 +275,6 @@ export function BikeApp() {
         onReady={() => setMapReady(true)}
         onClick={(e) => {
           if (racing) return;
-          if (hazardArmed) {
-            setHazardAt(e.at);
-            setHazardArmed(false);
-            closeCards();
-            return;
-          }
           setPick(null);
           setStreetAt(null);
           setTrayOpen(false);
@@ -357,17 +288,13 @@ export function BikeApp() {
           setStreetAt(e.at);
         }}
       >
-        <HazardMarkers
-          hazards={hazards}
-          onRemove={(id) => setHazards((prev) => prev.filter((h) => h.id !== id))}
-        />
         <MapLayers
           routes={{ modern: safeRoute.data, nature: greenRoute.data }}
           sel={sel}
           photos={photos.data}
           prefs={prefs}
           pick={pick}
-          interactive={!racing && !hazardArmed}
+          interactive={!racing}
           onPick={(p) => {
             setClickAt(null);
             setStreetAt(null);
@@ -390,19 +317,6 @@ export function BikeApp() {
         <PickPopup pick={pick} className={CARD_POPUP_CLASS} onClose={() => setPick(null)}>
           <StreetCard
             pick={pick}
-            onVote={
-              ui === "nature" &&
-              freshRoute &&
-              pick?.kind === "street" &&
-              pick.features &&
-              (pick.source === "rec" || pick.source === "fast")
-                ? (like) => {
-                    const features = pick.features;
-                    if (features) setVoteAdjust((prev) => applyVoteDeltas(prev, features, like));
-                    closeCards();
-                  }
-                : undefined
-            }
             onClose={() => setPick(null)}
             onStart={
               pick && pick.kind !== "crossing"
@@ -471,19 +385,6 @@ export function BikeApp() {
         <MapControls view3d={view3d} onToggle3d={() => setView3d((v) => !v)} onRecenter={recenter} />
       </MapLibreMap>
 
-      <HazardDialog
-        at={hazardAt}
-        onClose={() => setHazardAt(null)}
-        onSave={(hazard) => setHazards((prev) => [...prev, hazard])}
-      />
-      {hazardArmed && (
-        <div className="bm-report-hint" role="status">
-          Tap the map to mark a hazard.
-          <button type="button" onClick={() => setHazardArmed(false)}>
-            Cancel
-          </button>
-        </div>
-      )}
       <ModeSwitch ui={ui} onChange={switchMode} />
 
       <Sheet
@@ -540,24 +441,6 @@ export function BikeApp() {
         hop={hop}
         onTry={() => setTrayOpen((o) => !o)}
         defaultMore={params.get("more") === "1"}
-        tools={
-          <FeatureTools
-            ui={ui}
-            rural={rural}
-            onRural={setRural}
-            onPreset={(value, next) => {
-              setRural(value);
-              setPrefs(next);
-              setVoteAdjust({});
-            }}
-            hasVotes={Object.keys(voteAdjust).length > 0}
-            onResetVotes={() => setVoteAdjust({})}
-            armed={hazardArmed}
-            onReport={toggleReport}
-            voice={voice}
-            canListen={!!freshRoute}
-          />
-        }
       />
 
       <TryTray
@@ -565,10 +448,6 @@ export function BikeApp() {
         open={trayOpen}
         onOpenChange={setTrayOpen}
         race={race}
-        canRace={!!freshRoute}
-        listening={voice.speaking}
-        onListen={voice.supported && freshRoute ? voice.toggle : undefined}
-        onReport={toggleReport}
         onRace={() => (race === "running" ? stopRace() : startRace())}
       />
       <RideBar

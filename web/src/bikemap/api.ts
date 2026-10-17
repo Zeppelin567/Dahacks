@@ -9,13 +9,7 @@ export type Place = { id: string; name: string; lat: number; lng: number };
 
 export type GreenPrefs = { green: boolean; quiet: boolean; shade: boolean };
 
-export type Segment = {
-  coords: LatLng[];
-  score: number;
-  level: Level;
-  reasons: string[];
-  features?: Record<string, number> | null;
-};
+export type Segment = { coords: LatLng[]; score: number; level: Level; reasons: string[] };
 
 export type Route = { coords: LatLng[]; distance_m: number; duration_min: number; segments: Segment[] };
 
@@ -38,14 +32,7 @@ export type RouteResponse = {
 
 export type NetworkResponse = { layer: Mode; mock: boolean; segments: Segment[] };
 
-export type RouteRequest = {
-  start: LatLng;
-  end: LatLng;
-  mode: Mode;
-  rural?: number;
-  prefs?: GreenPrefs;
-  pref_override?: Record<string, number>;
-};
+export type RouteRequest = { start: LatLng; end: LatLng; mode: Mode; rural?: number; prefs?: GreenPrefs };
 
 export type Photo = { url: string; pano_id: string; heading: number; date: string | null };
 

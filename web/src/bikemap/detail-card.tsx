@@ -95,7 +95,6 @@ export function StreetCard({
   onClose,
   onStart,
   onEnd,
-  onVote,
 }: {
   pick?: MapPick | null;
   loading?: boolean;
@@ -104,7 +103,6 @@ export function StreetCard({
   /** "Start here" / "Go here" for the tapped spot (a street tap still lets you set a trip point) */
   onStart?: () => void;
   onEnd?: () => void;
-  onVote?: (like: boolean) => void;
 }) {
   const drop = (onStart || onEnd) && (
     <div className="bm-drop sc-drop">
@@ -218,16 +216,6 @@ export function StreetCard({
             </span>
           )}
         </div>
-        {onVote && pick?.kind === "street" && pick.features && (
-          <section className="bm-feature-actions" aria-label="Rate this stretch">
-            <button type="button" onClick={() => onVote(true)}>
-              More like this
-            </button>
-            <button type="button" onClick={() => onVote(false)}>
-              Less like this
-            </button>
-          </section>
-        )}
         {drop}
       </div>
     </div>
