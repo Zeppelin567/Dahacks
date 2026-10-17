@@ -2,8 +2,8 @@
 // (docs/demo-script.md, docs/backend-story.md, Dahacks-design/build/TECH_STACK.md).
 // Change a fact here and every slide picks it up.
 
-/** Product name as the website shows it (web/index.html: "BikeMap Cupertino"). */
-export const PRODUCT = "BikeMap";
+/** Product name as the website shows it (web/index.html: "BikeScape"). */
+export const PRODUCT = "BikeScape";
 
 /** The live website (the main app runs on 5173; this deck runs on 5174). */
 export const LIVE_URL = "http://localhost:5173/";

@@ -1,4 +1,4 @@
-# Demo script: BikeMap Cupertino
+# Demo script: BikeScape
 
 Two routes, one per mode, chained into one story. Every number below was measured on 2026-10-16 at 20:30 against branch `fix/routing` (commit `8b15384`), through the engine that the API serves.
 

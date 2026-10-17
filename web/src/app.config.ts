@@ -4,7 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import { Boxes, KeyRound, LayoutDashboard, MessageSquare, Radio, Terminal } from "lucide-react";
 
 export const appConfig = {
-  name: "BikeMap Cupertino",
+  name: "BikeScape",
   tagline: "Two ways to ride: the safe way and the green way.",
   description: "Bike routes for Cupertino commuters: a safe-route map and a City ↔ Rural green-route map.",
   /** Emoji or short text shown as the logo. */

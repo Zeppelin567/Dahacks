@@ -154,7 +154,7 @@ export default function Presentation() {
             </div>
           </div>
           <div className="hero-phone rv" style={d(2)}>
-            <SiteSlot name="mobile" label="BikeMap on a phone" ratio="390 / 844" />
+            <SiteSlot name="mobile" label="BikeScape on a phone" ratio="390 / 844" />
           </div>
         </div>
         <button type="button" className="next-hint" onClick={() => go(1)} aria-label="Next slide">

@@ -1,4 +1,4 @@
-# BikeMap Cupertino: how the backend works (the story)
+# BikeScape: how the backend works (the story)
 
 > **Team copy, Fri 2026-10-16, 9 PM.** This describes branch `fix/routing` (commits `3292710` and `8b15384`): the data pipeline from `161c005`, plus the map clean-up (§5.4) and the routing fix (§6). The demo is in `docs/demo-script.md`.
 > Every number was recomputed from `py/data/*` with the team's Python environment, or quoted from the plan, the spec or the research notes, with the source named. **[CHECK]** marks anything we could not verify from the repo.

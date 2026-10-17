@@ -1,4 +1,4 @@
-# BikeMap Cupertino (DAHacks 5.0)
+# BikeScape (DAHacks 5.0)
 
 Two bike maps for Cupertino: a Safe route map and a Green route map with a City ↔ Rural slider.
 

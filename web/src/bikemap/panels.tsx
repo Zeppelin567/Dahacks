@@ -15,7 +15,7 @@ type How = "key" | "pointer";
 
 const CUPERTINO = { lat: 37.318, lng: -122.04 };
 
-/** Browser geolocation, kept inside Cupertino (the only city BikeMap scores). */
+/** Browser geolocation, kept inside Cupertino (the only city BikeScape scores). */
 export function locateMe(): Promise<TripPoint> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject(new Error("Location isn't available in this browser."));
