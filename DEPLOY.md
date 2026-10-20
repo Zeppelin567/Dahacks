@@ -6,7 +6,7 @@ The production website is the integrated `main` branch. It uses a single Docker 
 
 1. Sign in at https://dashboard.render.com and choose **New → Blueprint**.
 2. Connect `blar-tw/Dahacks`, select **main**, and use the root `render.yaml`.
-3. Review the proposed `bikescape` web service (Docker, Free), then deploy. Existing Render services must also have their source branch changed to **main**; pushing main does not change a service still tracking demo/refined-map.
+3. Review the proposed `dahacks-bikemap` web service (Docker, Free), then deploy. Existing Render services must also have their source branch changed to **main**; pushing main does not change a service still tracking demo/refined-map.
 4. Render assigns an HTTPS `*.onrender.com` address. Attach a domain in the service settings if desired.
 5. Verify the website and a real route using the checks below. `/api/py/health` verifies the Python process, but does not by itself verify the routing graph.
 
@@ -47,3 +47,7 @@ In a browser, switch Modern/Nature, edit From/To, open More, try presets, vote o
 Hazards and votes stay on that browser, not a shared server. Photo cards only show images in the private local cache, which the public image deliberately excludes. Scores and routing remain available without images.
 
 For the original starter's database/auth deployment, consult the API code and `.env.example`; those features are not part of the public map container.
+
+## Existing deployment
+
+The existing service is https://dahacks-bikemap.onrender.com and is connected to `Zeppelin567/Dahacks`. That deployment repository mirrors the tested `blar-tw/Dahacks` main release. Its Blueprint must track main as well; keep the existing service name to retain the URL.

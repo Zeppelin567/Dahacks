@@ -1,7 +1,7 @@
 # BikeScape: public website and Python routing at one HTTPS origin.
 services:
   - type: web
-    name: bikescape
+    name: dahacks-bikemap
     branch: main
     runtime: docker
     plan: free
