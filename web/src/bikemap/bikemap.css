@@ -1,0 +1,54 @@
+/* BikeMap app shell. Tokens: theme.css. Map chrome: map/map.css. Sheet, switch, cards, tray: sheet.css. */
+.bm-app {
+  position: fixed;
+  inset: 0;
+  overflow: clip; /* hidden still scrolls from code (scrollIntoView) */
+}
+
+/* "Start here / Go here" on a map tap (inside a .bm-popup) */
+.bm-drop {
+  display: flex;
+  gap: 6px;
+}
+.bm-drop button {
+  height: 36px;
+  padding: 0 12px 0 10px;
+  border-radius: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: 700 14px var(--bm-font);
+  background: var(--bm-chip);
+  color: var(--bm-ink);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.bm-drop button.go {
+  background: var(--bm-btn);
+  color: #fff;
+}
+.bm-drop button:active {
+  transform: scale(0.96);
+}
+.bm-drop i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 3px solid currentColor;
+  flex: none;
+}
+.bm-drop i.e {
+  background: currentColor;
+}
+/* the same two buttons at the foot of a street card */
+.bm-drop.sc-drop {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--bm-line);
+}
+.bm-drop.sc-drop button {
+  flex: 1;
+  justify-content: center;
+  height: 34px;
+  font-size: 13px;
+}

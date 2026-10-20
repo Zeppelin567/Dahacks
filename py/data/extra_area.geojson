@@ -1,0 +1,35 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "south-east extension",
+    "bounds": "N: I-280, E: San Tomas Aquino Rd (straight north of Payne Ave), S: Prospect Rd -> Hamilton Ave, W: De Anza Blvd",
+    "note": "Each edge sits ~100 m outside its boundary road so the road itself is in. Overlap with the Cupertino area is intended: 0_extend_area.py only adds what the old graph lacks."
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [[
+     [-122.0360, 37.3355],
+     [-122.0286, 37.3355],
+     [-122.0197, 37.3342],
+     [-122.0113, 37.3299],
+     [-121.9962, 37.3223],
+     [-121.9871, 37.3192],
+     [-121.9755, 37.3192],
+     [-121.9755, 37.2928],
+     [-121.9880, 37.2890],
+     [-121.9904, 37.2890],
+     [-121.9920, 37.2908],
+     [-121.9978, 37.2916],
+     [-122.0029, 37.2921],
+     [-122.0141, 37.2927],
+     [-122.0231, 37.2929],
+     [-122.0360, 37.2930],
+     [-122.0360, 37.3355]
+    ]]
+   }
+  }
+ ]
+}

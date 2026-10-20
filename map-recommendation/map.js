@@ -50,7 +50,6 @@ let recentMarkers = [];       // Leaflet markers for recent visits pins
 let searchResultMarker = null; // single marker for search results
 let selectedDestination = null;
 let searchDebounceTimer = null;
-let searchVersion = 0;
 let cachedRecommendations = null; // Cached green recommendations
 let recommendationsEnabled = false; // Default: OFF (shows recent visits only)
 
@@ -124,7 +123,6 @@ function requestGPS() {
 gpsEnableBtn.addEventListener('click', async () => {
   gpsEnableBtn.textContent = 'Locating…';
   gpsEnableBtn.disabled = true;
-  gpsSkipBtn.disabled = true;
   const coords = await requestGPS();
   userLat = coords.lat;
   userLng = coords.lng;
@@ -142,7 +140,6 @@ gpsSkipBtn.addEventListener('click', () => {
 // ============================================================
 
 function startApp() {
-  if (map) return;
   gpsOverlay.classList.add('hidden');
   initMap(userLat, userLng);
   placeUserMarker(userLat, userLng);
@@ -492,7 +489,7 @@ function closeRecentModal() {
 
 function clearAllRecentVisits() {
   if (confirm('Clear all recent visits history from local storage?')) {
-    localStorage.setItem(RECENT_VISITS_KEY, '[]');
+    localStorage.removeItem(RECENT_VISITS_KEY);
     updateRecentBadge(0);
     if (!recommendationsEnabled) {
       clearRecentPins();
@@ -688,7 +685,6 @@ cardRouteBtn.addEventListener('click', () => {
 
 searchInput.addEventListener('input', () => {
   const q = searchInput.value.trim();
-  const version = ++searchVersion;
   searchClear.classList.toggle('hidden', q.length === 0);
 
   clearTimeout(searchDebounceTimer);
@@ -696,12 +692,10 @@ searchInput.addEventListener('input', () => {
     searchResults.classList.add('hidden');
     return;
   }
-  searchDebounceTimer = setTimeout(() => searchPlaces(q, version), 350);
+  searchDebounceTimer = setTimeout(() => searchPlaces(q), 350);
 });
 
 searchClear.addEventListener('click', () => {
-  ++searchVersion;
-  clearTimeout(searchDebounceTimer);
   searchInput.value = '';
   searchClear.classList.add('hidden');
   searchResults.classList.add('hidden');
@@ -717,16 +711,14 @@ document.addEventListener('click', (e) => {
   }
 });
 
-async function searchPlaces(query, version = ++searchVersion) {
+async function searchPlaces(query) {
   try {
     // Try our backend search proxy first (handles CORS and biases to current location)
     const backendUrl = `${SEARCH_ENDPOINT}?q=${encodeURIComponent(query)}&lat=${userLat}&lng=${userLng}`;
-    const resp = await fetch(backendUrl, { signal: AbortSignal.timeout(12000) });
-    if (version !== searchVersion) return;
+    const resp = await fetch(backendUrl);
     if (resp.ok) {
       const data = await resp.json();
-      if (version !== searchVersion) return;
-      if (Array.isArray(data.results)) {
+      if (data.results && data.results.length > 0) {
         renderSearchResults(data.results);
         return;
       }
@@ -734,8 +726,6 @@ async function searchPlaces(query, version = ++searchVersion) {
   } catch (err) {
     console.warn('Backend search proxy unavailable, falling back to direct Nominatim:', err);
   }
-
-  if (version !== searchVersion) return;
 
   // Direct Nominatim fallback
   try {
@@ -748,13 +738,11 @@ async function searchPlaces(query, version = ++searchVersion) {
       bounded: '0',
       countrycodes: 'us',
     });
-    const resp = await fetch(`${NOMINATIM_DIRECT}?${params}`, { signal: AbortSignal.timeout(12000) });
+    const resp = await fetch(`${NOMINATIM_DIRECT}?${params}`);
     if (!resp.ok) throw new Error(`Nominatim returned ${resp.status}`);
     const data = await resp.json();
-    if (version !== searchVersion) return;
     renderSearchResults(data);
   } catch (err) {
-    if (version !== searchVersion) return;
     console.error('All search options failed:', err);
     searchResults.innerHTML = '<li class="no-results">Search unavailable — try again</li>';
     searchResults.classList.remove('hidden');
@@ -794,8 +782,6 @@ function renderSearchResults(results) {
       const name = li.dataset.name;
       const isGreen = li.dataset.type === 'green';
 
-      ++searchVersion;
-      clearTimeout(searchDebounceTimer);
       placeSearchPin(lat, lng, name, isGreen);
       searchResults.classList.add('hidden');
       searchInput.value = name;
@@ -838,7 +824,6 @@ function placeSearchPin(lat, lng, name, isGreen) {
 // ============================================================
 
 locateBtn.addEventListener('click', () => {
-  if (!map) return;
   map.flyTo([userLat, userLng], 14, { animate: true, duration: 0.6 });
 });
 

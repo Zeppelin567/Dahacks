@@ -1,0 +1,1168 @@
+{
+  "photoCount": 8931,
+  "nodeCount": 8514,
+  "edgeCount": 19817,
+  "safetySamples": 5743,
+  "greenSamples": 5196,
+  "sampleCount": 7917,
+  "photos": [
+    {
+      "src": "street-00.jpg",
+      "right": null,
+      "name": "Mercedes Road",
+      "at": [
+        37.314664,
+        -122.073316
+      ],
+      "safety": 8,
+      "greenery": 10,
+      "shade": 70,
+      "safeNote": "Narrow, winding, tree-lined residential road with light traffic and smooth pavement; no bike lane but low stress.",
+      "greenNote": "Narrow road tunnels under a dense canopy of mature trees, with leafy understory and wooded hillside beside it.",
+      "hazards": [
+        "no_bike_lane"
+      ],
+      "lts": 1,
+      "date": "2025-10"
+    },
+    {
+      "src": "street-01.jpg",
+      "right": "street-01-right.jpg",
+      "name": "Prospect Road",
+      "at": [
+        37.291622,
+        -122.044678
+      ],
+      "safety": 8,
+      "greenery": 10,
+      "shade": 80,
+      "safeNote": "Quiet 25 mph wooded road with no centre-line traffic, but cracked pavement and narrow edges need care.",
+      "greenNote": "Oak canopy closes completely over a narrow road with dense understory and riparian-style vegetation, no buildings or traffic in view.",
+      "hazards": [
+        "poor_pavement"
+      ],
+      "lts": 1,
+      "date": "2025-10"
+    },
+    {
+      "src": "street-02.jpg",
+      "right": null,
+      "name": "Regnart Road",
+      "at": [
+        37.292229,
+        -122.064474
+      ],
+      "safety": 8,
+      "greenery": 10,
+      "shade": 70,
+      "safeNote": "Quiet 25 mph rural-residential road with light traffic and no parked cars; comfortable for cautious riders despite narrow edges.",
+      "greenNote": "Oak canopy closes over a winding hillside road with dense woodland on both sides, very leafy and natural.",
+      "hazards": [],
+      "lts": 1,
+      "date": "2025-10"
+    },
+    {
+      "src": "street-03.jpg",
+      "right": "street-03-right.jpg",
+      "name": "Stevens Canyon Road",
+      "at": [
+        37.300144,
+        -122.078266
+      ],
+      "safety": 5,
+      "greenery": 9,
+      "shade": 10,
+      "safeNote": "Winding rural canyon road with no bike lane and limited sight lines, though speeds are moderate and traffic light.",
+      "greenNote": "Dense chaparral and oak woodland line the road on rolling hills, with no buildings or traffic in view.",
+      "hazards": [
+        "no_bike_lane",
+        "blind_corner"
+      ],
+      "lts": 3,
+      "date": "2025-10"
+    },
+    {
+      "src": "street-04.jpg",
+      "right": "street-04-right.jpg",
+      "name": "McClellan Road",
+      "at": [
+        37.313196,
+        -122.064691
+      ],
+      "safety": 8,
+      "greenery": 9,
+      "shade": 70,
+      "safeNote": "Quiet tree-lined residential street at 25 mph with a centre line and no parking; shared-lane markings only.",
+      "greenNote": "Tall mature trees arch over McClellan Road, with a grassy open space and lush roadside planting along the curb.",
+      "hazards": [
+        "sharrows_only"
+      ],
+      "lts": 1,
+      "date": "2025-10"
+    },
+    {
+      "src": "street-05.jpg",
+      "right": null,
+      "name": "Lindy Lane",
+      "at": [
+        37.302846,
+        -122.059203
+      ],
+      "safety": 8,
+      "greenery": 9,
+      "shade": 70,
+      "safeNote": "Quiet residential hill street with no bike lane, light traffic, and some cracked pavement and limited sight lines.",
+      "greenNote": "Dense mature oaks form a closed canopy over a hillside lane, with lush roadside vegetation and no buildings dominating the view.",
+      "hazards": [
+        "no_bike_lane",
+        "poor_pavement",
+        "blind_corner"
+      ],
+      "lts": 1,
+      "date": "2025-10"
+    },
+    {
+      "src": "street-06.jpg",
+      "right": null,
+      "name": "Deodara Drive",
+      "at": [
+        37.334973,
+        -122.069445
+      ],
+      "safety": 9,
+      "greenery": 9,
+      "shade": 60,
+      "safeNote": "Quiet, low-speed residential street with clear sight lines and good pavement; comfortable for most riders.",
+      "greenNote": "Tall trees and dense shrubs line both sides, with canopy closing over the quiet residential road.",
+      "hazards": [],
+      "lts": 1,
+      "date": "2022-10"
+    },
+    {
+      "src": "street-07.jpg",
+      "right": null,
+      "name": "Regnart Canyon Drive",
+      "at": [
+        37.298057,
+        -122.060161
+      ],
+      "safety": 8,
+      "greenery": 9,
+      "shade": 80,
+      "safeNote": "Narrow, quiet, shaded canyon road with good pavement and clear sight lines; no bike lane but low traffic.",
+      "greenNote": "Dense oak canopy closes over a shaded canyon road with lush planting and nearby creek-side vegetation.",
+      "hazards": [],
+      "lts": 1,
+      "date": "2025-10"
+    },
+    {
+      "src": "street-08.jpg",
+      "right": null,
+      "name": "Cristo Rey Drive",
+      "at": [
+        37.331898,
+        -122.071769
+      ],
+      "safety": 7,
+      "greenery": 9,
+      "shade": 30,
+      "safeNote": "Two-lane 30 mph road with a centre line and no bike lane, but a clear, smooth pavement and quiet traffic.",
+      "greenNote": "Dense eucalyptus and shrubs line a bridge over a creek corridor, with tree crowns overhanging the road and little built clutter.",
+      "hazards": [
+        "no_bike_lane"
+      ],
+      "lts": 2,
+      "date": "2022-07"
+    },
+    {
+      "src": "street-09.jpg",
+      "right": null,
+      "name": "Blue Hills Lane",
+      "at": [
+        37.291269,
+        -122.04524
+      ],
+      "safety": 8,
+      "greenery": 9,
+      "shade": 60,
+      "safeNote": "Narrow, quiet rural residential lane with good pavement and clear sight lines; low traffic expected.",
+      "greenNote": "Narrow lane under closed oak canopy with dense shrubs and hillside vegetation; very natural, though a vehicle hood fills the lower view.",
+      "hazards": [],
+      "lts": 1,
+      "date": "2025-10"
+    },
+    {
+      "src": "street-10.jpg",
+      "right": null,
+      "name": "Heney Creek Place",
+      "at": [
+        37.329774,
+        -122.070795
+      ],
+      "safety": 8,
+      "greenery": 9,
+      "shade": 40,
+      "safeNote": "Quiet residential cul-de-sac-style street with light traffic; just watch cracked pavement and parked bins.",
+      "greenNote": "Dense mature trees and shrubs line the road with creek-side vegetation; canopy partly covers the sky, though photo is winter-dated.",
+      "hazards": [
+        "poor_pavement"
+      ],
+      "lts": 1,
+      "date": "2016-02"
+    },
+    {
+      "src": "street-11.jpg",
+      "right": null,
+      "name": "nan",
+      "at": [
+        37.317916,
+        -122.059426
+      ],
+      "safety": 6,
+      "greenery": 9,
+      "shade": 80,
+      "safeNote": "Narrow, tree-lined residential lane with no bike lane and some cracked pavement; sight lines are partly blocked by vegetation.",
+      "greenNote": "Narrow lane is enclosed by a full canopy of mature trees and dense ivy-covered banks, with leaves on..",
+      "hazards": [
+        "poor_pavement",
+        "no_bike_lane"
+      ],
+      "lts": 2,
+      "date": "2025-10"
+    },
+    {
+      "src": "street-12.jpg",
+      "right": null,
+      "name": "Ricardo Road",
+      "at": [
+        37.30859,
+        -122.069251
+      ],
+      "safety": 9,
+      "greenery": 9,
+      "shade": 70,
+      "safeNote": "Quiet, shaded residential street with good pavement and clear sight lines; no bike lane, but traffic is light.",
+      "greenNote": "Mature oaks form a closed canopy over a quiet residential road with leafy yards on both sides.",
+      "hazards": [],
+      "lts": 1,
+      "date": "2022-08"
+    },
+    {
+      "src": "street-13.jpg",
+      "right": "street-13-right.jpg",
+      "name": "North Foothill Boulevard",
+      "at": [
+        37.327893,
+        -122.06927
+      ],
+      "safety": 6,
+      "greenery": 8,
+      "shade": 30,
+      "safeNote": "Mapped bike lane on a 40 mph road; curb side mostly out of view, so score is tentative.",
+      "greenNote": "Mature pines and dense oaks line the road with lush roadside planting and hillside vegetation nearby.",
+      "hazards": [
+        "high_speed_traffic"
+      ],
+      "lts": 2,
+      "date": "2023-05"
+    },
+    {
+      "src": "street-14.jpg",
+      "right": null,
+      "name": "Mira Vista Road",
+      "at": [
+        37.320197,
+        -122.065009
+      ],
+      "safety": 7,
+      "greenery": 8,
+      "shade": 40,
+      "safeNote": "Quiet residential street with shared-lane markings only; lightly trafficked and easy to ride, but no dedicated lane.",
+      "greenNote": "Residential street with mature trees and lush shrubs on both sides; canopy partly closes over the road.",
+      "hazards": [
+        "sharrows_only",
+        "frequent_driveways"
+      ],
+      "lts": 2,
+      "date": "2025-10"
+    },
+    {
+      "src": "street-15.jpg",
+      "right": null,
+      "name": "Vineyard Court",
+      "at": [
+        37.336777,
+        -122.071667
+      ],
+      "safety": 8,
+      "greenery": 8,
+      "shade": 30,
+      "safeNote": "Quiet residential court with light traffic and good pavement; no bike lane, but a low-stress ride.",
+      "greenNote": "Quiet residential court with mature trees and lush front yards; canopy overhangs the road in places.",
+      "hazards": [
+        "frequent_driveways"
+      ],
+      "lts": 1,
+      "date": "2022-10"
+    },
+    {
+      "src": "street-16.jpg",
+      "right": null,
+      "name": "Cozette Lane",
+      "at": [
+        37.320537,
+        -122.007016
+      ],
+      "safety": 8,
+      "greenery": 8,
+      "shade": 60,
+      "safeNote": "Quiet residential street with shade trees and light traffic; no bike lane, but low speeds make riding comfortable.",
+      "greenNote": "Residential street with mature trees on both sides forming a largely closed canopy over the road.",
+      "hazards": [
+        "poor_pavement",
+        "frequent_driveways"
+      ],
+      "lts": 1,
+      "date": "2022-08"
+    },
+    {
+      "src": "street-17.jpg",
+      "right": "street-17-right.jpg",
+      "name": "South Tantau Avenue",
+      "at": [
+        37.320026,
+        -122.006496
+      ],
+      "safety": 8,
+      "greenery": 8,
+      "shade": 60,
+      "safeNote": "Quiet residential street at 25 mph with shared-lane markings only; driveways add some conflicts but traffic is light.",
+      "greenNote": "Residential street with mature trees on both sides and a largely closed canopy over the road.",
+      "hazards": [
+        "sharrows_only",
+        "frequent_driveways"
+      ],
+      "lts": 1,
+      "date": "2022-08"
+    },
+    {
+      "src": "street-18.jpg",
+      "right": "street-18-right.jpg",
+      "name": "Pacifica Drive",
+      "at": [
+        37.316035,
+        -122.02777
+      ],
+      "safety": 8,
+      "greenery": 8,
+      "shade": 30,
+      "safeNote": "Quiet 25 mph residential street with wide lanes and clear sight lines; shared-lane markings only.",
+      "greenNote": "Residential street with mature trees and lawn park on one side; canopy partly closes overhead, with a green corridor nearby.",
+      "hazards": [
+        "sharrows_only"
+      ],
+      "lts": 1,
+      "date": "2017-04"
+    },
+    {
+      "src": "street-19.jpg",
+      "right": null,
+      "name": "Twig Lane",
+      "at": [
+        37.317578,
+        -122.006997
+      ],
+      "safety": 8,
+      "greenery": 8,
+      "shade": 60,
+      "safeNote": "Quiet residential street with light traffic and parked vehicles; no bike lane but low speeds, so easy riding.",
+      "greenNote": "Residential street with mature trees on both sides forming a largely closed canopy over the road.",
+      "hazards": [
+        "door_zone",
+        "frequent_driveways"
+      ],
+      "lts": 1,
+      "date": "2025-09"
+    },
+    {
+      "src": "street-20.jpg",
+      "right": "street-20-right.jpg",
+      "name": "Stevens Creek Boulevard",
+      "at": [
+        37.323095,
+        -121.999888
+      ],
+      "safety": 2,
+      "greenery": 1,
+      "shade": 0,
+      "safeNote": "Stevens Creek Boulevard at 40 mph with 4-5 lanes under an overpass; a stressful, hard-to-ride corridor.",
+      "greenNote": "Route passes beneath a freeway overpass; concrete pillars and pavement dominate, with no trees or planting visible.",
+      "hazards": [
+        "high_speed_traffic",
+        "freeway_ramp_crossing",
+        "expressway",
+        "no_bike_lane"
+      ],
+      "lts": 4,
+      "date": "2025-10"
+    },
+    {
+      "src": "street-21.jpg",
+      "right": "street-21-right.jpg",
+      "name": "Lawrence Expressway",
+      "at": [
+        37.320529,
+        -121.99552
+      ],
+      "safety": 1,
+      "greenery": 1,
+      "shade": 0,
+      "safeNote": "Four-lane expressway at 50 mph with no real bike lane; shared lane is unsafe for ordinary riders.",
+      "greenNote": "Route runs under a concrete freeway overpass with no trees or planting, only pavement, pillars and bare embankment.",
+      "hazards": [
+        "high_speed_traffic",
+        "expressway",
+        "sharrows_only",
+        "no_bike_lane"
+      ],
+      "lts": 4,
+      "date": "2024-10"
+    },
+    {
+      "src": "street-22.jpg",
+      "right": null,
+      "name": "Marigny Place",
+      "at": [
+        37.290136,
+        -122.030997
+      ],
+      "safety": 8,
+      "greenery": 2,
+      "shade": 0,
+      "safeNote": "Quiet residential street with slow traffic and no bike lane; parked cars and driveways add some caution.",
+      "greenNote": "Townhome street with paved frontages, parked cars and garages; only sparse small shrubs, no trees over the road.",
+      "hazards": [
+        "door_zone",
+        "frequent_driveways"
+      ],
+      "lts": 1,
+      "date": "2017-12"
+    },
+    {
+      "src": "street-23.jpg",
+      "right": "street-23-right.jpg",
+      "name": "North Blaney Avenue",
+      "at": [
+        37.334524,
+        -122.023665
+      ],
+      "safety": 5,
+      "greenery": 2,
+      "shade": 0,
+      "safeNote": "Bridge over freeway with a mapped bike lane, but the photos don't show a clear lane and pavement is potholed.",
+      "greenNote": "Bridge over a freeway with chain-link railings; the little vegetation shown is distant or beside the freeway, not street greenery.",
+      "hazards": [
+        "poor_pavement"
+      ],
+      "lts": 3,
+      "date": "2025-10"
+    },
+    {
+      "src": "street-24.jpg",
+      "right": "street-24-right.jpg",
+      "name": "South De Anza Boulevard",
+      "at": [
+        37.300964,
+        -122.032115
+      ],
+      "safety": 4,
+      "greenery": 3,
+      "shade": 10,
+      "safeNote": "Painted lane beside 40 mph traffic and parked cars, with faded markings and cracked pavement; stressful for most riders.",
+      "greenNote": "Wide arterial with paved lanes and parked cars; only scattered trees and a fence-side hedge are visible.",
+      "hazards": [
+        "door_zone",
+        "poor_pavement",
+        "high_speed_traffic",
+        "bike_lane_between_turn_lanes"
+      ],
+      "lts": 3,
+      "date": "2025-10"
+    },
+    {
+      "src": "street-25.jpg",
+      "right": null,
+      "name": "Bark Lane",
+      "at": [
+        37.303021,
+        -122.031856
+      ],
+      "safety": 6,
+      "greenery": 3,
+      "shade": 0,
+      "safeNote": "No bike lane and a busy commercial frontage with many driveways; speed and lane count are unmapped.",
+      "greenNote": "Commercial intersection with strip retail and pavement; only a few scattered trees and small planting areas.",
+      "hazards": [
+        "no_bike_lane",
+        "frequent_driveways"
+      ],
+      "lts": 2,
+      "date": "2025-08"
+    },
+    {
+      "src": "street-26.jpg",
+      "right": null,
+      "name": "Covina Court",
+      "at": [
+        37.293987,
+        -122.02803
+      ],
+      "safety": 9,
+      "greenery": 3,
+      "shade": 10,
+      "safeNote": "Quiet one-way residential court with clear sight lines and good pavement; no bike lane needed at low traffic.",
+      "greenNote": "Bare dirt strip, a few shrubs and one palm; fences and buildings dominate, with almost no canopy over the street.",
+      "hazards": [
+        "no_bike_lane"
+      ],
+      "lts": 1,
+      "date": "2024-08"
+    },
+    {
+      "src": "street-27.jpg",
+      "right": "street-27-right.jpg",
+      "name": "North De Anza Boulevard",
+      "at": [
+        37.334365,
+        -122.032184
+      ],
+      "safety": 4,
+      "greenery": 3,
+      "shade": 0,
+      "safeNote": "Fast multi-lane arterial at 40 mph with a buffered lane, but the photos show no bike lane clearly.",
+      "greenNote": "Wide multi-lane arterial with pavement and fencing; only scattered trees on the edges, little canopy over the road.",
+      "hazards": [
+        "high_speed_traffic",
+        "wide_crossing"
+      ],
+      "lts": 3,
+      "date": "2025-10"
+    },
+    {
+      "src": "street-28.jpg",
+      "right": null,
+      "name": "Sharon Drive",
+      "at": [
+        37.297091,
+        -122.03145
+      ],
+      "safety": 9,
+      "greenery": 3,
+      "shade": 0,
+      "safeNote": "Quiet 25 mph residential street with wide, smooth pavement and clear sight lines; easy riding.",
+      "greenNote": "Commercial-style street with modern buildings, parked cars and pavement; only a few small trees and shrubs.",
+      "hazards": [],
+      "lts": 1,
+      "date": "2023-02"
+    },
+    {
+      "src": "street-29.jpg",
+      "right": null,
+      "name": "Stern Avenue",
+      "at": [
+        37.322434,
+        -122.003384
+      ],
+      "safety": 6,
+      "greenery": 3,
+      "shade": 10,
+      "safeNote": "Quiet 25 mph street with no bike lane and some parked cars, plus cracked pavement at the edge.",
+      "greenNote": "Mostly pavement, glass office buildings and parked cars; only a few scattered trees on the left.",
+      "hazards": [
+        "poor_pavement"
+      ],
+      "lts": 2,
+      "date": "2024-08"
+    },
+    {
+      "src": "street-30.jpg",
+      "right": "street-30-right.jpg",
+      "name": "Vallco Parkway",
+      "at": [
+        37.325631,
+        -122.011609
+      ],
+      "safety": 5,
+      "greenery": 3,
+      "shade": 0,
+      "safeNote": "Mapped bike lane beside a one-way four-lane arterial at 35 mph with a right-turn lane; curb side mostly out of view.",
+      "greenNote": "Wide commercial street with a parking garage and apartments; only a few small trees and a planted island.",
+      "hazards": [
+        "bike_lane_between_turn_lanes"
+      ],
+      "lts": 3,
+      "date": "2025-08"
+    },
+    {
+      "src": "street-31.jpg",
+      "right": "street-31-right.jpg",
+      "name": "South Bernardo Avenue",
+      "at": [
+        37.33937,
+        -122.059447
+      ],
+      "safety": 7,
+      "greenery": 3,
+      "shade": 10,
+      "safeNote": "Quiet 30 mph two-lane street with no bike lane but light traffic and good pavement; a comfortable ride for most.",
+      "greenNote": "Mostly a blank concrete wall, pavement and buildings, with only a few scattered trees and no real canopy.",
+      "hazards": [
+        "no_bike_lane"
+      ],
+      "lts": 2,
+      "date": "2022-11"
+    },
+    {
+      "src": "street-32.jpg",
+      "right": null,
+      "name": "Loma Linda Drive",
+      "at": [
+        37.322359,
+        -121.992086
+      ],
+      "safety": 4,
+      "greenery": 3,
+      "shade": 10,
+      "safeNote": "Multi-lane arterial-style road with no bike lane, many driveways and parked cars; speed limit unmapped.",
+      "greenNote": "Wide road with parking lots and commercial buildings; only a few scattered young trees and little planting.",
+      "hazards": [
+        "no_bike_lane",
+        "frequent_driveways"
+      ],
+      "lts": 3,
+      "date": "2009-03"
+    },
+    {
+      "src": "street-33.jpg",
+      "right": "street-33-right.jpg",
+      "name": "Saratoga-Sunnyvale Road",
+      "at": [
+        37.290427,
+        -122.032454
+      ],
+      "safety": 4,
+      "greenery": 3,
+      "shade": 10,
+      "safeNote": "Painted lane at 40 mph with many driveways and cracked pavement; uncomfortable for cautious riders.",
+      "greenNote": "Commercial strip with bare winter trees, parking lots and pavement dominate; only sparse young trees and small planting beds.",
+      "hazards": [
+        "high_speed_traffic",
+        "frequent_driveways",
+        "poor_pavement"
+      ],
+      "lts": 3,
+      "date": "2023-02"
+    },
+    {
+      "src": "street-34.jpg",
+      "right": null,
+      "name": "Rodrigues Avenue",
+      "at": [
+        37.319324,
+        -122.032568
+      ],
+      "safety": 6,
+      "greenery": 3,
+      "shade": 10,
+      "safeNote": "Low-speed residential-edge road with sharrows only; many driveways and parking reduce comfort, but traffic is light.",
+      "greenNote": "Commercial strip with parking lots and a few sparse young trees; little canopy or planting visible.",
+      "hazards": [
+        "sharrows_only",
+        "frequent_driveways"
+      ],
+      "lts": 2,
+      "date": "2024-08"
+    },
+    {
+      "src": "street-35.jpg",
+      "right": null,
+      "name": "Kentwood Avenue",
+      "at": [
+        37.303807,
+        -122.032264
+      ],
+      "safety": 6,
+      "greenery": 3,
+      "shade": 10,
+      "safeNote": "Photo shows a wide, open commercial intersection rather than the residential road point; curb side and bike lane are not visible.",
+      "greenNote": "Wide intersection with a McDonald's, parking lots and pavement; only a few scattered trees and small planters.",
+      "hazards": [],
+      "lts": 2,
+      "date": "2022-08"
+    },
+    {
+      "src": "street-36.jpg",
+      "right": null,
+      "name": "Bianchini Lane",
+      "at": [
+        37.300064,
+        -122.034497
+      ],
+      "safety": 8,
+      "greenery": 3,
+      "shade": 10,
+      "safeNote": "Quiet narrow residential lane with light traffic and smooth pavement; parked cars and driveways need care.",
+      "greenNote": "Narrow lane between townhouse blocks; one bare tree and a few shrubs, little greenery in view.",
+      "hazards": [
+        "door_zone",
+        "frequent_driveways"
+      ],
+      "lts": 1,
+      "date": "2017-12"
+    },
+    {
+      "src": "street-37.jpg",
+      "right": null,
+      "name": "Murano Circle",
+      "at": [
+        37.299688,
+        -122.033407
+      ],
+      "safety": 8,
+      "greenery": 3,
+      "shade": 10,
+      "safeNote": "Quiet private-feeling residential court with brick paving and light traffic; many garage driveways but slow, low-speed riding.",
+      "greenNote": "Brick-paved townhouse lane with a few small shrubs and one distant tree; mostly hardscape and garages.",
+      "hazards": [
+        "frequent_driveways"
+      ],
+      "lts": 1,
+      "date": "2017-12"
+    },
+    {
+      "src": "street-38.jpg",
+      "right": "street-38-right.jpg",
+      "name": "Wolfe Road",
+      "at": [
+        37.323167,
+        -122.014305
+      ],
+      "safety": 4,
+      "greenery": 3,
+      "shade": 10,
+      "safeNote": "Wide signalised arterial with a right-turn lane, pothole patches and a long crossing; bike lane exists but is partly unclear.",
+      "greenNote": "Wide crossing with pavement, signals and a construction fence; only a few scattered trees and gravel medians.",
+      "hazards": [
+        "poor_pavement",
+        "right_turn_slip_lane",
+        "wide_crossing"
+      ],
+      "lts": 3,
+      "date": "2025-09"
+    },
+    {
+      "src": "street-39.jpg",
+      "right": "street-39-right.jpg",
+      "name": "North Tantau Avenue",
+      "at": [
+        37.326551,
+        -122.006136
+      ],
+      "safety": 5,
+      "greenery": 3,
+      "shade": 10,
+      "safeNote": "Bridge deck with no visible bike lane; mapped painted lanes at 30 mph on a 4-5 lane road rate moderate stress.",
+      "greenNote": "Overpass with concrete barriers and fencing; a few trees at edges, freeway and parking lots in view.",
+      "hazards": [
+        "high_speed_traffic"
+      ],
+      "lts": 3,
+      "date": "2025-08"
+    },
+    {
+      "src": "street-40.jpg",
+      "right": null,
+      "name": "Alpine Drive",
+      "at": [
+        37.328222,
+        -122.069519
+      ],
+      "safety": 5,
+      "greenery": 7,
+      "shade": 30,
+      "safeNote": "Quiet residential street with no bike lane, but construction cones and a large pothole narrow the usable riding space.",
+      "greenNote": "Tree-lined residential street with mature trees and lush planting on both sides, though construction cones and a parked truck partly block the view.",
+      "hazards": [
+        "construction",
+        "poor_pavement",
+        "no_bike_lane"
+      ],
+      "lts": 2,
+      "date": "2022-11"
+    },
+    {
+      "src": "street-41.jpg",
+      "right": "street-41-right.jpg",
+      "name": "Cabot Avenue",
+      "at": [
+        37.323049,
+        -121.99253
+      ],
+      "safety": 5,
+      "greenery": 4,
+      "shade": 10,
+      "safeNote": "Painted bike lane on a two-lane-each-way road with moderate traffic; the curb-side lane is narrow, so ride with caution.",
+      "greenNote": "Wide commercial corridor with mostly pavement and buildings; only a few scattered trees and small planted strips.",
+      "hazards": [
+        "no_bike_lane"
+      ],
+      "lts": 2,
+      "date": "2024-11"
+    },
+    {
+      "src": "street-42.jpg",
+      "right": null,
+      "name": "Hale Place",
+      "at": [
+        37.332979,
+        -122.045402
+      ],
+      "safety": 8,
+      "greenery": 4,
+      "shade": 0,
+      "safeNote": "Quiet residential street with light traffic and clear sight lines; parked cars and driveways are the main concerns.",
+      "greenNote": "Residential street with a few young trees and some hedges, but no canopy over the road and mostly pavement.",
+      "hazards": [
+        "door_zone"
+      ],
+      "lts": 1,
+      "date": "2024-07"
+    },
+    {
+      "src": "street-43.jpg",
+      "right": null,
+      "name": "Gardena Drive",
+      "at": [
+        37.33343,
+        -122.044839
+      ],
+      "safety": 9,
+      "greenery": 6,
+      "shade": 20,
+      "safeNote": "Quiet residential street with 25 mph limit, light traffic, good pavement and clear sight lines.",
+      "greenNote": "Residential street with street trees on the right and some front-yard planting, but canopy over the road is only partial.",
+      "hazards": [],
+      "lts": 1,
+      "date": "2024-10"
+    },
+    {
+      "src": "street-44.jpg",
+      "right": null,
+      "name": "Forest Avenue",
+      "at": [
+        37.326563,
+        -122.023672
+      ],
+      "safety": 7,
+      "greenery": 7,
+      "shade": 30,
+      "safeNote": "Quiet residential street with 25 mph sign and parked cars; shared-lane markings only, so ride carefully near doors.",
+      "greenNote": "Residential street with mature trees along both sides and some canopy, though gaps and parked cars reduce the green feel.",
+      "hazards": [
+        "sharrows_only",
+        "door_zone"
+      ],
+      "lts": 2,
+      "date": "2019-04"
+    },
+    {
+      "src": "street-45.jpg",
+      "right": null,
+      "name": "Toni Court",
+      "at": [
+        37.326292,
+        -122.024069
+      ],
+      "safety": 8,
+      "greenery": 5,
+      "shade": 10,
+      "safeNote": "Quiet residential court with slow traffic and clear sight lines; no bike lane but very low stress.",
+      "greenNote": "Suburban cul-de-sac with lawns, shrubs and a few young trees, but little canopy over the road.",
+      "hazards": [],
+      "lts": 1,
+      "date": "2020-11"
+    },
+    {
+      "src": "street-46.jpg",
+      "right": null,
+      "name": "Plum Tree Lane",
+      "at": [
+        37.32692,
+        -122.024143
+      ],
+      "safety": 8,
+      "greenery": 7,
+      "shade": 40,
+      "safeNote": "Quiet residential street with light traffic and no bike lane; parked cars and some cracked pavement, but manageable.",
+      "greenNote": "Tree-lined residential street with mature trees on both sides, though canopy has gaps and a parked car partly blocks the view.",
+      "hazards": [
+        "door_zone",
+        "poor_pavement",
+        "frequent_driveways"
+      ],
+      "lts": 1,
+      "date": "2022-10"
+    },
+    {
+      "src": "street-47.jpg",
+      "right": null,
+      "name": "Randy Lane",
+      "at": [
+        37.326205,
+        -122.026133
+      ],
+      "safety": 8,
+      "greenery": 7,
+      "shade": 10,
+      "safeNote": "Quiet residential street with no bike lane, light traffic and good pavement; driveways are the main concern.",
+      "greenNote": "Residential street with mature trees and shrubs on both sides, but canopy is only partial and the sky is largely open.",
+      "hazards": [
+        "no_bike_lane",
+        "frequent_driveways"
+      ],
+      "lts": 1,
+      "date": "2025-08"
+    },
+    {
+      "src": "street-48.jpg",
+      "right": null,
+      "name": "Vista Drive",
+      "at": [
+        37.326953,
+        -122.02673
+      ],
+      "safety": 8,
+      "greenery": 7,
+      "shade": 30,
+      "safeNote": "Quiet residential street with wide edge space and clear sight lines; no bike lane, but low traffic and speed.",
+      "greenNote": "Tree-lined residential street with a park edge and shrub planting; canopy has gaps over the road.",
+      "hazards": [
+        "no_bike_lane",
+        "frequent_driveways"
+      ],
+      "lts": 1,
+      "date": "2024-10"
+    },
+    {
+      "src": "street-49.jpg",
+      "right": null,
+      "name": "Lazaneo Drive",
+      "at": [
+        37.326557,
+        -122.027954
+      ],
+      "safety": 7,
+      "greenery": 5,
+      "shade": 10,
+      "safeNote": "Quiet two-lane residential street with clear sightlines and good pavement, but no bike lane and unknown speed limit.",
+      "greenNote": "Residential street with a few mature trees and hedges on one side, but mostly open road and industrial buildings.",
+      "hazards": [
+        "sharrows_only"
+      ],
+      "lts": 2,
+      "date": "2025-10"
+    },
+    {
+      "src": "street-50.jpg",
+      "right": null,
+      "name": "Anne Lane",
+      "at": [
+        37.32152,
+        -122.007038
+      ],
+      "safety": 9,
+      "greenery": 7,
+      "shade": 30,
+      "safeNote": "Quiet residential street with light traffic and clear sight lines; no bike lane but very low stress.",
+      "greenNote": "Tree-lined residential lane with mature trees and a palm, though canopy gaps leave the road partly open to sky.",
+      "hazards": [
+        "no_bike_lane"
+      ],
+      "lts": 1,
+      "date": "2022-08"
+    },
+    {
+      "src": "street-51.jpg",
+      "right": null,
+      "name": "Baxter Avenue",
+      "at": [
+        37.333291,
+        -122.067886
+      ],
+      "safety": 8,
+      "greenery": 6,
+      "shade": 10,
+      "safeNote": "Quiet 25 mph residential street with clear sight lines; cracked pavement is the main concern.",
+      "greenNote": "Residential street with some scattered trees and shrubs, but canopy over the road is thin and sky is mostly open.",
+      "hazards": [
+        "poor_pavement"
+      ],
+      "lts": 1,
+      "date": "2025-10"
+    },
+    {
+      "src": "street-52.jpg",
+      "right": null,
+      "name": "Mitty Way",
+      "at": [
+        37.315832,
+        -121.994821
+      ],
+      "safety": 8,
+      "greenery": 6,
+      "shade": 20,
+      "safeNote": "Quiet two-lane residential street with clear sight lines; cracked pavement and no bike lane, but low traffic.",
+      "greenNote": "Some street trees line this residential road, but canopy is partial and the view is mostly pavement and buildings.",
+      "hazards": [
+        "poor_pavement",
+        "no_bike_lane"
+      ],
+      "lts": 1,
+      "date": "2025-09"
+    },
+    {
+      "src": "street-53.jpg",
+      "right": "street-53-right.jpg",
+      "name": "Belleville Way",
+      "at": [
+        37.341737,
+        -122.061036
+      ],
+      "safety": 8,
+      "greenery": 6,
+      "shade": 30,
+      "safeNote": "Quiet 25 mph residential street with clear sight lines and light traffic; parked cars are the main concern.",
+      "greenNote": "Mature street trees on one side and scattered shrubs, but canopy is partial and the view is mostly pavement and portable buildings.",
+      "hazards": [
+        "door_zone"
+      ],
+      "lts": 1,
+      "date": "2017-10"
+    },
+    {
+      "src": "street-54.jpg",
+      "right": "street-54-right.jpg",
+      "name": "Alberta Avenue",
+      "at": [
+        37.343024,
+        -122.037434
+      ],
+      "safety": 8,
+      "greenery": 6,
+      "shade": 20,
+      "safeNote": "Quiet 25 mph residential street with clear sight lines and good pavement; parked cars and driveways add some caution.",
+      "greenNote": "Mature street trees line one side and some front yards are planted, but canopy over the road is only partial.",
+      "hazards": [
+        "door_zone",
+        "frequent_driveways"
+      ],
+      "lts": 1,
+      "date": "2024-09"
+    },
+    {
+      "src": "street-55.jpg",
+      "right": null,
+      "name": "Whiteoak Drive",
+      "at": [
+        37.309138,
+        -121.999368
+      ],
+      "safety": 8,
+      "greenery": 7,
+      "shade": 30,
+      "safeNote": "Quiet residential street with a good surface and clear sightlines; few cars, but many driveways and no bike lane.",
+      "greenNote": "Tree-lined residential street with mature trees and shrubs, though canopy has gaps over the road.",
+      "hazards": [
+        "frequent_driveways"
+      ],
+      "lts": 1,
+      "date": "2025-09"
+    },
+    {
+      "src": "street-56.jpg",
+      "right": "street-56-right.jpg",
+      "name": "West Homestead Road",
+      "at": [
+        37.337514,
+        -122.057491
+      ],
+      "safety": 5,
+      "greenery": 6,
+      "shade": 20,
+      "safeNote": "Painted bike lane on a 35 mph four-to-five-lane arterial with many driveways and a narrow edge; stressful for cautious riders.",
+      "greenNote": "Mature trees line one side and frame the road, but the wide arterial and houses limit canopy overhead.",
+      "hazards": [
+        "frequent_driveways"
+      ],
+      "lts": 3,
+      "date": "2024-07"
+    },
+    {
+      "src": "street-57.jpg",
+      "right": null,
+      "name": "Club House Lane",
+      "at": [
+        37.313194,
+        -122.065024
+      ],
+      "safety": 8,
+      "greenery": 7,
+      "shade": 30,
+      "safeNote": "Quiet residential street with clear sight lines and good pavement; no bike lane, but traffic looks light.",
+      "greenNote": "Tall conifers and willows line the road, with a grassy open space on the left and planted front yards.",
+      "hazards": [],
+      "lts": 1,
+      "date": "2025-10"
+    },
+    {
+      "src": "street-58.jpg",
+      "right": null,
+      "name": "Wunderlich Drive",
+      "at": [
+        37.311619,
+        -121.998805
+      ],
+      "safety": 8,
+      "greenery": 7,
+      "shade": 40,
+      "safeNote": "Quiet residential street with good pavement and clear sight lines; no bike lane but low traffic stress.",
+      "greenNote": "Tree-lined residential street with mature trees on the right and gaps in the canopy overhead.",
+      "hazards": [],
+      "lts": 1,
+      "date": "2024-08"
+    },
+    {
+      "src": "street-59.jpg",
+      "right": null,
+      "name": "Edminton Drive",
+      "at": [
+        37.311977,
+        -121.99844
+      ],
+      "safety": 9,
+      "greenery": 5,
+      "shade": 10,
+      "safeNote": "Quiet residential cul-de-sac-style street with light traffic and clear sight lines; comfortable for careful riders.",
+      "greenNote": "Bare winter birch and shrubs line a curving residential street, but there is little canopy over the road.",
+      "hazards": [],
+      "lts": 1,
+      "date": "2014-01"
+    }
+  ],
+  "junctionPhotos": [
+    "junction-0.jpg",
+    "junction-1.jpg",
+    "junction-2.jpg",
+    "junction-3.jpg"
+  ]
+}

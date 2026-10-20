@@ -1,0 +1,191 @@
+/* Website look for Hong Zhe's deck: the same palettes and type as the BikeScape website
+   (web/src/bikemap/theme.css). Modern "Harbor" = navy + coral on #EEF1F4, Nature = greens on cream.
+   Colour and type only: the deck's sections, order, layout and text are unchanged. */
+
+html,
+body {
+  background: #eef1f4;
+}
+
+.bs-showcase {
+  background: #eef1f4;
+  color: #1d2b3a;
+}
+
+/* The Modern ↔ Nature slider thumb has inline neon gradients; give it the website's solid buttons. */
+.bs-scroll-slider-thumb {
+  background: #22476b !important;
+  border-color: #22476b !important;
+  box-shadow: 0 1px 2px rgba(20, 32, 48, 0.12), 0 6px 16px rgba(20, 32, 48, 0.14) !important;
+}
+.bs-demo-container:has(.bs-slider-tab:nth-of-type(2).is-active) .bs-scroll-slider-thumb {
+  background: #2e4a22 !important;
+  border-color: #2e4a22 !important;
+}
+.bs-slider-tab.is-active {
+  color: #ffffff;
+}
+
+/* Hero phone: a real-phone bezel in the website's ink colour around the live website. */
+.bs-phone-mockup {
+  background: #1d2b3a;
+  box-shadow:
+    0 1px 2px rgba(20, 32, 48, 0.1),
+    0 28px 60px -14px rgba(20, 32, 48, 0.35);
+}
+.bs-phone-screen {
+  background: #eef1f4;
+}
+
+/* "13,000" over the photo ring: website navy with a paper halo so it reads over photos. */
+.rs-orbit-count strong {
+  color: #22476b;
+  font-weight: 800;
+  text-shadow:
+    0 0 2px #ffffff,
+    0 0 18px rgba(238, 241, 244, 0.95),
+    0 0 42px rgba(238, 241, 244, 0.85);
+  filter: none;
+}
+
+/* Sandbox: the live website, one frame per mode, cross-faded by the deck's slider. */
+.ls-sandbox {
+  display: flex;
+  flex-direction: column;
+  height: calc(680px - 112px); /* the sandbox card is 680px tall; header and padding take the rest */
+  border-radius: 18px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid rgba(29, 43, 58, 0.1);
+}
+.ls-frames {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #eef1f4;
+}
+.ls-sandbox[data-ui="nature"] .ls-frames {
+  background: #f5efe1;
+}
+.ls-frames iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0s linear 0.45s;
+}
+.ls-frames iframe.is-shown {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ls-shield {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 0 18px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.ls-shield span {
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(29, 43, 58, 0.82);
+  color: #ffffff;
+  font: 700 13px/1 var(--bs-font-sans);
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+.ls-shield:hover span,
+.ls-shield:focus-visible span {
+  opacity: 1;
+  transform: none;
+}
+.ls-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-top: 1px solid rgba(29, 43, 58, 0.08);
+  color: #4b5a6a;
+  font: 500 13px/1.3 var(--bs-font-sans);
+}
+.ls-foot a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #22476b;
+  font-weight: 700;
+  text-decoration: none;
+}
+.ls-sandbox[data-ui="nature"] .ls-foot a {
+  color: #2e4a22;
+}
+
+/* Tech stack, after the pathfinding diagram: his flow cards in a 3 × 2 grid. */
+.bs-stack-wrapper {
+  margin-top: 72px;
+}
+.bs-stack-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 28px;
+}
+@media (max-width: 1024px) {
+  .bs-stack-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.bs-stack-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.bs-stack-head .bs-step-badge {
+  margin-bottom: 0;
+}
+.bs-stack-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: #ffffff;
+  background: #22476b;
+}
+.bs-stack-node.is-coral .bs-stack-icon {
+  background: #d9653b;
+}
+.bs-stack-node.is-forest .bs-stack-icon {
+  background: #2e4a22;
+}
+.bs-stack-node.is-coral .bs-step-badge {
+  color: #b4532c;
+}
+.bs-stack-node.is-forest .bs-step-badge {
+  color: #3f7d2a;
+}
+.bs-stack-node .bs-step-title {
+  font-size: 19px;
+}
+.bs-stack-node .bs-step-desc {
+  font-size: 14px;
+}
+.bs-stack-node .bs-tech-pill {
+  font-size: 11.5px;
+  padding: 4px 9px;
+}

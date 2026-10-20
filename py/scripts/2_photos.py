@@ -2,6 +2,7 @@
 
     cd py && uv run python scripts/2_photos.py            # dry run: free Metadata API only, no photos
     cd py && uv run python scripts/2_photos.py --fetch    # also download photos, never past the free tier
+    cd py && uv run python scripts/2_photos.py --only-new # after 0_extend_area.py: leave scored samples alone
 
 Free by construction:
   - Metadata requests are free and unlimited (Google Maps Platform pricing list, checked 2026-10-16).
@@ -18,6 +19,7 @@ import argparse
 import collections
 import json
 import math
+import os
 import random
 import sys
 import threading
@@ -34,12 +36,14 @@ import osmnx as ox
 from pyproj import Transformer
 
 PY = Path(__file__).resolve().parents[1]
-DATA = PY / "data"
+DATA = (PY / os.environ.get("BIKEMAP_DATA", "data")).resolve()  # data/ext = extended area
 CACHE = DATA / "cache"
 META_DIR = CACHE / "metadata"
 PHOTO_DIR = CACHE / "streetview"
 REPORTS = CACHE / "reports"
 USAGE = CACHE / "streetview_usage.json"
+SAMPLES = DATA / "samples.jsonl"
+NEW_IDS = CACHE / "new_samples.json"
 ENV = PY.parent / ".env"
 
 UTM = "EPSG:32610"
@@ -257,6 +261,9 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--fetch", action="store_true", help="download photos (within the free tier)")
     ap.add_argument("--workers", type=int, default=WORKERS, help="parallel photo downloads")
+    ap.add_argument("--only-new", action="store_true",
+                    help="keep every sample already in data/samples.jsonl as it is (no metadata, no photos); "
+                    "check and fetch only the new ones, e.g. after 0_extend_area.py")  # fmt: skip
     args = ap.parse_args()
     key = env("GOOGLE_MAPS_API_KEY")
     for d in (META_DIR, PHOTO_DIR, REPORTS):
@@ -265,17 +272,33 @@ def main() -> None:
     print("1/4 sampling data/graph_raw.graphml")
     G = ox.load_graphml(DATA / "graph_raw.graphml")
     samples = build_samples(G)
+    # --only-new: rows already in samples.jsonl are written back unchanged, so their scores stay valid
+    # and their photos (which may live only on the machine that scored them) are not fetched again.
+    # Rows an earlier --only-new run added (NEW_IDS) are not "already there": they are checked again,
+    # so a later run can fetch their photos or retry a failed metadata request.
+    kept: dict[str, dict] = {}
+    if args.only_new and SAMPLES.exists():
+        added = set(json.loads(NEW_IDS.read_text())) if NEW_IDS.exists() else set()
+        rows = (json.loads(line) for line in SAMPLES.read_text(encoding="utf-8").splitlines() if line.strip())
+        kept = {
+            r["sample_id"]: r
+            for r in rows
+            if r["sample_id"] not in added and not r.get("status", "").startswith("error")
+        }
+    check = [s for s in samples if s["sample_id"] not in kept]
+    if args.only_new:
+        print(f"   {len(kept)} samples kept as they are, {len(check)} new")
 
-    print(f"2/4 Street View metadata for {len(samples)} samples (free; cached in data/cache/metadata)")
+    print(f"2/4 Street View metadata for {len(check)} samples (free; cached in data/cache/metadata)")
     with ThreadPoolExecutor(WORKERS) as pool:
-        for s, m in zip(samples, pool.map(lambda s: metadata(s, key), samples), strict=True):
+        for s, m in zip(check, pool.map(lambda s: metadata(s, key), check), strict=True):
             classify(s, m)
 
     # One entry per distinct photo, at the best (lowest) tier any sample needs it for. Within a tier,
     # the first sample of every street comes before any street's second one, so when the free tier
     # runs out we lose density evenly instead of whole neighbourhoods.
     wanted: dict[str, dict] = {}
-    for s in samples:
+    for s in check:
         for name, heading, tier in photo_requests(s):
             w = wanted.setdefault(name, {"pano": s["pano_id"], "heading": heading, "tier": tier, "order": 99})
             w["tier"], w["order"] = min(w["tier"], tier), min(w["order"], s.get("i", 0))
@@ -326,15 +349,23 @@ def main() -> None:
         print("3/4 dry run: no photos fetched (add --fetch)")
 
     print("4/4 writing data/samples.jsonl + report")
-    with (DATA / "samples.jsonl").open("w", encoding="utf-8") as f:
+    with SAMPLES.open("w", encoding="utf-8") as f:
         for s in samples:
+            if s["sample_id"] in kept:
+                f.write(json.dumps(kept.pop(s["sample_id"])) + "\n")
+                continue
             names = [n for n, *_ in photo_requests(s)]
             s["photos"] = [n for n in names if (PHOTO_DIR / n).exists()]  # what step 3 can score
             s["photos_missing"] = [n for n in names if not (PHOTO_DIR / n).exists()]
             f.write(json.dumps(s) + "\n")
+        for r in kept.values():  # old rows this graph no longer yields: kept so their scores still bake
+            f.write(json.dumps(r) + "\n")
+    if args.only_new:
+        NEW_IDS.write_text(json.dumps([s["sample_id"] for s in check]))
+        print(f"   new sample ids -> {NEW_IDS.relative_to(PY)} (pass to 3_score.py --samples)")
 
     planned_new = len(plan - on_disk)
-    write_report(samples, wanted, plan, tier_fit, remaining, planned_new, fetch_stats, args.fetch)
+    write_report(check, wanted, plan, tier_fit, remaining, planned_new, fetch_stats, args.fetch)
 
 
 def write_report(samples, wanted, plan, tier_fit, remaining, planned_new, fetch_stats, fetched) -> None:

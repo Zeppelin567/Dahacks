@@ -1,0 +1,44 @@
+name: BikeScape checks
+
+on:
+  push:
+    branches: [main, integrate/presentation-main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: astral-sh/setup-uv@v6
+      - run: npm ci --no-audit --no-fund
+      - run: uv sync --frozen --project py
+      - run: npm run check
+      - run: npm run test:py
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: docker build -t bikescape .
+      - run: docker run -d --name bikescape -p 3000:3000 bikescape
+      - name: Wait for Python
+        run: |
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3000/api/py/health; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+      - run: node scripts/smoke-map.mjs
+      - if: always()
+        run: docker logs bikescape && docker stats --no-stream bikescape
