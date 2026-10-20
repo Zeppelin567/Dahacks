@@ -44,4 +44,4 @@ PLACES: list[Place] = [
 ]
 
 # Bounding box used by the mock network layer (and a sane default map view).
-BBOX = (37.290, -122.090, 37.340, -121.995)  # south, west, north, east
+BBOX = (37.288, -122.090, 37.340, -121.974)  # south, west, north, east

@@ -3,7 +3,7 @@
 // row that is also the "More" expander (details: km, worst spot, named crossings, who can ride it / chips, trees, photos).
 // Desktop: floating card top-left. <=700px: bottom sheet (sets --bm-sheet-h on <html> for the map's padding).
 import "./sheet.css";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { GreenPrefs, LatLng, Place, Route, RoutePhoto, RouteResponse } from "./api";
 import { crossingTags, heroVals, RIDERS, shortName, treesAlong, whoCanRide, worstOf } from "./derive";
 import { Ico, RiderIco } from "./icons";
@@ -58,6 +58,7 @@ export type SheetProps = {
   /** phone: the small play button in the trip line opens the "Try it" tray */
   onTry?: () => void;
   defaultMore?: boolean;
+  tools?: ReactNode;
 };
 
 const fmt = (v: number | null, unit: "" | "%") =>
@@ -268,6 +269,16 @@ export function Sheet(p: SheetProps) {
                 </span>
               </span>
             </span>
+            {ui === "nature" && !p.loading && !p.drawing && (
+              <span
+                className="greenery-change"
+                title="Length-weighted vegetation score; change is in percentage points."
+              >
+                {same
+                  ? "Same greenery"
+                  : `${hero.us > hero.them ? "+" : ""}${(hero.us - hero.them).toFixed(1)} pts greenery`}
+              </span>
+            )}
           </>
         )}
       </button>
@@ -297,7 +308,10 @@ export function Sheet(p: SheetProps) {
 
       <div className="more" id="bm-more">
         <div>
-          <div className="more-in">{route && <More {...p} route={route} />}</div>
+          <div className="more-in">
+            {route && <More {...p} route={route} />}
+            {p.tools}
+          </div>
         </div>
       </div>
 

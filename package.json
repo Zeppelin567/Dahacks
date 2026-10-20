@@ -15,12 +15,11 @@
   ],
   "scripts": {
     "dev": "concurrently -k -n api,web,py -c blue,green,magenta \"npm run dev -w api\" \"npm run dev -w web\" \"npm run dev:py\"",
-    "dev:js": "concurrently -k -n api,web -c blue,green \"npm run dev -w api\" \"npm run dev -w web\"",
     "dev:py": "uv run --directory py uvicorn app.main:app --reload --port 8000",
     "build": "npm run build -w web",
     "start": "npm run start -w api",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "lint": "biome check .",
+    "lint": "biome check api web shared scripts package.json biome.json tsconfig.base.json",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "test": "npm run test -w api",
@@ -28,11 +27,13 @@
     "db:generate": "npm run db:generate -w api",
     "db:seed": "npm run db:seed -w api",
     "db:reset": "npm run db:reset -w api",
-    "check": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run test:web && npm run build",
     "smoke:dev": "node scripts/smoke-dev.mjs",
     "lint:py": "uv run --directory py ruff check . && uv run --directory py ruff format --check .",
     "format:py": "uv run --directory py ruff format .",
-    "check:py": "npm run lint:py && npm run test:py"
+    "check:py": "npm run lint:py && npm run test:py",
+    "test:web": "npm run test -w web",
+    "dev:js": "concurrently -k -n api,web -c blue,green \"npm run dev -w api\" \"npm run dev -w web\""
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.13",

@@ -10,15 +10,17 @@ function Tile({
   sub,
   pressed,
   onClick,
+  disabled = false,
 }: {
   icon: IconName;
   word: string;
   sub: string;
   pressed: boolean;
   onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
-    <button type="button" className="tile" aria-pressed={pressed} onClick={onClick}>
+    <button type="button" className="tile" disabled={disabled} aria-pressed={pressed} onClick={onClick}>
       <Ico n={icon} />
       {word}
       <small>{sub}</small>
@@ -32,6 +34,8 @@ export function TryTray({
   onOpenChange,
   race = "idle",
   onRace,
+  canRace = true,
+  onReport,
   listening = false,
   onListen,
   split = false,
@@ -44,6 +48,8 @@ export function TryTray({
   race?: RaceState;
   /** start, stop or replay (the app decides from `race`) */
   onRace?: () => void;
+  canRace?: boolean;
+  onReport?: () => void;
   listening?: boolean;
   onListen?: () => void;
   split?: boolean;
@@ -64,6 +70,7 @@ export function TryTray({
         {onRace && (
           <Tile
             icon={race === "running" ? "close" : race === "done" ? "replay" : "flag"}
+            disabled={!canRace}
             word={race === "running" ? "Stop" : race === "done" ? "Again" : "Race"}
             sub="Race the fast way"
             pressed={race !== "idle"}
@@ -74,10 +81,13 @@ export function TryTray({
           <Tile
             icon="listen"
             word="Listen"
-            sub="Hear each street"
+            sub="Route overview"
             pressed={listening}
             onClick={close(onListen)}
           />
+        )}
+        {onReport && (
+          <Tile icon="flag" word="Report" sub="Mark a hazard" pressed={false} onClick={close(onReport)} />
         )}
         {onSplit && (
           <Tile icon="split" word="Split" sub="Split the city" pressed={split} onClick={close(onSplit)} />
